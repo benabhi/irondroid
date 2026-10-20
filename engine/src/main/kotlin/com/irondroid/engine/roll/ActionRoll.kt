@@ -84,6 +84,19 @@ data class ActionRoll(
         return BurnResult(copy(burnedMomentum = momentum.value), momentum.resetValue())
     }
 
+    /**
+     * Rolls again the dice in [which] (RF-MOT-11), in action, first and second challenge order,
+     * keeping the others. Only before burning momentum.
+     */
+    fun reroll(dice: Dice, which: Set<RerollDie>): ActionRoll {
+        check(burnedMomentum == null) { "Dice cannot be rerolled after burning momentum" }
+        return copy(
+            actionDie = if (RerollDie.ACTION in which) dice.roll(Die.D6).value else actionDie,
+            challenge1 = if (RerollDie.CHALLENGE_1 in which) dice.roll(Die.D10).value else challenge1,
+            challenge2 = if (RerollDie.CHALLENGE_2 in which) dice.roll(Die.D10).value else challenge2,
+        )
+    }
+
     companion object {
         const val MAX_ACTION_SCORE = 10
 
@@ -93,6 +106,13 @@ data class ActionRoll(
             return ActionRoll(action, stat, adds, first, second, momentum)
         }
     }
+}
+
+/** A die of an action roll that an asset may let the player roll again. */
+enum class RerollDie {
+    ACTION,
+    CHALLENGE_1,
+    CHALLENGE_2,
 }
 
 /** An action roll after burning momentum, with the momentum that is left. */

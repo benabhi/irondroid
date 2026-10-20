@@ -11,6 +11,7 @@ import com.irondroid.engine.progress.ProgressTrackType
 import com.irondroid.engine.roll.ActionRoll
 import com.irondroid.engine.roll.Outcome
 import com.irondroid.engine.roll.ProgressRoll
+import com.irondroid.engine.roll.RerollDie
 
 /** A track to start when a move opens one, such as Swear an Iron Vow. */
 data class NewTrack(val name: String, val rank: ChallengeRank)
@@ -23,6 +24,7 @@ data class NewTrack(val name: String, val rank: ChallengeRank)
  * @property track id of the progress track the move acts on.
  * @property amount how much the move is triggered with, such as 2 for Endure Harm 2.
  * @property newTrack name and rank of the track the move starts.
+ * @property rerollable dice an asset lets the player roll again on this move (RF-MOT-11).
  */
 data class MoveRequest(
     val source: RollSource? = null,
@@ -30,6 +32,7 @@ data class MoveRequest(
     val track: String? = null,
     val amount: Int? = null,
     val newTrack: NewTrack? = null,
+    val rerollable: Set<RerollDie> = emptySet(),
 )
 
 /** Something the engine does not resolve by itself; the caller chains it next. */
@@ -82,6 +85,17 @@ sealed interface MoveStep {
     data class Done(override val character: Character, override val record: MoveRecord) : MoveStep
 
     /**
+     * An asset allows rerolling [rerollable] dice: the player decides with [MoveResolver.reroll]
+     * before anything from the outcome is applied.
+     */
+    data class AwaitingReroll(
+        override val character: Character,
+        override val record: MoveRecord,
+        val rerollable: Set<RerollDie>,
+        internal val context: Context,
+    ) : MoveStep
+
+    /**
      * The action roll would improve by burning momentum, to [burnOutcome]. The player decides
      * with [MoveResolver.decideBurn]; nothing from the outcome is applied yet.
      */
@@ -130,12 +144,11 @@ class MoveResolver(private val catalog: MoveCatalog, private val dice: Dice) {
             is MoveRoll.None -> offerChoices(listOfNotNull(move.choice), context, state)
             is MoveRoll.Action -> {
                 val (rolled, record) = rollAction(roll, move, state)
-                val burn = record.roll.burnOutcome(rolled.character.momentum)
                 val after = rolled.copy(record = rolled.record.copy(roll = record))
-                if (burn != null) {
-                    MoveStep.AwaitingBurn(after.character, after.record, burn, context)
+                if (state.request.rerollable.isNotEmpty()) {
+                    MoveStep.AwaitingReroll(after.character, after.record, state.request.rerollable, context)
                 } else {
-                    applyOutcome(record.outcome, context, after)
+                    afterActionRoll(context, after)
                 }
             }
             is MoveRoll.Progress -> {
@@ -145,6 +158,14 @@ class MoveResolver(private val catalog: MoveCatalog, private val dice: Dice) {
                 applyOutcome(result.outcome, context, after)
             }
         }
+    }
+
+    /** Rolls again the dice in [which] (empty keeps the roll), then continues as after any action roll. */
+    fun reroll(step: MoveStep.AwaitingReroll, which: Set<RerollDie>): MoveStep {
+        (which - step.rerollable).firstOrNull()?.let { throw IllegalArgumentException("The asset does not allow rerolling $it") }
+        val record = step.record.roll as RollRecord.Action
+        val rerolled = record.copy(roll = record.roll.reroll(dice, which))
+        return afterActionRoll(step.context, Applied(step.character, step.record.copy(roll = rerolled), step.context.request))
     }
 
     /** Burns momentum (or not) on a roll that offered it, then applies the outcome. */
@@ -192,6 +213,17 @@ class MoveResolver(private val catalog: MoveCatalog, private val dice: Dice) {
         val adds = roll.bonuses.filter { it.id in state.request.bonuses }.sumOf { it.amount } + used.sumOf { it.amount }
         val result = ActionRoll.roll(dice, character.value(source), adds, character.momentum.value)
         return state.copy(character = character.copy(pendingBonuses = kept)) to RollRecord.Action(source, result)
+    }
+
+    /** Offers burning momentum when it would help; otherwise applies the outcome. */
+    private fun afterActionRoll(context: MoveStep.Context, state: Applied): MoveStep {
+        val record = state.record.roll as RollRecord.Action
+        val burn = record.roll.burnOutcome(state.character.momentum)
+        return if (burn != null) {
+            MoveStep.AwaitingBurn(state.character, state.record, burn, context)
+        } else {
+            applyOutcome(record.outcome, context, state)
+        }
     }
 
     private fun applyOutcome(outcome: Outcome, context: MoveStep.Context, state: Applied): MoveStep {
