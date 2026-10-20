@@ -59,6 +59,18 @@ data class ProgressTrack(
         return copy(ticks = minOf(ticks + times * ticksPerProgress, MAX_TICKS))
     }
 
+    /** Clears progress down to [keepBoxes] filled boxes; partial ticks are cleared too. Never adds progress. */
+    fun clearProgress(keepBoxes: Int = 0): ProgressTrack {
+        require(keepBoxes in 0..BOXES) { "Boxes to keep must be 0..$BOXES, was $keepBoxes" }
+        return copy(ticks = minOf(ticks, keepBoxes * TICKS_PER_BOX))
+    }
+
+    /** Raises the rank by one; epic stays epic. Bonds have no rank. */
+    fun raiseRank(): ProgressTrack {
+        val current = checkNotNull(rank) { "$type tracks have no rank" }
+        return copy(rank = ChallengeRank.entries.getOrElse(current.ordinal + 1) { current })
+    }
+
     companion object {
         const val BOXES = 10
         const val TICKS_PER_BOX = 4

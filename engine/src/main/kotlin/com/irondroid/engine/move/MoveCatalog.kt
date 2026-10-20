@@ -22,11 +22,17 @@ class MoveCatalog internal constructor(
     fun text(id: String, language: String): MoveText? = texts[language]?.get(id)
 
     /**
-     * Moves named by trigger_move effects that are not in this catalog. Not an error while loading,
+     * Moves named by effects that are not in this catalog. Not an error while loading,
      * because moves arrive in separate files and tasks; a complete catalog must return none.
      */
     fun unresolvedReferences(): Set<String> =
-        moves.flatMap { it.allEffects }.filterIsInstance<Effect.TriggerMove>().map { it.move }.toSet() - byId.keys
+        moves.flatMap { it.allEffects }.mapNotNull { effect ->
+            when (effect) {
+                is Effect.TriggerMove -> effect.move
+                is Effect.NextRollBonus -> effect.move
+                else -> null
+            }
+        }.toSet() - byId.keys
 }
 
 /** Reads and validates moves.json and its per-language text files. */
@@ -90,22 +96,41 @@ object MoveLoader {
             if (roll is MoveRoll.None && move.outcomes != null) errors += "$where: a move without a roll has no outcomes"
             if (roll !is MoveRoll.None && move.outcomes == null) errors += "$where: a rolled move needs outcomes"
 
-            move.optionIds.groupBy { it }.filterValues { it.size > 1 }.keys.forEach { errors += "$where: option $it is repeated" }
+            for (choice in move.choices) {
+                choice.options.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { errors += "$where: option $it is repeated" }
+                if (choice.count !in 1..choice.options.size) errors += "$where: cannot choose ${choice.count} of ${choice.options.size} options"
+            }
+            // An option listed in several outcomes (Make Camp) must do the same everywhere: it has one text.
+            move.choices.flatMap { it.options }.groupBy { it.id }
+                .filterValues { same -> same.map { it.effects }.distinct().size > 1 }
+                .keys.forEach { errors += "$where: option $it has different effects in different outcomes" }
             move.optionIds.filterNot { idPattern.matches(it) }.forEach { errors += "$where: option id $it must be snake_case" }
-            listOfNotNull(move.outcomes?.strongHit, move.outcomes?.weakHit, move.outcomes?.miss)
-                .mapNotNull { it.choice }
-                .filter { it.count !in 1..it.options.size }
-                .forEach { errors += "$where: cannot choose ${it.count} of ${it.options.size} options" }
-            move.allEffects.forEach { effect -> validateEffect(effect)?.let { errors += "$where: $it" } }
+
+            val bonuses = (roll as? MoveRoll.Action)?.bonuses.orEmpty()
+            bonuses.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { errors += "$where: bonus $it is repeated" }
+            bonuses.filterNot { idPattern.matches(it.id) }.forEach { errors += "$where: bonus id ${it.id} must be snake_case" }
+            bonuses.filter { it.amount < 1 }.forEach { errors += "$where: bonus ${it.id} needs amount >= 1" }
+
+            move.allEffects.forEach { effect -> validateEffect(effect, move)?.let { errors += "$where: $it" } }
         }
     }
 
-    private fun validateEffect(effect: Effect): String? = when (effect) {
-        is Effect.AdjustMomentum -> "momentum effect of 0".takeIf { effect.amount == 0 }
-        is Effect.AdjustMeter -> "${effect.meter} effect of 0".takeIf { effect.amount == 0 }
-        is Effect.MarkProgress -> "mark_progress needs times >= 1".takeIf { effect.times < 1 }
-        is Effect.NextRollBonus -> "next_roll_bonus needs amount >= 1".takeIf { effect.amount < 1 }
-        is Effect.TriggerMove -> "trigger_move to an invalid id ${effect.move}".takeUnless { idPattern.matches(effect.move) }
+    private fun validateEffect(effect: Effect, move: MoveDefinition): String? {
+        val needsTrack = effect is Effect.MarkProgress || effect is Effect.ClearProgress || effect is Effect.RaiseRank
+        if (needsTrack && move.progressTrack == null) return "progress effects need the move's track"
+        return when (effect) {
+            is Effect.AdjustMomentum -> "momentum effect of 0".takeIf { effect.amount == 0 }
+            is Effect.AdjustMeter -> "${effect.meter} effect of 0".takeIf { effect.amount == 0 }
+            is Effect.MarkProgress -> "mark_progress needs times >= 1".takeIf { effect.times < 1 }
+            is Effect.ClearProgress -> "clear_progress keeps 0..9 boxes".takeIf { effect.keepBoxes !in 0..9 }
+            is Effect.RaiseRank, is Effect.ClearDebility -> null
+            is Effect.NextRollBonus -> when {
+                effect.amount < 1 -> "next_roll_bonus needs amount >= 1"
+                effect.move != null && !idPattern.matches(effect.move) -> "next_roll_bonus for an invalid move id ${effect.move}"
+                else -> null
+            }
+            is Effect.TriggerMove -> "trigger_move to an invalid id ${effect.move}".takeUnless { idPattern.matches(effect.move) }
+        }
     }
 
     private fun validateTexts(moves: List<MoveDefinition>, language: String, file: MoveTextFile, errors: MutableList<String>) {
@@ -128,9 +153,12 @@ object MoveLoader {
             } else {
                 outcomeTexts.filterValues { it != null }.keys.forEach { errors += "$where: $it text for a move without a roll" }
             }
-            (move.optionIds.toSet() - text.options.keys).forEach { errors += "$where: missing text for option $it" }
-            (text.options.keys - move.optionIds.toSet()).forEach { errors += "$where: text for unknown option $it" }
+            (move.optionIds - text.options.keys).forEach { errors += "$where: missing text for option $it" }
+            (text.options.keys - move.optionIds).forEach { errors += "$where: text for unknown option $it" }
             text.options.filterValues { it.isBlank() }.keys.forEach { errors += "$where: empty text for option $it" }
+            (move.bonusIds - text.bonuses.keys).forEach { errors += "$where: missing text for bonus $it" }
+            (text.bonuses.keys - move.bonusIds).forEach { errors += "$where: text for unknown bonus $it" }
+            text.bonuses.filterValues { it.isBlank() }.keys.forEach { errors += "$where: empty text for bonus $it" }
         }
     }
 }

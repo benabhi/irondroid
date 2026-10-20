@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "moves": [
+    {
+      "id": "face_danger",
+      "category": "adventure",
+      "roll": { "type": "action", "sources": ["edge", "heart", "iron", "shadow", "wits"] },
+      "outcomes": {
+        "strong_hit": { "effects": [{ "type": "momentum", "amount": 1 }] },
+        "weak_hit": {
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "lose_momentum", "effects": [{ "type": "momentum", "amount": -1 }] },
+              { "id": "endure_harm", "effects": [{ "type": "trigger_move", "move": "endure_harm", "amount": 1 }] },
+              { "id": "endure_stress", "effects": [{ "type": "trigger_move", "move": "endure_stress", "amount": 1 }] },
+              { "id": "lose_supply", "effects": [{ "type": "meter", "meter": "supply", "amount": -1 }] }
+            ]
+          }
+        },
+        "miss": { "effects": [{ "type": "trigger_move", "move": "pay_the_price" }] }
+      }
+    },
+    {
+      "id": "secure_an_advantage",
+      "category": "adventure",
+      "roll": { "type": "action", "sources": ["edge", "heart", "iron", "shadow", "wits"] },
+      "outcomes": {
+        "strong_hit": {
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "take_control", "effects": [{ "type": "next_roll_bonus", "amount": 1 }] },
+              { "id": "prepare_to_act", "effects": [{ "type": "momentum", "amount": 2 }] }
+            ]
+          }
+        },
+        "weak_hit": { "effects": [{ "type": "momentum", "amount": 1 }] },
+        "miss": { "effects": [{ "type": "trigger_move", "move": "pay_the_price" }] }
+      }
+    },
+    {
+      "id": "gather_information",
+      "category": "adventure",
+      "roll": {
+        "type": "action",
+        "sources": ["wits"],
+        "bonuses": [{ "id": "community_or_bond", "amount": 1 }]
+      },
+      "outcomes": {
+        "strong_hit": { "effects": [{ "type": "momentum", "amount": 2 }] },
+        "weak_hit": { "effects": [{ "type": "momentum", "amount": 1 }] },
+        "miss": { "effects": [{ "type": "trigger_move", "move": "pay_the_price" }] }
+      }
+    },
+    {
+      "id": "heal",
+      "category": "adventure",
+      "roll": { "type": "action", "sources": ["wits", "iron"] },
+      "outcomes": {
+        "strong_hit": {
+          "effects": [
+            { "type": "clear_debility", "debility": "wounded" },
+            { "type": "meter", "meter": "health", "amount": 2 }
+          ]
+        },
+        "weak_hit": {
+          "effects": [
+            { "type": "clear_debility", "debility": "wounded" },
+            { "type": "meter", "meter": "health", "amount": 2 }
+          ],
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "lose_supply", "effects": [{ "type": "meter", "meter": "supply", "amount": -1 }] },
+              { "id": "lose_momentum", "effects": [{ "type": "momentum", "amount": -1 }] }
+            ]
+          }
+        },
+        "miss": { "effects": [{ "type": "trigger_move", "move": "pay_the_price" }] }
+      }
+    },
+    {
+      "id": "resupply",
+      "category": "adventure",
+      "roll": { "type": "action", "sources": ["wits"] },
+      "blocked_by": ["unprepared"],
+      "outcomes": {
+        "strong_hit": { "effects": [{ "type": "meter", "meter": "supply", "amount": 2 }] },
+        "weak_hit": {
+          "choice": {
+            "count": 1,
+            "options": [
+              {
+                "id": "take_one_supply",
+                "effects": [{ "type": "meter", "meter": "supply", "amount": 1 }, { "type": "momentum", "amount": -1 }]
+              },
+              {
+                "id": "take_two_supply",
+                "effects": [{ "type": "meter", "meter": "supply", "amount": 2 }, { "type": "momentum", "amount": -2 }]
+              }
+            ]
+          }
+        },
+        "miss": { "effects": [{ "type": "trigger_move", "move": "pay_the_price" }] }
+      }
+    },
+    {
+      "id": "make_camp",
+      "category": "adventure",
+      "roll": { "type": "action", "sources": ["supply"] },
+      "outcomes": {
+        "strong_hit": {
+          "choice": {
+            "count": 2,
+            "options": [
+              { "id": "recuperate", "effects": [{ "type": "meter", "meter": "health", "amount": 1 }] },
+              {
+                "id": "partake",
+                "effects": [{ "type": "meter", "meter": "supply", "amount": -1 }, { "type": "meter", "meter": "health", "amount": 1 }]
+              },
+              { "id": "relax", "effects": [{ "type": "meter", "meter": "spirit", "amount": 1 }] },
+              { "id": "focus", "effects": [{ "type": "momentum", "amount": 1 }] },
+              { "id": "prepare", "effects": [{ "type": "next_roll_bonus", "amount": 1, "move": "undertake_a_journey" }] }
+            ]
+          }
+        },
+        "weak_hit": {
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "recuperate", "effects": [{ "type": "meter", "meter": "health", "amount": 1 }] },
+              {
+                "id": "partake",
+                "effects": [{ "type": "meter", "meter": "supply", "amount": -1 }, { "type": "meter", "meter": "health", "amount": 1 }]
+              },
+              { "id": "relax", "effects": [{ "type": "meter", "meter": "spirit", "amount": 1 }] },
+              { "id": "focus", "effects": [{ "type": "momentum", "amount": 1 }] },
+              { "id": "prepare", "effects": [{ "type": "next_roll_bonus", "amount": 1, "move": "undertake_a_journey" }] }
+            ]
+          }
+        },
+        "miss": { "effects": [{ "type": "trigger_move", "move": "pay_the_price" }] }
+      }
+    },
+    {
+      "id": "undertake_a_journey",
+      "category": "adventure",
+      "track": "journey",
+      "roll": {
+        "type": "action",
+        "sources": ["wits"],
+        "bonuses": [{ "id": "bonded_community", "amount": 1 }]
+      },
+      "outcomes": {
+        "strong_hit": {
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "use_resources", "effects": [{ "type": "mark_progress" }] },
+              {
+                "id": "move_at_speed",
+                "effects": [
+                  { "type": "mark_progress" },
+                  { "type": "momentum", "amount": 1 },
+                  { "type": "meter", "meter": "supply", "amount": -1 }
+                ]
+              }
+            ]
+          }
+        },
+        "weak_hit": {
+          "effects": [{ "type": "mark_progress" }, { "type": "meter", "meter": "supply", "amount": -1 }]
+        },
+        "miss": { "effects": [{ "type": "trigger_move", "move": "pay_the_price" }] }
+      }
+    },
+    {
+      "id": "reach_your_destination",
+      "category": "adventure",
+      "roll": { "type": "progress", "track": "journey" },
+      "outcomes": {
+        "strong_hit": {
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "make_another_move", "effects": [{ "type": "next_roll_bonus", "amount": 1 }] },
+              { "id": "take_momentum", "effects": [{ "type": "momentum", "amount": 1 }] }
+            ]
+          }
+        },
+        "weak_hit": {},
+        "miss": {
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "journey_ends" },
+              { "id": "journey_continues", "effects": [{ "type": "clear_progress", "keep_boxes": 1 }, { "type": "raise_rank" }] }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

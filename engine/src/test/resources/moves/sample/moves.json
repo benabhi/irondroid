@@ -53,6 +53,7 @@
       "id": "reach_a_milestone",
       "category": "quest",
       "roll": { "type": "none" },
+      "track": "vow",
       "effects": [{ "type": "mark_progress" }]
     }
   ]
