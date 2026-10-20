@@ -36,15 +36,18 @@ Toda la gestión del proyecto se hace en **Lific**, en el proyecto **irondroid**
 ### Cómo está armado el proyecto
 
 - **Módulos** (áreas funcionales): Base del proyecto, Motor de reglas, Oráculos, Datos y guardado, Interfaz de acciones, Proveedores IA, Narrador IA, Interfaz, Dados 3D, Campaña y personaje, Gestión y documentación, Ideas a futuro. Todo issue va en un módulo. Al empezar un módulo pasalo a `active`; al terminarlo, a `done` (y se escribe su informe, ver abajo).
-- **Planes**: un plan por ciclo del MVP (IRON-PLAN-1 a 6). Los sub-items van como pasos anidados bajo su issue principal, y cada sub-item dice en su descripción "**Parte de:** IRON-N". Cerrar un paso cierra su issue y al revés. Para un trabajo nuevo de varios pasos, creá su plan.
-- **Etiquetas**:
-  - Tipo: Funcionalidad, Tarea técnica, Prototipo, Tests, Documentación, Investigación, Bug.
-  - Etapa: MVP. Ciclo: Ciclo 1 a Ciclo 6 (las fechas están en la descripción de cada etiqueta y en el título del plan).
-  - Estimación: `Estimación: 1`, `2`, `3`, `5`, `8`, `13` (Fibonacci).
-  - `Idea`: pedido o idea sin triagear. Entra en `backlog`, módulo Ideas a futuro, y se convierte en tarea cuando el usuario la aprueba.
-  - `Probando en el celular`: implementado e instalado, esperando la prueba del usuario (junto con el estado `active`).
-- **Estados**: `backlog` (anotado) → `todo` (listo, sin bloqueos) → `active` (en curso; con la etiqueta Probando en el celular cuando espera la prueba) → `done` (aprobado por el usuario) o `cancelled`.
-- **Vistas guardadas** (web, menú de vistas de Issues): MVP por módulo, orden de trabajo, una por ciclo, En curso, Probando en el celular, Urgentes sin empezar, Prototipos, Tests e Ideas sin triagear. El MCP no las maneja: se crean desde la web.
+Se usa el modelo propio de Lific, sin imitar otros gestores: no hay ciclos, sprints, sub-issues, estimaciones ni estados a medida.
+
+- **Issues planos**: Lific no tiene sub-issues. La jerarquía vive en los planes.
+- **Planes**: cada entrega es un issue principal con su plan anclado (`create_plan(anchor_issue=...)`), y los pasos del plan son sus sub-tareas, cada una mirando su issue. Cerrar un paso cierra su issue y al revés; cerrar el issue principal archiva el plan. Hoy hay 12 (IRON-PLAN-1 a 12, ver la página MVP). Para un trabajo nuevo de varios pasos, creá su issue principal y su plan.
+- **Dependencias**: `blocks` entre issues define el orden (Graph, `workable`, `blocked`).
+- **Esperas**: lo que depende del usuario (una prueba en el celular o una decisión) se marca con `link_issues(target=..., relation_type='blocks', user='benabhi', note=...)` y se limpia con `unlink_issues(target=..., user='benabhi')` cuando responde.
+- **Asignación**: sin asignar = lo hace un agente. Lo que tiene que hacer el usuario se asigna a `benabhi` (por ejemplo las pruebas de aceptación IRON-84 a 88).
+- **Etiquetas**: solo dicen qué tipo de trabajo es: Funcionalidad, Tarea técnica, Prototipo, Tests, Documentación, Investigación, Bug, más MVP para lo que entra en la primera versión.
+- **Fechas**: inicio y fin previstos en cada issue (`start_date`, `target_date`). Las etapas del MVP son orientativas y están en la página MVP.
+- **Ideas**: van en `backlog`, módulo Ideas a futuro, hasta que el usuario las apruebe.
+- **Estados**: `backlog` (anotado) → `todo` (listo) → `active` (en curso, con espera sobre benabhi cuando aguarda su prueba) → `done` (aprobado por el usuario, con evidencia) o `cancelled`.
+- **Vistas guardadas** (web, menú de vistas de Issues): MVP · Tablero por módulo, MVP · Lista por módulo, MVP · Orden de trabajo, En curso, Urgentes sin empezar, Prototipos, Tests e Ideas a futuro. El MCP no las maneja: se crean desde la web.
 - **Páginas** en carpetas: `SRD de irondroid` (el SRD dividido por secciones, con índice en IRON-DOC-1), `Planificación` (MVP y cómo consultar el tablero), `Referencia` (reglas de Ironsworn y sus archivos) e `Informes`.
 
 ## Forma de trabajo (OBLIGATORIA)
@@ -53,8 +56,8 @@ Toda la gestión del proyecto se hace en **Lific**, en el proyecto **irondroid**
 
 1. **Una tarea por vez.** No se empieza ninguna tarea, ni la primera, hasta que el usuario lo diga. Solo él da la confirmación para seguir con la siguiente.
 2. Al empezar: issue en `active`, comentario de inicio con el enfoque, y rama nueva de git (ver abajo).
-3. Al terminar la implementación: se instala en el celular por USB, se agrega la etiqueta `Probando en el celular`, se marca la espera con `link_issues(..., user='benabhi')` y se le avisa al usuario.
-4. **El usuario prueba y aprueba.** Recién con su confirmación: merge a `main`, se quita la espera y la etiqueta, y el issue pasa a `done` con evidencia. Si pide cambios, se sigue en la misma rama y se vuelve al paso 3.
+3. Al terminar la implementación: se instala en el celular por USB, se marca la espera con `link_issues(target='IRON-N', relation_type='blocks', user='benabhi', note='qué probar')` y se le avisa al usuario.
+4. **El usuario prueba y aprueba.** Recién con su confirmación: merge a `main`, se limpia la espera (`unlink_issues`) y el issue pasa a `done` con evidencia. Si pide cambios, se sigue en la misma rama y se vuelve al paso 3.
 5. No se pasa a la siguiente tarea hasta que el usuario lo indique.
 
 ### Aviso al terminar cada tarea
@@ -78,7 +81,7 @@ Cada issue se comenta con información útil mientras se trabaja, no solo al fin
   - Qué funciona ahora y cómo probarlo.
   - Decisiones tomadas y cambios respecto del SRD o del plan.
   - Problemas, riesgos y deuda técnica.
-  - Métricas: tareas cerradas, puntos estimados contra lo real, fechas previstas contra las reales.
+  - Métricas: tareas cerradas, fechas previstas contra las reales y, como referencia, la estimación original que figura en cada issue.
   - Próximos pasos.
 - También van ahí los informes de estado que sirvan para mantener al usuario al día (avance general, decisiones importantes, problemas).
 - Al cerrar un módulo o plan, enlazá su informe desde un comentario en el issue principal correspondiente.
