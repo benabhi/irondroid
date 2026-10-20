@@ -114,7 +114,24 @@ Cada issue se comenta con información útil mientras se trabaja, no solo al fin
 - App **nativa en Kotlin**.
 - **No se usa Android Studio ni emulador.** Se compila desde Windows con las herramientas de línea de comandos (Android SDK command-line tools, Gradle wrapper y un JDK).
 - Las pruebas se hacen en el **celular del usuario conectado por USB** con depuración USB activada: instalar con `adb install`, ver logs con `adb logcat`.
-- No propongas instalar Android Studio. Los comandos exactos de build e instalación se agregan acá cuando exista el proyecto Gradle.
+- No propongas instalar Android Studio.
+- Entorno instalado (JDK 21, SDK en `C:\Android\Sdk`, versiones y variables): `docs/build-environment.md` y la página **Entorno de compilación en Windows** (IRON-DOC-13).
+
+### Compilar, instalar y ver logs (PowerShell, desde la raíz del repo)
+
+| Para | Comando |
+|---|---|
+| Compilar, instalar en el celular, abrir la app y seguir sus logs | `.\scripts\run.ps1` |
+| Reinstalar el último APK sin compilar | `.\scripts\run.ps1 -NoBuild` |
+| Instalar y abrir sin quedarse en los logs (lo que usa Claude) | `.\scripts\run.ps1 -NoLogcat` |
+| Solo instalar | `.\scripts\run.ps1 -NoLaunch` |
+| Elegir dispositivo si hay más de uno | `.\scripts\run.ps1 -Serial ZY22LXMCJK` |
+| Solo compilar | `.\gradlew.bat assembleDebug` (APK en `app\build\outputs\apk\debug\app-debug.apk`) |
+| Ver un crash | `adb logcat -d -b crash` |
+
+- El script toma `JAVA_HOME` y `ANDROID_HOME` de las variables de usuario si la terminal no las tiene, y usa `adb install -r` (reemplaza la app sin borrar sus datos).
+- El paquete de la app es `com.irondroid` y la actividad de entrada `com.irondroid/.MainActivity`.
+- Claude no debe dejar corriendo `adb logcat` sin `-d`: bloquea la terminal. Para leer logs usa `adb logcat -d --pid=$(adb shell pidof -s com.irondroid)`.
 
 ## Referencias
 
