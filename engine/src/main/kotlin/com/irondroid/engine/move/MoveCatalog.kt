@@ -80,10 +80,7 @@ object MoveLoader {
     private fun <T> parse(content: String, name: String, errors: MutableList<String>, decode: (String) -> T): T? =
         try {
             decode(content)
-        } catch (e: SerializationException) {
-            errors += "$name: ${e.message}"
-            null
-        } catch (e: IllegalArgumentException) {
+        } catch (e: SerializationException) { // Also covers malformed JSON: it is an IllegalArgumentException subclass.
             errors += "$name: ${e.message}"
             null
         }

@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.kover)
 }
 
 // Same bytecode level as the Android modules that consume it.
@@ -32,5 +33,17 @@ tasks.test {
     testLogging {
         events("passed", "skipped", "failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}
+
+// Coverage of the engine tests (IRON-28): `.\gradlew.bat :engine:koverHtmlReport` for the report.
+// The build fails if line coverage drops below 95% (`koverVerify`, also run by `check`).
+kover {
+    reports {
+        verify {
+            rule {
+                minBound(95)
+            }
+        }
     }
 }

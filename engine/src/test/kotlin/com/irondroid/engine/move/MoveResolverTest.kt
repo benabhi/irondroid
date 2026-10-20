@@ -153,7 +153,11 @@ class MoveResolverTest {
     @Test
     fun `fulfilling a vow marks experience by rank and closes it`() {
         val (vow, sworn) = hero.withTrack(ProgressTrackType.VOW, ChallengeRank.FORMIDABLE, ticks = 28) // 7 boxes.
-        val strong = resolver(3, 4).make(sworn, "fulfill_your_vow", MoveRequest(track = vow)).character
+        val strongStep = resolver(3, 4).make(sworn, "fulfill_your_vow", MoveRequest(track = vow))
+        val progress = assertIs<RollRecord.Progress>(strongStep.record.roll)
+        assertEquals(vow, progress.track)
+        assertFalse(progress.isMatch)
+        val strong = strongStep.character
         assertEquals(3, strong.experience)
         assertFalse(vow in strong.tracks)
 
