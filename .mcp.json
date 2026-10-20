@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "lific": {
+      "args": [
+        "--db",
+        "\\\\?\\G:\\irondroid\\lific.db",
+        "mcp"
+      ],
+      "command": "lific",
+      "env": {
+        "LIFIC_TOKEN": "${LIFIC_TOKEN}"
+      },
+      "type": "stdio"
+    }
+  }
+}
