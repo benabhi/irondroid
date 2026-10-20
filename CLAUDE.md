@@ -14,7 +14,7 @@ Toda la gestión del proyecto se hace en **Lific**, en el proyecto **irondroid**
 **Datos del proyecto**
 
 - Proyecto: `IRON` (irondroid). Issues `IRON-N`, páginas `IRON-DOC-N`, planes `IRON-PLAN-N`.
-- Web: http://127.0.0.1:3456 (servicio local de Lific; la base es `lific.db` en la raíz del repo, con backups automáticos en `backups/`).
+- Web: http://127.0.0.1:3456 (servicio local de Lific; la base es `lific.db` en la raíz del repo, con backups automáticos en `backups/`; la base y los adjuntos **no van a git**, ver Configuración de Lific).
 - Una página se enlaza en Markdown como `[título](#/IRON/pages/N)`, donde N es el número de `IRON-DOC-N`. Los issues se nombran por su identificador (`IRON-12`), que la web convierte en link.
 
 ### Herramientas del MCP y cuándo usarlas
@@ -135,7 +135,7 @@ Cuando el usuario pide "anotar" algo (una idea, una preferencia, una decisión),
 - Las credenciales las carga el usuario en `.claude/settings.local.json` (ignorado por git). Claude no las escribe ni las commitea.
 - Si algo falla, diagnosticalo y arreglalo vos; pedile algo al usuario solo si hace falta un dato que únicamente él tiene.
 - **Si el MCP `lific` no conecta en la sesión**, no se deja de usar Lific: se le habla al mismo servidor por stdio con un script de Node en el scratchpad (`lific --db G:/irondroid/lific.db mcp`, con `cwd` en la raíz del repo; mensajes `initialize`, `notifications/initialized` y `tools/call`). Los argumentos JSON van en un archivo escrito con Write, porque desde la shell se pierden las barras invertidas. La REST de la web (`http://127.0.0.1:3456/api/...`) también responde, sin token, para leer.
-- Los merges que tocan `lific.db` fallan con el servicio corriendo (Windows bloquea el archivo): copia de la base, `lific service stop`, merge, `lific service restart`.
+- **Los datos de Lific no se versionan** (decisión de benabhi del 20/10/2026, IRON-96): el repo de GitHub es público y `lific.db` trae usuarios, sesiones y todo el proyecto. `lific.db` y `attachments/` están en `.gitignore` y se sacaron de toda la historia. El respaldo es solo con `lific dump` (al cerrar cada plan, ver arriba) y los backups automáticos de `backups/`. Nunca agregues esos archivos a git.
 
 ## Convenciones de código
 
