@@ -106,9 +106,35 @@ class OracleTableTest {
     }
 
     @Test
-    fun `only the consequence tables of IRON-98 are still missing for the moves`() {
+    fun `every table a move names exists and every move a row names is loaded`() {
         val moves = MoveLoader.fromResources()
-        val missing = moves.referencedTables() - catalog.tables.map { it.id }.toSet()
-        assertEquals(setOf("endure_harm", "endure_stress"), missing)
+        assertEquals(emptySet(), moves.referencedTables() - catalog.tables.map { it.id }.toSet())
+        assertEquals(setOf("face_death", "face_desolation", "forsake_your_vow"), catalog.referencedMoves())
+        assertEquals(emptySet(), catalog.referencedMoves().filter { moves[it] == null }.toSet())
+    }
+
+    @Test
+    fun `endure harm and endure stress follow the SRD ranges`() {
+        val harm = catalog["endure_harm"]!!
+        assertEquals(
+            listOf("mortal", "mortal", "dying", "dying", "unconscious", "unconscious", "reeling", "reeling", "battered", "battered"),
+            listOf(1, 10, 11, 20, 21, 35, 36, 50, 51, 100).map { harm.rowFor(it).id },
+        )
+        val stress = catalog["endure_stress"]!!
+        assertEquals(
+            listOf("overwhelmed", "overwhelmed", "give_up", "give_up", "fear_or_compulsion", "fear_or_compulsion", "persevere", "persevere"),
+            listOf(1, 10, 11, 25, 26, 50, 51, 100).map { stress.rowFor(it).id },
+        )
+        assertEquals("Soportar daño", catalog.text("endure_harm", "es")!!.name)
+        assertEquals("You persevere.", catalog.text("endure_stress", "en")!!.rows["persevere"])
+    }
+
+    @Test
+    fun `rows that always lead to a move hand it to the caller`() {
+        assertEquals(listOf("face_death"), catalog.roll("endure_harm", FixedDice(7)).moves)
+        assertEquals(emptyList(), catalog.roll("endure_harm", FixedDice(15)).moves) // Only if not healed in time.
+        assertEquals(listOf("face_desolation"), catalog.roll("endure_stress", FixedDice(10)).moves)
+        assertEquals(listOf("forsake_your_vow"), catalog.roll("endure_stress", FixedDice(25)).moves)
+        assertEquals(emptyList(), catalog.roll("endure_stress", FixedDice(80)).moves)
     }
 }

@@ -24,6 +24,9 @@ class OracleTableCatalog internal constructor(
 
     /** Rolls on table [id] (a roll_table follow-up of a move). Fails if the table is unknown. */
     fun roll(id: String, dice: Dice): TableRoll = requireNotNull(byId[id]) { "Unknown oracle table $id" }.roll(dice)
+
+    /** Moves named by table rows. They live in the move catalog; a complete set of data has them all. */
+    fun referencedMoves(): Set<String> = tables.flatMap { table -> table.rows.mapNotNull { it.move } }.toSet()
 }
 
 /** Reads and validates tables.json and its per-language text files. */
@@ -82,6 +85,7 @@ object OracleTableLoader {
             if (!idPattern.matches(table.id)) errors += "$where: id must be snake_case"
             table.rows.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { errors += "$where: row $it is repeated" }
             table.rows.filterNot { idPattern.matches(it.id) }.forEach { errors += "$where: row id ${it.id} must be snake_case" }
+            table.rows.mapNotNull { it.move }.filterNot { idPattern.matches(it) }.forEach { errors += "$where: move id $it must be snake_case" }
             table.rows.filter { it.min > it.max }.forEach { errors += "$where: row ${it.id} goes from ${it.min} down to ${it.max}" }
 
             // Every d100 result must land on exactly one row.

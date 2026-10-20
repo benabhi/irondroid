@@ -80,6 +80,13 @@ class OracleTableLoaderTest {
     }
 
     @Test
+    fun `move of a row must be a snake_case id`() {
+        val table = """{ "id": "coin", "rows": [ { "id": "heads", "min": 1, "max": 50, "move": "Face Death" },
+            { "id": "tails", "min": 51, "max": 100, "move": "face_death" } ] }"""
+        assertEquals(listOf("Table coin: move id Face Death must be snake_case"), errors(structure(table)))
+    }
+
+    @Test
     fun `unknown row action is an error`() {
         val table = """{ "id": "coin", "rows": [ { "id": "heads", "min": 1, "max": 100, "then": "roll_thrice" } ] }"""
         assertTrue(errors(structure(table)).single().startsWith("tables.json: "))
