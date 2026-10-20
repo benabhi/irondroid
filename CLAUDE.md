@@ -128,6 +128,7 @@ Cada issue se comenta con información útil mientras se trabaja, no solo al fin
 | Elegir dispositivo si hay más de uno | `.\scripts\run.ps1 -Serial ZY22LXMCJK` |
 | Solo compilar | `.\gradlew.bat assembleDebug` (APK en `app\build\outputs\apk\debug\app-debug.apk`) |
 | Ver un crash | `adb logcat -d -b crash` |
+| Correr los tests del motor (JUnit 6, sin celular) | `.\gradlew.bat :engine:test` (informe en `engine\build\reports\tests\test\index.html`) |
 
 - El script toma `JAVA_HOME` y `ANDROID_HOME` de las variables de usuario si la terminal no las tiene, y usa `adb install -r` (reemplaza la app sin borrar sus datos).
 - El paquete de la app es `com.irondroid` y la actividad de entrada `com.irondroid/.MainActivity`.
