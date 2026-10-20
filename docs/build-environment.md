@@ -12,7 +12,7 @@ Everything below is installed per user, without administrator rights.
 | Gradle wrapper | 9.8.2 (bin distribution) | `gradlew`, `gradlew.bat`, `gradle/wrapper/` in this repo | `gradle wrapper --gradle-version 9.8.2 --distribution-type bin` |
 | Android SDK command-line tools | 23.0 (`commandlinetools-win-16111833`) | `C:\Android\Sdk\cmdline-tools\latest` | Official zip from `dl.google.com`, SHA-1 checked |
 | Android SDK Platform-Tools (adb) | 37.0.1 | `C:\Android\Sdk\platform-tools` | `sdkmanager "platform-tools"` |
-| Android SDK Platform | API 36 and API 37.0 | `C:AndroidSdkplatformsndroid-36`, `android-37.0` | `sdkmanager "platforms/android-36" "platforms/android-37.0"` |
+| Android SDK Platform | API 36 and API 37.0 | `C:\Android\Sdk\platforms\android-36`, `android-37.0` | `sdkmanager "platforms/android-36" "platforms/android-37.0"` |
 | Android SDK Build-Tools | 36.1.0 | `C:\Android\Sdk\build-tools\36.1.0` | `sdkmanager "build-tools/36.1.0"` |
 
 Always build with the wrapper (`.\gradlew.bat`), never with the global `gradle`.
