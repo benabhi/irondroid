@@ -97,6 +97,47 @@
         "journey_ends": "Tu viaje termina acá.",
         "journey_continues": "Tu viaje sigue: borrá todo el progreso completo salvo una casilla y subí el rango del viaje en uno (si no es épico)."
       }
+    },
+    "swear_an_iron_vow": {
+      "name": "Jurar un voto de hierro",
+      "trigger": "Cuando jurás sobre el hierro cumplir una misión, escribí tu voto y dale un rango a la misión. Después tirá +corazón.",
+      "strong_hit": "Te sentís con coraje y tenés claro qué hacer a continuación (preguntale al oráculo si no estás seguro). Tomá +2 de impulso.",
+      "weak_hit": "Estás decidido, pero empezás la misión con más preguntas que respuestas. Tomá +1 de impulso e imaginá qué hacés para encontrar el camino.",
+      "miss": "Te topás con un obstáculo importante antes de poder empezar la misión. Imaginá qué se interpone (preguntale al oráculo si no estás seguro) y elegí uno.",
+      "options": {
+        "press_on": "Seguís adelante: sufrí -2 de impulso y hacé lo que haga falta para superar el obstáculo.",
+        "give_up": "Te rendís: Abandonar tu voto."
+      },
+      "bonuses": {
+        "sworn_to_bond": "Le hacés el voto a una persona o comunidad con la que tenés un vínculo: sumá +1."
+      }
+    },
+    "reach_a_milestone": {
+      "name": "Alcanzar un hito",
+      "trigger": "Cuando avanzás de forma importante en tu misión al superar un obstáculo clave, completar un viaje peligroso, resolver un misterio complejo, derrotar una amenaza poderosa, conseguir un apoyo vital u obtener un objeto crucial, podés marcar progreso.\n- Misión problemática: marcá 3 de progreso.\n- Misión peligrosa: marcá 2 de progreso.\n- Misión formidable: marcá 1 de progreso.\n- Misión extrema: marcá 2 marcas.\n- Misión épica: marcá 1 marca."
+    },
+    "fulfill_your_vow": {
+      "name": "Cumplir tu voto",
+      "trigger": "Cuando lográs lo que creés que cumple tu voto, tirá los dados de desafío y comparalos con tu progreso. El impulso no cuenta en esta tirada.",
+      "strong_hit": "Tu misión está cumplida. Marcá experiencia (problemática=1; peligrosa=2; formidable=3; extrema=4; épica=5).",
+      "weak_hit": "Queda más por hacer o descubrís la verdad de tu misión. Imaginá qué descubrís (preguntale al oráculo si no estás seguro). Después marcá experiencia (problemática=0; peligrosa=1; formidable=2; extrema=3; épica=4). Podés Jurar un voto de hierro para arreglar las cosas; si lo hacés, sumá +1.",
+      "miss": "Tu misión se deshace. Imaginá qué pasa (preguntale al oráculo si no estás seguro) y elegí uno.",
+      "options": {
+        "recommit": "Te volvés a comprometer: borrá todo el progreso completo salvo una casilla y subí el rango de la misión en uno (si no es épica).",
+        "give_up": "Te rendís: Abandonar tu voto."
+      }
+    },
+    "forsake_your_vow": {
+      "name": "Abandonar tu voto",
+      "trigger": "Cuando renunciás a tu misión, traicionás tu promesa o el objetivo se pierde, borrá el voto y hacé Soportar estrés. Sufrís -espíritu igual al rango de la misión (problemática=1; peligrosa=2; formidable=3; extrema=4; épica=5)."
+    },
+    "advance": {
+      "name": "Avanzar",
+      "trigger": "Cuando te concentrás en tus habilidades, recibís entrenamiento, encontrás inspiración, ganás una recompensa o sumás un compañero, podés gastar 3 de experiencia para sumar una ventaja nueva o 2 para mejorar una ventaja.",
+      "options": {
+        "new_asset": "Gastá 3 de experiencia para sumar una ventaja nueva.",
+        "upgrade_asset": "Gastá 2 de experiencia para mejorar una ventaja."
+      }
     }
   }
 }

@@ -97,6 +97,47 @@
         "journey_ends": "Your journey ends here.",
         "journey_continues": "Your journey continues: clear all but one filled progress, and raise the journey's rank by one (if not already epic)."
       }
+    },
+    "swear_an_iron_vow": {
+      "name": "Swear an Iron Vow",
+      "trigger": "When you swear upon iron to complete a quest, write your vow and give the quest a rank. Then, roll +heart.",
+      "strong_hit": "You are emboldened and it is clear what you must do next (Ask the Oracle if unsure). Take +2 momentum.",
+      "weak_hit": "You are determined but begin your quest with more questions than answers. Take +1 momentum, and envision what you do to find a path forward.",
+      "miss": "You face a significant obstacle before you can begin your quest. Envision what stands in your way (Ask the Oracle if unsure), and choose one.",
+      "options": {
+        "press_on": "You press on: Suffer -2 momentum, and do what you must to overcome this obstacle.",
+        "give_up": "You give up: Forsake Your Vow."
+      },
+      "bonuses": {
+        "sworn_to_bond": "You make this vow to a person or community with whom you share a bond: add +1."
+      }
+    },
+    "reach_a_milestone": {
+      "name": "Reach a Milestone",
+      "trigger": "When you make significant progress in your quest by overcoming a critical obstacle, completing a perilous journey, solving a complex mystery, defeating a powerful threat, gaining vital support, or acquiring a crucial item, you may mark progress.\n- Troublesome quest: Mark 3 progress.\n- Dangerous quest: Mark 2 progress.\n- Formidable quest: Mark 1 progress.\n- Extreme quest: Mark 2 ticks.\n- Epic quest: Mark 1 tick."
+    },
+    "fulfill_your_vow": {
+      "name": "Fulfill Your Vow",
+      "trigger": "When you achieve what you believe to be the fulfillment of your vow, roll the challenge dice and compare to your progress. Momentum is ignored on this roll.",
+      "strong_hit": "Your quest is complete. Mark experience (troublesome=1; dangerous=2; formidable=3; extreme=4; epic=5).",
+      "weak_hit": "There is more to be done or you realize the truth of your quest. Envision what you discover (Ask the Oracle if unsure). Then, mark experience (troublesome=0; dangerous=1; formidable=2; extreme=3; epic=4). You may Swear an Iron Vow to set things right. If you do, add +1.",
+      "miss": "Your quest is undone. Envision what happens (Ask the Oracle if unsure), and choose one.",
+      "options": {
+        "recommit": "You recommit: Clear all but one filled progress, and raise the quest's rank by one (if not already epic).",
+        "give_up": "You give up: Forsake Your Vow."
+      }
+    },
+    "forsake_your_vow": {
+      "name": "Forsake Your Vow",
+      "trigger": "When you renounce your quest, betray your promise, or the goal is lost to you, clear the vow and Endure Stress. You suffer -spirit equal to the rank of your quest (troublesome=1; dangerous=2; formidable=3; extreme=4; epic=5)."
+    },
+    "advance": {
+      "name": "Advance",
+      "trigger": "When you focus on your skills, receive training, find inspiration, earn a reward, or gain a companion, you may spend 3 experience to add a new asset, or 2 experience to upgrade an asset.",
+      "options": {
+        "new_asset": "Spend 3 experience to add a new asset.",
+        "upgrade_asset": "Spend 2 experience to upgrade an asset."
+      }
     }
   }
 }
