@@ -1,5 +1,8 @@
 package com.irondroid.engine.progress
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /** Rank of a challenge: how much progress each mark is worth, plus the harm and experience tied to it. */
 enum class ChallengeRank(val ticksPerProgress: Int, val harm: Int, val experience: Int) {
     TROUBLESOME(12, 1, 1),
@@ -10,11 +13,12 @@ enum class ChallengeRank(val ticksPerProgress: Int, val harm: Int, val experienc
 }
 
 /** What a progress track measures. Bonds have no rank and advance one tick at a time. */
+@Serializable
 enum class ProgressTrackType(val isRanked: Boolean) {
-    VOW(true),
-    JOURNEY(true),
-    COMBAT(true),
-    BONDS(false),
+    @SerialName("vow") VOW(true),
+    @SerialName("journey") JOURNEY(true),
+    @SerialName("combat") COMBAT(true),
+    @SerialName("bonds") BONDS(false),
 }
 
 /**

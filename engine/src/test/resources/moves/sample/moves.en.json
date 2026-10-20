@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "moves": {
+    "face_danger": {
+      "name": "Face Danger",
+      "trigger": "When you attempt something risky or react to an imminent threat, envision your action and roll.",
+      "strong_hit": "You are successful. Take +1 momentum.",
+      "weak_hit": "You succeed, but face a troublesome cost. Choose one.",
+      "miss": "You fail, or your progress is undermined by a dramatic and costly turn of events. Pay the Price.",
+      "options": {
+        "lose_momentum": "You are delayed, lose advantage, or face a new danger: suffer -1 momentum.",
+        "endure_harm": "You are tired or hurt: Endure Harm (1 harm).",
+        "endure_stress": "You are dispirited or afraid: Endure Stress (1 stress).",
+        "lose_supply": "You sacrifice resources: suffer -1 supply."
+      }
+    },
+    "secure_an_advantage": {
+      "name": "Secure an Advantage",
+      "trigger": "When you assess a situation, make preparations, or attempt to gain leverage, envision your action and roll.",
+      "strong_hit": "You gain advantage. Choose one.",
+      "weak_hit": "Your advantage is short-lived. Take +1 momentum.",
+      "miss": "You fail or your assumptions betray you. Pay the Price.",
+      "options": {
+        "take_momentum": "Prepare to act: take +2 momentum.",
+        "add_bonus": "Gain an edge: add +1 on your next move (not a progress move)."
+      }
+    },
+    "fulfill_your_vow": {
+      "name": "Fulfill Your Vow",
+      "trigger": "When you achieve what you believe to be the fulfillment of your vow, roll the challenge dice and compare to your progress.",
+      "strong_hit": "Your quest is complete. Mark experience.",
+      "weak_hit": "There is more to be done or you realize the truth of your quest. Mark experience, minus one.",
+      "miss": "Your quest is undone. Pay the Price."
+    },
+    "reach_a_milestone": {
+      "name": "Reach a Milestone",
+      "trigger": "When you make significant progress in your quest, mark progress on that vow."
+    }
+  }
+}
