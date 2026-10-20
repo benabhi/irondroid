@@ -49,6 +49,7 @@ adb devices              # the phone appears as "device" once USB debugging is a
 .\gradlew.bat assembleDebug   # APK at app\build\outputs\apk\debug\app-debug.apk
 .\scripts\run.ps1             # build, install over USB, launch and follow the app's logcat
 .\scripts\run.ps1 -NoBuild    # reinstall the last APK (also -NoLaunch, -NoLogcat, -Serial <id>)
+.\gradlew.bat :engine:test    # engine unit tests (JUnit 6 + kotlin.test), no phone needed
 ```
 
 Project layout: `:app` (Android app, Compose), `:engine` (pure Kotlin/JVM rules engine) and `:data` (Android library for persistence).
