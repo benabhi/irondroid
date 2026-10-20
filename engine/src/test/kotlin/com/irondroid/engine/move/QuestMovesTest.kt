@@ -76,7 +76,7 @@ class QuestMovesTest {
         assertEquals(MoveRoll.None, move.roll)
         assertEquals(ProgressTrackType.VOW, move.progressTrack)
         assertEquals(
-            listOf(Effect.EndTrack, Effect.TriggerMove("endure_stress", amountByRank = true)),
+            listOf(Effect.TriggerMove("endure_stress", amountByRank = true), Effect.EndTrack),
             move.effects,
         )
     }

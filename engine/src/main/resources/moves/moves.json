@@ -262,8 +262,8 @@
       "track": "vow",
       "roll": { "type": "none" },
       "effects": [
-        { "type": "end_track" },
-        { "type": "trigger_move", "move": "endure_stress", "amount_by_rank": true }
+        { "type": "trigger_move", "move": "endure_stress", "amount_by_rank": true },
+        { "type": "end_track" }
       ]
     },
     {
