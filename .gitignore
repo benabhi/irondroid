@@ -10,3 +10,11 @@ lific.db-shm
 .lific-attachments.lock
 lific.log
 backups/
+
+# Gradle and Android build outputs
+.gradle/
+build/
+/local.properties
+.kotlin/
+*.apk
+*.aab

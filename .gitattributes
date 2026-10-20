@@ -1,0 +1,4 @@
+# Keep shell scripts with LF and Windows batch files with CRLF
+gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
