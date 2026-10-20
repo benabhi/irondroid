@@ -68,4 +68,21 @@ class ProgressTrackTest {
         assertFailsWith<IllegalArgumentException> { vow(ChallengeRank.EPIC, ticks = 41) }
         assertFailsWith<IllegalArgumentException> { vow(ChallengeRank.EPIC).markProgress(-1) }
     }
+
+    @Test
+    fun `clearing progress keeps only the boxes asked for`() {
+        val track = vow(ChallengeRank.DANGEROUS, ticks = 22) // 5 boxes and 2 ticks.
+        assertEquals(4, track.clearProgress(keepBoxes = 1).ticks)
+        assertEquals(0, track.clearProgress().ticks)
+        assertEquals(2, vow(ChallengeRank.EPIC, ticks = 2).clearProgress(keepBoxes = 1).ticks) // Never adds.
+        assertFailsWith<IllegalArgumentException> { track.clearProgress(keepBoxes = 11) }
+    }
+
+    @Test
+    fun `raising the rank stops at epic`() {
+        assertEquals(ChallengeRank.DANGEROUS, vow(ChallengeRank.TROUBLESOME).raiseRank().rank)
+        assertEquals(ChallengeRank.EPIC, vow(ChallengeRank.EXTREME).raiseRank().rank)
+        assertEquals(ChallengeRank.EPIC, vow(ChallengeRank.EPIC).raiseRank().rank)
+        assertFailsWith<IllegalStateException> { ProgressTrack("Bonds", ProgressTrackType.BONDS, rank = null).raiseRank() }
+    }
 }

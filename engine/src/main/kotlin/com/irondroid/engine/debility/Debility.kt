@@ -1,6 +1,8 @@
 package com.irondroid.engine.debility
 
 import com.irondroid.engine.momentum.Momentum
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /** Group of a debility, which decides how it is cleared. */
 enum class DebilityKind {
@@ -15,15 +17,16 @@ enum class DebilityKind {
 }
 
 /** The eight debilities of Ironsworn (RF-MOT-09). */
+@Serializable
 enum class Debility(val kind: DebilityKind) {
-    WOUNDED(DebilityKind.CONDITION),
-    SHAKEN(DebilityKind.CONDITION),
-    UNPREPARED(DebilityKind.CONDITION),
-    ENCUMBERED(DebilityKind.CONDITION),
-    MAIMED(DebilityKind.BANE),
-    CORRUPTED(DebilityKind.BANE),
-    CURSED(DebilityKind.BURDEN),
-    TORMENTED(DebilityKind.BURDEN),
+    @SerialName("wounded") WOUNDED(DebilityKind.CONDITION),
+    @SerialName("shaken") SHAKEN(DebilityKind.CONDITION),
+    @SerialName("unprepared") UNPREPARED(DebilityKind.CONDITION),
+    @SerialName("encumbered") ENCUMBERED(DebilityKind.CONDITION),
+    @SerialName("maimed") MAIMED(DebilityKind.BANE),
+    @SerialName("corrupted") CORRUPTED(DebilityKind.BANE),
+    @SerialName("cursed") CURSED(DebilityKind.BURDEN),
+    @SerialName("tormented") TORMENTED(DebilityKind.BURDEN),
 }
 
 /** The debilities a character has marked. Immutable: marking or clearing returns a new set. */

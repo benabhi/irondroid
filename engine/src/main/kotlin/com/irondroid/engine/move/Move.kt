@@ -1,6 +1,7 @@
 package com.irondroid.engine.move
 
 import com.irondroid.engine.character.Stat
+import com.irondroid.engine.debility.Debility
 import com.irondroid.engine.meters.MeterType
 import com.irondroid.engine.progress.ProgressTrackType
 import kotlinx.serialization.SerialName
@@ -37,10 +38,13 @@ enum class RollSource(val stat: Stat?, val meter: MeterType?) {
 /** How a move is rolled. */
 @Serializable
 sealed interface MoveRoll {
-    /** Action roll adding one of [sources], chosen by the player or the narrator. */
+    /**
+     * Action roll adding one of [sources], chosen by the player or the narrator.
+     * [bonuses] are situational adds the narrator applies when the fiction fits, such as +1 among a community.
+     */
     @Serializable
     @SerialName("action")
-    data class Action(val sources: List<RollSource>) : MoveRoll
+    data class Action(val sources: List<RollSource>, val bonuses: List<RollBonus> = emptyList()) : MoveRoll
 
     /** Progress roll on a track of type [track]. */
     @Serializable
@@ -52,6 +56,10 @@ sealed interface MoveRoll {
     @SerialName("none")
     data object None : MoveRoll
 }
+
+/** A situational add to an action roll; its condition is described in the move texts under [id]. */
+@Serializable
+data class RollBonus(val id: String, val amount: Int)
 
 /** A change a move applies. New kinds are added here as moves need them. */
 @Serializable
@@ -69,10 +77,25 @@ sealed interface Effect {
     @SerialName("mark_progress")
     data class MarkProgress(val times: Int = 1) : Effect
 
-    /** Bonus added to the next roll. */
+    /** Clears progress on the move's track, leaving [keepBoxes] filled boxes. */
+    @Serializable
+    @SerialName("clear_progress")
+    data class ClearProgress(@SerialName("keep_boxes") val keepBoxes: Int = 0) : Effect
+
+    /** Raises the rank of the move's track by one, up to epic. */
+    @Serializable
+    @SerialName("raise_rank")
+    data object RaiseRank : Effect
+
+    /** Clears [debility] if it is marked. */
+    @Serializable
+    @SerialName("clear_debility")
+    data class ClearDebility(val debility: Debility) : Effect
+
+    /** Bonus added to the next roll, or only to the next time [move] is made. */
     @Serializable
     @SerialName("next_roll_bonus")
-    data class NextRollBonus(val amount: Int) : Effect
+    data class NextRollBonus(val amount: Int, val move: String? = null) : Effect
 
     /** Another move follows, such as Pay the Price or Endure Harm with an [amount]. */
     @Serializable
@@ -104,6 +127,10 @@ data class MoveOutcomes(
 
 /**
  * One move. Rolled moves need [outcomes]; moves without a roll apply [effects] directly.
+ *
+ * [track] is the kind of progress track the move works on (a journey for Undertake a Journey),
+ * for moves that change progress without a progress roll. [blockedBy] lists debilities that
+ * prevent making the move, such as unprepared for Resupply.
  */
 @Serializable
 data class MoveDefinition(
@@ -112,12 +139,24 @@ data class MoveDefinition(
     val roll: MoveRoll,
     val outcomes: MoveOutcomes? = null,
     val effects: List<Effect> = emptyList(),
+    val track: ProgressTrackType? = null,
+    @SerialName("blocked_by") val blockedBy: List<Debility> = emptyList(),
 ) {
-    /** Every option id of every outcome. */
-    val optionIds: List<String>
-        get() = listOfNotNull(outcomes?.strongHit, outcomes?.weakHit, outcomes?.miss)
-            .flatMap { it.choice?.options.orEmpty() }
-            .map { it.id }
+    /** Choices of every outcome. The same option may appear in several, like Make Camp's list. */
+    val choices: List<Choice>
+        get() = listOfNotNull(outcomes?.strongHit, outcomes?.weakHit, outcomes?.miss).mapNotNull { it.choice }
+
+    /** Every distinct option id of the move. */
+    val optionIds: Set<String>
+        get() = choices.flatMap { choice -> choice.options.map { it.id } }.toSet()
+
+    /** Ids of the situational roll bonuses. */
+    val bonusIds: Set<String>
+        get() = (roll as? MoveRoll.Action)?.bonuses.orEmpty().map { it.id }.toSet()
+
+    /** Track the move's progress effects apply to: [track], or the one it rolls against. */
+    val progressTrack: ProgressTrackType?
+        get() = track ?: (roll as? MoveRoll.Progress)?.track
 
     /** Every effect of the move, including those inside outcomes and options. */
     val allEffects: List<Effect>
@@ -139,6 +178,7 @@ data class MoveText(
     @SerialName("weak_hit") val weakHit: String? = null,
     val miss: String? = null,
     val options: Map<String, String> = emptyMap(),
+    val bonuses: Map<String, String> = emptyMap(),
 )
 
 /** Root of moves.<language>.json. */

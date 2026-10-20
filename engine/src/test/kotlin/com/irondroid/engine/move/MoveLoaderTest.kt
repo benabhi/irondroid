@@ -168,4 +168,42 @@ class MoveLoaderTest {
         val errors = assertFailsWith<MoveDataException> { MoveLoader.fromResources("moves/nowhere") }.errors
         assertEquals(listOf("moves/nowhere/moves.json: file not found"), errors)
     }
+
+    @Test
+    fun `new format pieces are validated`() {
+        val errors = errorsOf(
+            structure(
+                """{ "id": "no_track", "category": "quest", "roll": { "type": "none" }, "effects": [{ "type": "raise_rank" }] }""",
+                """{ "id": "mixed_options", "category": "adventure", "roll": { "type": "action", "sources": ["wits"],
+                       "bonuses": [{ "id": "near_home", "amount": 0 }] },
+                     "outcomes": {
+                       "strong_hit": { "choice": { "count": 1, "options": [{ "id": "rest", "effects": [{ "type": "momentum", "amount": 1 }] }] } },
+                       "weak_hit": { "choice": { "count": 1, "options": [{ "id": "rest", "effects": [{ "type": "momentum", "amount": 2 }] }] } },
+                       "miss": { "effects": [{ "type": "clear_progress", "keep_boxes": 1 }] } } }""",
+            ),
+            bothLanguages(
+                """"no_track": { "name": "No track", "trigger": "When..." }""",
+                """"mixed_options": { "name": "Mixed", "trigger": "When...", "strong_hit": "a", "weak_hit": "b", "miss": "c",
+                                      "options": { "rest": "Rest" }, "bonuses": { "far_away": "x" } }""",
+            ),
+        )
+        val expected = listOf(
+            "Move no_track: progress effects need the move's track",
+            "Move mixed_options: option rest has different effects in different outcomes",
+            "Move mixed_options: bonus near_home needs amount >= 1",
+            "Move mixed_options: progress effects need the move's track",
+            "moves.en.json, move mixed_options: missing text for bonus near_home",
+            "moves.en.json, move mixed_options: text for unknown bonus far_away",
+        )
+        expected.forEach { line -> assertTrue(line in errors, "Missing \"$line\" in $errors") }
+    }
+
+    @Test
+    fun `the same option may repeat across outcomes with one text`() {
+        val shared = """{ "count": 1, "options": [{ "id": "rest", "effects": [{ "type": "momentum", "amount": 1 }] }] }"""
+        val move = validMove.replace("\"strong_hit\": {}", "\"strong_hit\": { \"choice\": $shared }")
+            .replace("\"weak_hit\": {}", "\"weak_hit\": { \"choice\": $shared }")
+        val text = validText.replace("\"miss\": \"c\"", "\"miss\": \"c\", \"options\": { \"rest\": \"Rest\" }")
+        assertEquals(setOf("rest"), MoveLoader.load(structure(move), bothLanguages(text))["face_danger"]?.optionIds)
+    }
 }
