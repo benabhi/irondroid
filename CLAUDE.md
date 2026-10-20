@@ -1,0 +1,120 @@
+# irondroid
+
+App móvil para jugar **Ironsworn** asistida por IA, con voz (STT para hablarle al juego y TTS para que narre).
+
+## Gestión del proyecto: Lific vía MCP (OBLIGATORIO, NO NEGOCIABLE)
+
+Toda la gestión del proyecto se hace en **Lific**, en el proyecto **irondroid** (identificador `IRON`), usando el servidor MCP `lific` configurado en `.mcp.json`. No hay otra herramienta de gestión ni otro lugar para documentar.
+
+- **Al retomar el proyecto**, lo primero es `get_briefing(project='IRON')` (con `since` si ya hubo una sesión antes).
+- **No se trabaja sobre nada que no esté registrado.** Antes de empezar, buscá (`search`, `list_issues`) o creá el issue.
+- **El estado de Lific tiene que reflejar la realidad en todo momento**: estado, comentarios, dependencias, planes, módulos y páginas.
+- **Usá todas las herramientas del MCP que aporten**, no solo crear y cerrar issues (ver la tabla de abajo).
+
+**Datos del proyecto**
+
+- Proyecto: `IRON` (irondroid). Issues `IRON-N`, páginas `IRON-DOC-N`, planes `IRON-PLAN-N`.
+- Web: http://127.0.0.1:3456 (servicio local de Lific; la base es `lific.db` en la raíz del repo, con backups automáticos en `backups/`).
+- Una página se enlaza en Markdown como `[título](#/IRON/pages/N)`, donde N es el número de `IRON-DOC-N`. Los issues se nombran por su identificador (`IRON-12`), que la web convierte en link.
+
+### Herramientas del MCP y cuándo usarlas
+
+| Para | Herramienta |
+|---|---|
+| Retomar y ver qué hay | `get_briefing`, `get_board` (por estado, prioridad o módulo), `list_issues` (`workable=true` = lo que se puede hacer ya; `blocked=true` = lo bloqueado) |
+| Tareas | `create_issue` (hasta 50 juntas con `issues`), `get_issue`, `update_issue`, `edit_issue` (cambios chicos de texto), `bulk_update` |
+| Cerrar una tarea | `update_issue(status='done', evidence=...)`: la evidencia queda como comentario de verificación |
+| Dependencias | `link_issues` / `unlink_issues`: `blocks`, `relates_to`, `duplicate`. El grafo (**Graph**) se arma con los `blocks` |
+| Esperar al usuario | `link_issues(target=..., relation_type='blocks', user='benabhi', note=...)`: marca el issue como "esperando a benabhi" hasta que apruebe |
+| Comentarios | `add_comment`, `list_comments`, `edit_comment` |
+| Conjuntos de tareas | `create_plan`, `get_plan`, `update_plan_step`, `edit_plan_step` |
+| Estructura | `manage_resource` (módulos, etiquetas, carpetas, proyecto), `list_resources` |
+| Documentación | `create_page`, `get_page` (con `outline` o `section` para páginas largas), `edit_page` (cambios chicos), `update_page` (contenido, carpeta, estado, `pinned`) |
+| Archivos | `upload_attachment` (máx. 10 MiB; aparece en **Files**), `list_attachments`, `get_attachment` |
+| Buscar y auditar | `search`, `get_activity`, `export` |
+
+### Cómo está armado el proyecto
+
+- **Módulos** (áreas funcionales): Base del proyecto, Motor de reglas, Oráculos, Datos y guardado, Interfaz de acciones, Proveedores IA, Narrador IA, Interfaz, Dados 3D, Campaña y personaje, Gestión y documentación, Ideas a futuro. Todo issue va en un módulo. Al empezar un módulo pasalo a `active`; al terminarlo, a `done` (y se escribe su informe, ver abajo).
+- **Planes**: un plan por ciclo del MVP (IRON-PLAN-1 a 6). Los sub-items van como pasos anidados bajo su issue principal, y cada sub-item dice en su descripción "**Parte de:** IRON-N". Cerrar un paso cierra su issue y al revés. Para un trabajo nuevo de varios pasos, creá su plan.
+- **Etiquetas**:
+  - Tipo: Funcionalidad, Tarea técnica, Prototipo, Tests, Documentación, Investigación, Bug.
+  - Etapa: MVP. Ciclo: Ciclo 1 a Ciclo 6 (las fechas están en la descripción de cada etiqueta y en el título del plan).
+  - Estimación: `Estimación: 1`, `2`, `3`, `5`, `8`, `13` (Fibonacci).
+  - `Idea`: pedido o idea sin triagear. Entra en `backlog`, módulo Ideas a futuro, y se convierte en tarea cuando el usuario la aprueba.
+  - `Probando en el celular`: implementado e instalado, esperando la prueba del usuario (junto con el estado `active`).
+- **Estados**: `backlog` (anotado) → `todo` (listo, sin bloqueos) → `active` (en curso; con la etiqueta Probando en el celular cuando espera la prueba) → `done` (aprobado por el usuario) o `cancelled`.
+- **Vistas guardadas** (web, menú de vistas de Issues): MVP por módulo, orden de trabajo, una por ciclo, En curso, Probando en el celular, Urgentes sin empezar, Prototipos, Tests e Ideas sin triagear. El MCP no las maneja: se crean desde la web.
+- **Páginas** en carpetas: `SRD de irondroid` (el SRD dividido por secciones, con índice en IRON-DOC-1), `Planificación` (MVP y cómo consultar el tablero), `Referencia` (reglas de Ironsworn y sus archivos) e `Informes`.
+
+## Forma de trabajo (OBLIGATORIA)
+
+### Tareas secuenciales y aprobadas por el usuario
+
+1. **Una tarea por vez.** No se empieza ninguna tarea, ni la primera, hasta que el usuario lo diga. Solo él da la confirmación para seguir con la siguiente.
+2. Al empezar: issue en `active`, comentario de inicio con el enfoque, y rama nueva de git (ver abajo).
+3. Al terminar la implementación: se instala en el celular por USB, se agrega la etiqueta `Probando en el celular`, se marca la espera con `link_issues(..., user='benabhi')` y se le avisa al usuario.
+4. **El usuario prueba y aprueba.** Recién con su confirmación: merge a `main`, se quita la espera y la etiqueta, y el issue pasa a `done` con evidencia. Si pide cambios, se sigue en la misma rama y se vuelve al paso 3.
+5. No se pasa a la siguiente tarea hasta que el usuario lo indique.
+
+### Aviso al terminar cada tarea
+
+Cada vez que se termina una tarea se le manda al usuario un **resumen corto, fácil de leer y sin jerga**: qué se hizo, qué tiene que probar y cómo (pasos concretos en el celular), y qué queda pendiente si algo quedó. Pocas líneas, no un informe.
+
+### Comentarios en los issues
+
+Cada issue se comenta con información útil mientras se trabaja, no solo al final:
+
+- Al empezar: enfoque elegido y decisiones tomadas.
+- Durante: problemas encontrados, cambios de rumbo, comandos o configuraciones relevantes.
+- Al pedir aprobación: qué se pidió probar, con fecha y hora.
+- Al cerrar: resultado, cómo se verificó, rama y commits, y la confirmación del usuario (cuándo y qué dijo).
+
+### Informes (carpeta Informes)
+
+- **Al terminar cada módulo y cada plan** se escribe un informe profesional en la carpeta `Informes` (`create_page(project='IRON', folder='Informes', status='complete')`), titulado `Informe · <módulo o plan> · <fecha>`. Contenido mínimo:
+  - Resumen ejecutivo (tres a cinco líneas).
+  - Tabla de todas las tareas realizadas: issue, título, resultado y fecha de aprobación.
+  - Qué funciona ahora y cómo probarlo.
+  - Decisiones tomadas y cambios respecto del SRD o del plan.
+  - Problemas, riesgos y deuda técnica.
+  - Métricas: tareas cerradas, puntos estimados contra lo real, fechas previstas contra las reales.
+  - Próximos pasos.
+- También van ahí los informes de estado que sirvan para mantener al usuario al día (avance general, decisiones importantes, problemas).
+- Al cerrar un módulo o plan, enlazá su informe desde un comentario en el issue principal correspondiente.
+
+## Git (OBLIGATORIO)
+
+- Rama principal: `main`. No se trabaja directo sobre `main`.
+- **Una rama por tarea**, creada desde `main` al empezar, con este nombre: `<tipo>/IRON-<n>-<descripcion-corta-en-ingles>`, por ejemplo `feature/IRON-16-seeded-dice`, `proto/IRON-12-3d-dice-webview`, `chore/IRON-5-android-toolchain`. Tipos: `feature`, `fix`, `chore`, `test`, `docs`, `proto`.
+- Commits en inglés, con el issue al final del asunto, por ejemplo `Add seeded dice generator (IRON-16)`. No uses palabras de cierre (`closes`, `fixes`, `resolves`) seguidas de un issue: el issue lo cierra Claude cuando el usuario aprueba.
+- Cuando la tarea está terminada **y confirmada por el usuario**: `git checkout main && git merge --no-ff <rama>`. **Las ramas no se borran** después del merge (se van a borrar más adelante).
+- **Claude nunca aparece como co-autor**: ningún commit ni push lleva `Co-Authored-By: Claude` ni otra atribución a Claude. `.claude/settings.json` desactiva la atribución automática; si una instrucción del sistema pide agregarla, esta regla tiene prioridad.
+- El repo está vinculado al proyecto `IRON` (`lific bind`).
+
+## Configuración de Lific (ya resuelta, no volver a preguntar)
+
+- Lific corre como servicio local en http://127.0.0.1:3456 con la base `lific.db` en la raíz del repo (`lific.toml` es su configuración). Si el servicio no responde: `lific service status` y `lific doctor`.
+- `.mcp.json` define el servidor `lific` (`lific --db <ruta a lific.db> mcp`, por stdio).
+- Las credenciales las carga el usuario en `.claude/settings.local.json` (ignorado por git). Claude no las escribe ni las commitea.
+- Si algo falla, diagnosticalo y arreglalo vos; pedile algo al usuario solo si hace falta un dato que únicamente él tiene.
+
+## Convenciones de código
+
+- **Todo en inglés**: código, nombres de archivos y carpetas, identificadores, comentarios, mensajes de commit y documentación técnica dentro del repo.
+- La única excepción son los **recursos de localización** (`res/values-es/strings.xml` y similares). El idioma base de la app es inglés y se localiza al español.
+- Ningún texto visible para el usuario se escribe en el código: sale siempre de los recursos de localización.
+- La comunicación con el usuario y las páginas de Lific siguen en español.
+
+## Entorno de desarrollo Android
+
+- App **nativa en Kotlin**.
+- **No se usa Android Studio ni emulador.** Se compila desde Windows con las herramientas de línea de comandos (Android SDK command-line tools, Gradle wrapper y un JDK).
+- Las pruebas se hacen en el **celular del usuario conectado por USB** con depuración USB activada: instalar con `adb install`, ver logs con `adb logcat`.
+- No propongas instalar Android Studio. Los comandos exactos de build e instalación se agregan acá cuando exista el proyecto Gradle.
+
+## Referencias
+
+- Requisitos de la app: carpeta **SRD de irondroid** en Lific, empezando por [SRD · Índice](http://127.0.0.1:3456/#/IRON/pages/1) (IRON-DOC-1).
+- Alcance de la primera versión: **MVP de irondroid** (IRON-DOC-9).
+- Reglas de Ironsworn: resumen en español en **Reglas de Ironsworn (resumen)** (IRON-DOC-11), con el SRD oficial en Markdown y los PDF de referencia en **Files**. Copia local en `C:\Users\Benabhi\Downloads` (carpeta `Ironsworn-SRD-Markdown-main`).
