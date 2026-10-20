@@ -3,4 +3,23 @@
 <resources>
     <string name="welcome_title">Te damos la bienvenida a irondroid</string>
     <string name="welcome_subtitle">Tu travesía por Ironsworn empieza aquí.</string>
+
+    <!-- Prototipo de dados 3D (IRON-12). Pantalla temporal. -->
+    <string name="dice_proto_open">Prototipo de dados 3D</string>
+    <string name="dice_proto_title">Prototipo de dados 3D</string>
+    <string name="dice_proto_back">Volver</string>
+    <string name="dice_proto_roll">Tirar dados de acción</string>
+    <string name="dice_proto_loading">Cargando dados…</string>
+    <string name="dice_proto_sharp">Imagen nítida (densidad de la pantalla)</string>
+    <string name="dice_proto_fake_heading">Las Tierras de Hierro, al anochecer</string>
+    <string name="dice_proto_fake_narration">El viento aúlla sobre el túmulo mientras alzas la antorcha. Allá abajo, la piedra cruje contra la piedra. Juraste encontrar a los tuyos antes de la primera nevada, y el rastro termina aquí, ante una puerta sellada con hierro viejo.</string>
+    <string name="dice_proto_fake_stats">Filo 2 · Corazón 1 · Hierro 3 · Sombra 2 · Ingenio 1\nSalud 5 · Espíritu 5 · Suministros 4 · Impulso +2</string>
+    <string name="dice_proto_ready">Cargado en %1$s ms · %2$d×%3$d px a ×%4$s · %5$s</string>
+    <string name="dice_proto_error">Error: %1$s</string>
+    <string name="dice_proto_engine">Resultado del motor: acción %1$d · desafío %2$d y %3$d</string>
+    <string name="dice_proto_shown">Los dados muestran: acción %1$d · desafío %2$d y %3$d</string>
+    <string name="dice_proto_match">Los dados coinciden con el motor</string>
+    <string name="dice_proto_mismatch">Los dados NO coinciden con el motor</string>
+    <string name="dice_proto_metrics">%1$s fps de promedio · peor cuadro %2$s ms · %3$d cuadros lentos de %4$d · duró %5$s s · primer cuadro a los %6$s ms</string>
+    <string name="dice_proto_session">En esta sesión: %1$d tiradas, %2$d coincidieron · promedio %3$s fps, mínimo %4$s fps · duración media %5$s s</string>
 </resources>

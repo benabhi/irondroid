@@ -1,0 +1,132 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <style>
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
+    #dice { position: absolute; inset: 0; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<div id="dice"></div>
+<script src="dice-box-threejs.umd.js"></script>
+<script>
+  // 3D dice overlay prototype (IRON-12). The host app decides every result and passes it in;
+  // this page only animates the dice so they land on those values and reports render metrics.
+  (function () {
+    const bridge = window.DiceBridge;
+    const DiceBox = window["dice-box-threejs"].default || window["dice-box-threejs"];
+
+    const ACTION_SET = { name: "action", foreground: "#f5f1e8", background: "#1c1c1c", outline: "#1c1c1c", texture: "none", material: "plastic" };
+    const CHALLENGE_SET = { name: "challenge", foreground: "#1c1c1c", background: "#e9e3d5", outline: "#e9e3d5", texture: "none", material: "plastic" };
+
+    const SLOW_FRAME_MS = 20;
+    let box = null;
+    let frameTimes = null;
+
+    function report(method, payload) {
+      if (bridge && bridge[method]) bridge[method](JSON.stringify(payload));
+    }
+
+    // Counts frames actually drawn by the library, not display refreshes, so a 120 Hz screen
+    // does not inflate the numbers.
+    function instrumentRenderer() {
+      const renderer = box.renderer;
+      const render = renderer.render.bind(renderer);
+      renderer.render = function (scene, camera) {
+        render(scene, camera);
+        if (frameTimes) frameTimes.push(performance.now());
+      };
+    }
+
+    // The library uses one colour set per box; switch it per die so action and challenge
+    // dice look different (RF-DAD-02).
+    async function installPerDieColors() {
+      const action = await box.DiceColors.makeColorSet(ACTION_SET);
+      const challenge = await box.DiceColors.makeColorSet(CHALLENGE_SET);
+      const factory = box.DiceFactory;
+      const create = factory.create.bind(factory);
+      factory.create = function (type) {
+        factory.applyColorSet(type === "d6" ? action : challenge);
+        return create(type);
+      };
+    }
+
+    function frameStats(times, startedAt) {
+      const gaps = [];
+      for (let i = 1; i < times.length; i++) gaps.push(times[i] - times[i - 1]);
+      const span = times.length > 1 ? times[times.length - 1] - times[0] : 0;
+      return {
+        frames: times.length,
+        avgFps: span > 0 ? (times.length - 1) * 1000 / span : 0,
+        worstFrameMs: gaps.length ? Math.max(...gaps) : 0,
+        slowFrames: gaps.filter(g => g > SLOW_FRAME_MS).length,
+        firstFrameMs: times.length ? times[0] - startedAt : 0,
+      };
+    }
+
+    async function roll(action, challenge1, challenge2) {
+      if (!box) return;
+      const notation = "1d6+2d10@" + [action, challenge1, challenge2].join(",");
+      frameTimes = [];
+      const startedAt = performance.now();
+      try {
+        const result = await box.roll(notation);
+        const stats = frameStats(frameTimes, startedAt);
+        frameTimes = null;
+        const shown = result.sets.flatMap(set => set.rolls.map(r => r.value));
+        report("onRollComplete", Object.assign({
+          notation: notation,
+          shown: shown,
+          durationMs: performance.now() - startedAt,
+        }, stats));
+      } catch (e) {
+        frameTimes = null;
+        report("onError", { message: String(e) });
+      }
+    }
+
+    async function init() {
+      const startedAt = performance.now();
+      try {
+        box = new DiceBox("#dice", {
+          assetPath: "./",
+          sounds: false,
+          shadows: true,
+          theme_material: "plastic",
+          baseScale: 100,
+        });
+        await box.initialize();
+        await installPerDieColors();
+        instrumentRenderer();
+        const gl = box.renderer.getContext();
+        const info = gl.getExtension("WEBGL_debug_renderer_info");
+        report("onReady", {
+          initMs: performance.now() - startedAt,
+          width: window.innerWidth,
+          height: window.innerHeight,
+          pixelRatio: window.devicePixelRatio,
+          gpu: info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : "unknown",
+        });
+      } catch (e) {
+        report("onError", { message: String(e) });
+      }
+    }
+
+    // The library renders at 1 CSS pixel per pixel; sharp mode uses the screen's real density
+    // to compare quality against frame rate.
+    function setSharp(sharp) {
+      if (!box) return;
+      box.renderer.setPixelRatio(sharp ? window.devicePixelRatio : 1);
+      box.renderer.setSize(box.container.clientWidth, box.container.clientHeight);
+      box.renderer.render(box.scene, box.camera);
+    }
+
+    window.irondroidDice = { roll: roll, setSharp: setSharp, clear: () => box && box.clearDice() };
+    init();
+  })();
+</script>
+</body>
+</html>
