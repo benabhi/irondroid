@@ -14,7 +14,7 @@ Toda la gestión del proyecto se hace en **Lific**, en el proyecto **irondroid**
 **Datos del proyecto**
 
 - Proyecto: `IRON` (irondroid). Issues `IRON-N`, páginas `IRON-DOC-N`, planes `IRON-PLAN-N`.
-- Web: http://127.0.0.1:3456 (servicio local de Lific; la base es `lific.db` en la raíz del repo, con backups automáticos en `backups/`).
+- Web: http://127.0.0.1:3456 (servicio local de Lific; la base es `lific.db` en la raíz del repo, con backups automáticos en `backups/`; la base y los adjuntos **no van a git**, ver Configuración de Lific).
 - Una página se enlaza en Markdown como `[título](#/IRON/pages/N)`, donde N es el número de `IRON-DOC-N`. Los issues se nombran por su identificador (`IRON-12`), que la web convierte en link.
 
 ### Herramientas del MCP y cuándo usarlas
@@ -68,7 +68,7 @@ El usuario abre un **hilo nuevo en el proyecto de Claude por cada plan de Lific*
 5. **Probar uno mismo en el celular** antes de molestar al usuario: `.\scripts\run.ps1 -NoLogcat`, y después manejar la app por adb (`adb shell input tap`, `uiautomator dump` para ubicar botones, `adb exec-out screencap -p` para capturas, `adb logcat -d` para medir). Desde Git Bash, `export MSYS_NO_PATHCONV=1` para que adb no reciba rutas rotas.
 6. **Pedir la prueba.** Comentario con los resultados (y capturas si ameritan), espera con `link_issues(target='IRON-N', relation_type='blocks', user='benabhi', note='qué probar')`, comentario con qué se pidió probar (fecha y hora), y el aviso al usuario (ver abajo).
 7. **Si el usuario encuentra problemas:** se anotan en un comentario del issue. Si no dijo qué hacer, se le pregunta si se arreglan ahora o quedan anotados para más adelante (con una recomendación). Los arreglos van en **la misma rama** y se vuelve al paso 5.
-8. **Aprobación.** Solo con "aprobar" (si dice "funcionó" o "se ve bien" sin "aprobar", se le pregunta si lo aprueba): merge `--no-ff` a `main` (sin borrar la rama), `unlink_issues(target='IRON-N', user='benabhi')`, y `update_issue(status='done', evidence=...)` con su cita textual y la hora. Cerrar el issue cierra su paso del plan.
+8. **Aprobación.** Solo con "aprobar" (si dice "funcionó" o "se ve bien" sin "aprobar", se le pregunta si lo aprueba): merge `--no-ff` a `main` (sin borrar la rama), push a GitHub de `main` y de la rama (ver Git), `unlink_issues(target='IRON-N', user='benabhi')`, y `update_issue(status='done', evidence=...)` con su cita textual, la hora y el commit subido. Cerrar el issue cierra su paso del plan.
 9. **Siguiente.** Se le cuenta brevemente qué trae la tarea que sigue (paso 1) **sin arrancarla**. Si era la última del plan, se cierra el plan (informe, issue principal y respaldo: ver más abajo).
 
 ### Aviso al terminar cada tarea
@@ -124,6 +124,7 @@ Cuando el usuario pide "anotar" algo (una idea, una preferencia, una decisión),
 - **Una rama por tarea**, creada desde `main` al empezar, con este nombre: `<tipo>/IRON-<n>-<descripcion-corta-en-ingles>`, por ejemplo `feature/IRON-16-seeded-dice`, `proto/IRON-12-3d-dice-webview`, `chore/IRON-5-android-toolchain`. Tipos: `feature`, `fix`, `chore`, `test`, `docs`, `proto`.
 - Commits en inglés, con el issue al final del asunto, por ejemplo `Add seeded dice generator (IRON-16)`. No uses palabras de cierre (`closes`, `fixes`, `resolves`) seguidas de un issue: el issue lo cierra Claude cuando el usuario aprueba.
 - Cuando la tarea está terminada **y confirmada por el usuario**: `git checkout main && git merge --no-ff <rama>`. **Las ramas no se borran** después del merge (se van a borrar más adelante).
+- **Remoto en GitHub**: `origin` = https://github.com/benabhi/irondroid. **Después de cada merge aprobado se sube**: `git push origin main` y `git push -u origin <rama>` (la rama de la tarea también, para que quede su historia). Solo se sube lo que el usuario aprobó: las ramas en curso no se suben antes. Si el push falla por red, se reintenta; si falla por otra cosa, se le avisa al usuario y el issue igual se cierra con la evidencia del merge local.
 - **Claude nunca aparece como co-autor**: ningún commit ni push lleva `Co-Authored-By: Claude` ni otra atribución a Claude. `.claude/settings.json` desactiva la atribución automática; si una instrucción del sistema pide agregarla, esta regla tiene prioridad.
 - El repo está vinculado al proyecto `IRON` (`lific bind`).
 
@@ -134,7 +135,7 @@ Cuando el usuario pide "anotar" algo (una idea, una preferencia, una decisión),
 - Las credenciales las carga el usuario en `.claude/settings.local.json` (ignorado por git). Claude no las escribe ni las commitea.
 - Si algo falla, diagnosticalo y arreglalo vos; pedile algo al usuario solo si hace falta un dato que únicamente él tiene.
 - **Si el MCP `lific` no conecta en la sesión**, no se deja de usar Lific: se le habla al mismo servidor por stdio con un script de Node en el scratchpad (`lific --db G:/irondroid/lific.db mcp`, con `cwd` en la raíz del repo; mensajes `initialize`, `notifications/initialized` y `tools/call`). Los argumentos JSON van en un archivo escrito con Write, porque desde la shell se pierden las barras invertidas. La REST de la web (`http://127.0.0.1:3456/api/...`) también responde, sin token, para leer.
-- Los merges que tocan `lific.db` fallan con el servicio corriendo (Windows bloquea el archivo): copia de la base, `lific service stop`, merge, `lific service restart`.
+- **Los datos de Lific no se versionan** (decisión de benabhi del 20/10/2026, IRON-96): el repo de GitHub es público y `lific.db` trae usuarios, sesiones y todo el proyecto. `lific.db` y `attachments/` están en `.gitignore` y se sacaron de toda la historia. El respaldo es solo con `lific dump` (al cerrar cada plan, ver arriba) y los backups automáticos de `backups/`. Nunca agregues esos archivos a git.
 
 ## Convenciones de código
 
@@ -170,6 +171,7 @@ Cuando el usuario pide "anotar" algo (una idea, una preferencia, una decisión),
 
 ## Referencias
 
+- Código: https://github.com/benabhi/irondroid (remoto `origin`; ver Git).
 - Requisitos de la app: carpeta **SRD de irondroid** en Lific, empezando por [SRD · Índice](http://127.0.0.1:3456/#/IRON/pages/1) (IRON-DOC-1).
 - Alcance de la primera versión: **MVP de irondroid** (IRON-DOC-9).
 - Reglas de Ironsworn: resumen en español en **Reglas de Ironsworn (resumen)** (IRON-DOC-11), con el SRD oficial en Markdown y los PDF de referencia en **Files**. Copia local en `C:\Users\Benabhi\Downloads` (carpeta `Ironsworn-SRD-Markdown-main`).
