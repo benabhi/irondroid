@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Traducción al español latino neutro. -->
+<resources>
+    <string name="welcome_title">Te damos la bienvenida a irondroid</string>
+    <string name="welcome_subtitle">Tu travesía por Ironsworn empieza aquí.</string>
+</resources>
