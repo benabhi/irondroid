@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "moves": {
+    "face_danger": {
+      "name": "Enfrentar el peligro",
+      "trigger": "Cuando intentás algo arriesgado o reaccionás ante una amenaza inminente, imaginá tu acción y tirá.",
+      "strong_hit": "Lo lográs. Tomá +1 de impulso.",
+      "weak_hit": "Lo lográs, pero con un costo molesto. Elegí uno.",
+      "miss": "Fallás, o un giro dramático y costoso arruina tu avance. Pagá el precio.",
+      "options": {
+        "lose_momentum": "Te demorás, perdés ventaja o aparece un peligro nuevo: -1 de impulso.",
+        "endure_harm": "Estás cansado o herido: Soportar daño (1 de daño).",
+        "endure_stress": "Estás desanimado o con miedo: Soportar estrés (1 de estrés).",
+        "lose_supply": "Sacrificás recursos: -1 de suministros."
+      }
+    },
+    "secure_an_advantage": {
+      "name": "Asegurar una ventaja",
+      "trigger": "Cuando evaluás una situación, te preparás o buscás sacar ventaja, imaginá tu acción y tirá.",
+      "strong_hit": "Ganás ventaja. Elegí uno.",
+      "weak_hit": "La ventaja dura poco. Tomá +1 de impulso.",
+      "miss": "Fallás o tus suposiciones te traicionan. Pagá el precio.",
+      "options": {
+        "take_momentum": "Prepararte: tomá +2 de impulso.",
+        "add_bonus": "Sacar ventaja: sumá +1 en tu próximo movimiento (no de progreso)."
+      }
+    },
+    "fulfill_your_vow": {
+      "name": "Cumplir tu voto",
+      "trigger": "Cuando lográs lo que creés que cumple tu voto, tirá los dados de desafío y comparalos con tu progreso.",
+      "strong_hit": "Tu misión está cumplida. Marcá experiencia.",
+      "weak_hit": "Queda más por hacer o descubrís la verdad de tu misión. Marcá experiencia, una menos.",
+      "miss": "Tu misión se deshace. Pagá el precio."
+    },
+    "reach_a_milestone": {
+      "name": "Alcanzar un hito",
+      "trigger": "Cuando avanzás de forma importante en tu misión, marcá progreso en ese voto."
+    }
+  }
+}

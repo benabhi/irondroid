@@ -1,10 +1,14 @@
 package com.irondroid.engine.meters
 
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
 /** The three condition meters of a character (RF-MOT-08). */
+@Serializable
 enum class MeterType {
-    HEALTH,
-    SPIRIT,
-    SUPPLY,
+    @SerialName("health") HEALTH,
+    @SerialName("spirit") SPIRIT,
+    @SerialName("supply") SUPPLY,
 }
 
 /** One condition meter, from [MIN] to [MAX]. Immutable: every change returns a new value. */

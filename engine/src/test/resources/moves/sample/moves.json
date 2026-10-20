@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "moves": [
+    {
+      "id": "face_danger",
+      "category": "adventure",
+      "roll": { "type": "action", "sources": ["edge", "heart", "iron", "shadow", "wits"] },
+      "outcomes": {
+        "strong_hit": { "effects": [{ "type": "momentum", "amount": 1 }] },
+        "weak_hit": {
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "lose_momentum", "effects": [{ "type": "momentum", "amount": -1 }] },
+              { "id": "endure_harm", "effects": [{ "type": "trigger_move", "move": "endure_harm", "amount": 1 }] },
+              { "id": "endure_stress", "effects": [{ "type": "trigger_move", "move": "endure_stress", "amount": 1 }] },
+              { "id": "lose_supply", "effects": [{ "type": "meter", "meter": "supply", "amount": -1 }] }
+            ]
+          }
+        },
+        "miss": { "effects": [{ "type": "trigger_move", "move": "pay_the_price" }] }
+      }
+    },
+    {
+      "id": "secure_an_advantage",
+      "category": "adventure",
+      "roll": { "type": "action", "sources": ["edge", "heart", "iron", "shadow", "wits"] },
+      "outcomes": {
+        "strong_hit": {
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "take_momentum", "effects": [{ "type": "momentum", "amount": 2 }] },
+              { "id": "add_bonus", "effects": [{ "type": "next_roll_bonus", "amount": 1 }] }
+            ]
+          }
+        },
+        "weak_hit": { "effects": [{ "type": "momentum", "amount": 1 }] },
+        "miss": { "effects": [{ "type": "trigger_move", "move": "pay_the_price" }] }
+      }
+    },
+    {
+      "id": "fulfill_your_vow",
+      "category": "quest",
+      "roll": { "type": "progress", "track": "vow" },
+      "outcomes": {
+        "strong_hit": {},
+        "weak_hit": {},
+        "miss": { "effects": [{ "type": "trigger_move", "move": "pay_the_price" }] }
+      }
+    },
+    {
+      "id": "reach_a_milestone",
+      "category": "quest",
+      "roll": { "type": "none" },
+      "effects": [{ "type": "mark_progress" }]
+    }
+  ]
+}
