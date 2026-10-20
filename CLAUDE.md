@@ -164,6 +164,7 @@ Cuando el usuario pide "anotar" algo (una idea, una preferencia, una decisión),
 | Solo compilar | `.\gradlew.bat assembleDebug` (APK en `app\build\outputs\apk\debug\app-debug.apk`) |
 | Ver un crash | `adb logcat -d -b crash` |
 | Correr los tests del motor (JUnit 6, sin celular) | `.\gradlew.bat :engine:test` (informe en `engine\build\reports\tests\test\index.html`) |
+| Ver la cobertura de los tests del motor (Kover; `check` falla si baja de 95 % de líneas) | `.\gradlew.bat :engine:koverHtmlReport` (informe en `engine\build\reports\kover\html\index.html`) |
 
 - El script toma `JAVA_HOME` y `ANDROID_HOME` de las variables de usuario si la terminal no las tiene, y usa `adb install -r` (reemplaza la app sin borrar sus datos).
 - El paquete de la app es `com.irondroid` y la actividad de entrada `com.irondroid/.MainActivity`.
