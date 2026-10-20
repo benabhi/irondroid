@@ -44,7 +44,11 @@ sealed interface MoveRoll {
      */
     @Serializable
     @SerialName("action")
-    data class Action(val sources: List<RollSource>, val bonuses: List<RollBonus> = emptyList()) : MoveRoll
+    data class Action(
+        val sources: List<RollSource>,
+        val bonuses: List<RollBonus> = emptyList(),
+        val pick: SourcePick = SourcePick.ANY,
+    ) : MoveRoll
 
     /** Progress roll on a track of type [track]. */
     @Serializable
@@ -55,6 +59,19 @@ sealed interface MoveRoll {
     @Serializable
     @SerialName("none")
     data object None : MoveRoll
+}
+
+/** How the source of an action roll is picked among its sources. */
+@Serializable
+enum class SourcePick {
+    /** The one that fits the fiction. */
+    @SerialName("any") ANY,
+
+    /** The highest value, as in Endure Harm (+health or +iron). */
+    @SerialName("highest") HIGHEST,
+
+    /** The lowest value. */
+    @SerialName("lowest") LOWEST,
 }
 
 /** A situational add to an action roll; its condition is described in the move texts under [id]. */
@@ -127,15 +144,47 @@ sealed interface Effect {
     @Serializable
     @SerialName("spend_experience")
     data class SpendExperience(val amount: Int) : Effect
+
+    /**
+     * Suffers -[meter] equal to the amount the move was triggered with (Endure Harm 2 means -2 health).
+     * What does not fit below 0 is suffered as -momentum.
+     */
+    @Serializable
+    @SerialName("suffer")
+    data class Suffer(val meter: MeterType) : Effect
+
+    /** Marks [debility]. */
+    @Serializable
+    @SerialName("mark_debility")
+    data class MarkDebility(val debility: Debility) : Effect
+
+    /** Rolls on the oracle table [table] (1d100) and applies its result. */
+    @Serializable
+    @SerialName("roll_table")
+    data class RollTable(val table: String) : Effect
+
+    /** Asks the yes/no oracle with odds the player or narrator sets. */
+    @Serializable
+    @SerialName("ask_oracle")
+    data object AskOracle : Effect
+
+    /** The character's story ends: dead or lost. */
+    @Serializable
+    @SerialName("end_character")
+    data object EndCharacter : Effect
 }
 
 /** One option of a choice, with the effects it applies when picked. */
 @Serializable
 data class MoveOption(val id: String, val effects: List<Effect> = emptyList())
 
-/** The player picks [count] of [options]. */
+/** The player picks [count] of [options]. With [whenZero], the choice applies only if that meter is at 0. */
 @Serializable
-data class Choice(val count: Int, val options: List<MoveOption>)
+data class Choice(
+    val count: Int,
+    val options: List<MoveOption>,
+    @SerialName("when_zero") val whenZero: MeterType? = null,
+)
 
 /** What happens on one outcome: fixed [effects] plus an optional [choice]. */
 @Serializable

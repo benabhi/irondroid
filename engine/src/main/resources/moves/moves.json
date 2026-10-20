@@ -277,6 +277,165 @@
           { "id": "upgrade_asset", "effects": [{ "type": "spend_experience", "amount": 2 }] }
         ]
       }
+    },
+    {
+      "id": "endure_harm",
+      "category": "suffer",
+      "effects": [{ "type": "suffer", "meter": "health" }],
+      "roll": { "type": "action", "sources": ["health", "iron"], "pick": "highest" },
+      "outcomes": {
+        "strong_hit": {
+          "choice": {
+            "count": 1,
+            "options": [
+              {
+                "id": "shake_it_off",
+                "effects": [{ "type": "momentum", "amount": -1 }, { "type": "meter", "meter": "health", "amount": 1 }]
+              },
+              { "id": "embrace_the_pain", "effects": [{ "type": "momentum", "amount": 1 }] }
+            ]
+          }
+        },
+        "weak_hit": {},
+        "miss": {
+          "effects": [{ "type": "momentum", "amount": -1 }],
+          "choice": {
+            "count": 1,
+            "when_zero": "health",
+            "options": [
+              { "id": "mark_wounded", "effects": [{ "type": "mark_debility", "debility": "wounded" }] },
+              { "id": "mark_maimed", "effects": [{ "type": "mark_debility", "debility": "maimed" }] },
+              { "id": "roll_consequence", "effects": [{ "type": "roll_table", "table": "endure_harm" }] }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "face_death",
+      "category": "suffer",
+      "roll": { "type": "action", "sources": ["heart"] },
+      "outcomes": {
+        "strong_hit": {},
+        "weak_hit": {
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "noble_sacrifice", "effects": [{ "type": "end_character" }] },
+              {
+                "id": "bargain_with_death",
+                "effects": [
+                  { "type": "mark_debility", "debility": "cursed" },
+                  { "type": "trigger_move", "move": "swear_an_iron_vow" }
+                ]
+              }
+            ]
+          }
+        },
+        "miss": { "effects": [{ "type": "end_character" }] }
+      }
+    },
+    {
+      "id": "endure_stress",
+      "category": "suffer",
+      "effects": [{ "type": "suffer", "meter": "spirit" }],
+      "roll": { "type": "action", "sources": ["heart", "spirit"], "pick": "highest" },
+      "outcomes": {
+        "strong_hit": {
+          "choice": {
+            "count": 1,
+            "options": [
+              {
+                "id": "shake_it_off",
+                "effects": [{ "type": "momentum", "amount": -1 }, { "type": "meter", "meter": "spirit", "amount": 1 }]
+              },
+              { "id": "embrace_the_darkness", "effects": [{ "type": "momentum", "amount": 1 }] }
+            ]
+          }
+        },
+        "weak_hit": {},
+        "miss": {
+          "effects": [{ "type": "momentum", "amount": -1 }],
+          "choice": {
+            "count": 1,
+            "when_zero": "spirit",
+            "options": [
+              { "id": "mark_shaken", "effects": [{ "type": "mark_debility", "debility": "shaken" }] },
+              { "id": "mark_corrupted", "effects": [{ "type": "mark_debility", "debility": "corrupted" }] },
+              { "id": "roll_consequence", "effects": [{ "type": "roll_table", "table": "endure_stress" }] }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "face_desolation",
+      "category": "suffer",
+      "roll": { "type": "action", "sources": ["heart"] },
+      "outcomes": {
+        "strong_hit": {},
+        "weak_hit": {
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "noble_sacrifice", "effects": [{ "type": "end_character" }] },
+              {
+                "id": "dreaded_vision",
+                "effects": [
+                  { "type": "mark_debility", "debility": "tormented" },
+                  { "type": "trigger_move", "move": "swear_an_iron_vow" }
+                ]
+              }
+            ]
+          }
+        },
+        "miss": { "effects": [{ "type": "end_character" }] }
+      }
+    },
+    {
+      "id": "out_of_supply",
+      "category": "suffer",
+      "roll": { "type": "none" },
+      "effects": [{ "type": "mark_debility", "debility": "unprepared" }]
+    },
+    {
+      "id": "face_a_setback",
+      "category": "suffer",
+      "roll": { "type": "none" },
+      "choice": {
+        "count": 1,
+        "options": [
+          { "id": "exchange_momentum" },
+          { "id": "lose_progress" }
+        ]
+      }
+    },
+    {
+      "id": "pay_the_price",
+      "category": "fate",
+      "roll": { "type": "none" },
+      "choice": {
+        "count": 1,
+        "options": [
+          { "id": "obvious_outcome" },
+          { "id": "ask_the_oracle", "effects": [{ "type": "ask_oracle" }] },
+          { "id": "roll_on_table", "effects": [{ "type": "roll_table", "table": "pay_the_price" }] }
+        ]
+      }
+    },
+    {
+      "id": "ask_the_oracle",
+      "category": "fate",
+      "roll": { "type": "none" },
+      "choice": {
+        "count": 1,
+        "options": [
+          { "id": "draw_a_conclusion" },
+          { "id": "yes_no_question", "effects": [{ "type": "ask_oracle" }] },
+          { "id": "pick_two", "effects": [{ "type": "ask_oracle" }] },
+          { "id": "spark_an_idea" }
+        ]
+      }
     }
   ]
 }

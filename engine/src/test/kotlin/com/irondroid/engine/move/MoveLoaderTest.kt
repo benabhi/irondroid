@@ -233,4 +233,17 @@ class MoveLoaderTest {
         expected.forEach { line -> assertTrue(line in errors, "Missing \"$line\" in $errors") }
         assertEquals(3, errors.count { it == "Move trackless: progress effects need the move's track" })
     }
+
+    @Test
+    fun `suffer and oracle pieces are validated`() {
+        val errors = errorsOf(
+            structure(
+                """{ "id": "single_pick", "category": "suffer", "roll": { "type": "action", "sources": ["iron"], "pick": "highest" },
+                     "outcomes": { "strong_hit": {}, "weak_hit": {}, "miss": { "effects": [{ "type": "roll_table", "table": "Bad Table" }] } } }""",
+            ),
+            mapOf("en" to texts(), "es" to texts()),
+        )
+        assertTrue("Move single_pick: picking the highest or lowest needs two sources or more" in errors, errors.toString())
+        assertTrue("Move single_pick: roll_table with an invalid id Bad Table" in errors, errors.toString())
+    }
 }

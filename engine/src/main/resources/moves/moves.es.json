@@ -138,6 +138,87 @@
         "new_asset": "Gastá 3 de experiencia para sumar una ventaja nueva.",
         "upgrade_asset": "Gastá 2 de experiencia para mejorar una ventaja."
       }
+    },
+    "endure_harm": {
+      "name": "Soportar daño",
+      "trigger": "Cuando sufrís daño físico, sufrí -salud igual al rango de tu enemigo o según la situación. Si tu salud está en 0, sufrí -impulso igual a lo que falte de -salud. Después tirá +salud o +hierro, el que sea mayor.",
+      "strong_hit": "Elegí uno.",
+      "weak_hit": "Seguís adelante.",
+      "miss": "Además sufrí -1 de impulso. Si estás con salud 0, tenés que marcar herido o mutilado (si no los tenés marcados) o tirar en la tabla de Soportar daño.",
+      "options": {
+        "shake_it_off": "Sacudírtelo: si tu salud es mayor que 0, sufrí -1 de impulso a cambio de +1 de salud.",
+        "embrace_the_pain": "Abrazar el dolor: tomá +1 de impulso.",
+        "mark_wounded": "Marcá herido.",
+        "mark_maimed": "Marcá mutilado.",
+        "roll_consequence": "Tirá en la tabla de Soportar daño."
+      }
+    },
+    "face_death": {
+      "name": "Enfrentar la muerte",
+      "trigger": "Cuando quedás al borde de la muerte y vislumbrás el mundo del más allá, tirá +corazón.",
+      "strong_hit": "La muerte te rechaza. Volvés al mundo de los vivos.",
+      "weak_hit": "Elegí uno.",
+      "miss": "Estás muerto.",
+      "options": {
+        "noble_sacrifice": "Morís, pero no sin antes hacer un sacrificio noble. Imaginá tus últimos momentos.",
+        "bargain_with_death": "La muerte quiere algo de vos a cambio de tu vida. Imaginá qué quiere (preguntale al oráculo si no estás seguro) y Jurá un voto de hierro (formidable o extremo) para cumplir esa misión. Si no sacás un éxito al jurar, o rechazás la misión, estás muerto. Si no, volvés al mundo de los vivos y ahora estás maldito. Solo podés limpiar la debilidad maldito cumpliendo la misión."
+      }
+    },
+    "endure_stress": {
+      "name": "Soportar estrés",
+      "trigger": "Cuando sufrís un golpe mental o caés en la desesperación, sufrí -espíritu igual al rango de tu enemigo o según la situación. Si tu espíritu está en 0, sufrí -impulso igual a lo que falte de -espíritu. Después tirá +corazón o +espíritu, el que sea mayor.",
+      "strong_hit": "Elegí uno.",
+      "weak_hit": "Seguís adelante.",
+      "miss": "Además sufrí -1 de impulso. Si estás con espíritu 0, tenés que marcar conmocionado o corrompido (si no los tenés marcados) o tirar en la tabla de Soportar estrés.",
+      "options": {
+        "shake_it_off": "Sacudírtelo: si tu espíritu es mayor que 0, sufrí -1 de impulso a cambio de +1 de espíritu.",
+        "embrace_the_darkness": "Abrazar la oscuridad: tomá +1 de impulso.",
+        "mark_shaken": "Marcá conmocionado.",
+        "mark_corrupted": "Marcá corrompido.",
+        "roll_consequence": "Tirá en la tabla de Soportar estrés."
+      }
+    },
+    "face_desolation": {
+      "name": "Enfrentar la desolación",
+      "trigger": "Cuando quedás al borde de la desolación, tirá +corazón.",
+      "strong_hit": "Resistís y seguís adelante.",
+      "weak_hit": "Elegí uno.",
+      "miss": "Sucumbís a la desesperación o al horror y estás perdido.",
+      "options": {
+        "noble_sacrifice": "Tu espíritu o tu cordura se quiebran, pero no sin antes hacer un sacrificio noble. Imaginá tus últimos momentos.",
+        "dreaded_vision": "Tenés la visión de un hecho temido que se va a cumplir. Imaginá ese futuro oscuro (preguntale al oráculo si no estás seguro) y Jurá un voto de hierro (formidable o extremo) para impedirlo. Si no sacás un éxito al jurar, o rechazás la misión, estás perdido. Si no, volvés en vos y ahora estás atormentado. Solo podés limpiar la debilidad atormentado cumpliendo la misión."
+      }
+    },
+    "out_of_supply": {
+      "name": "Sin suministros",
+      "trigger": "Cuando se te agotan los suministros (bajan a 0), marcá desabastecido. Si sufrís más -suministros estando desabastecido, tenés que cambiar cada -suministro extra por cualquier combinación de -salud, -espíritu o -impulso, según las circunstancias."
+    },
+    "face_a_setback": {
+      "name": "Enfrentar un revés",
+      "trigger": "Cuando tu impulso está en su mínimo (-6) y sufrís más -impulso, elegí uno.",
+      "options": {
+        "exchange_momentum": "Cambiá cada -impulso extra por cualquier combinación de -salud, -espíritu o -suministros, según las circunstancias.",
+        "lose_progress": "Imaginá un suceso o un descubrimiento (preguntale al oráculo si no estás seguro) que socava tu progreso en una misión, un viaje o una pelea en curso. Después, por cada -impulso extra, borrá 1 unidad de progreso en esa pista según su rango (problemática=3 de progreso; peligrosa=2; formidable=1; extrema=2 marcas; épica=1 marca)."
+      }
+    },
+    "pay_the_price": {
+      "name": "Pagar el precio",
+      "trigger": "Cuando sufrís el resultado de un movimiento, elegí uno.",
+      "options": {
+        "obvious_outcome": "Hacé que pase la consecuencia negativa más obvia.",
+        "ask_the_oracle": "Imaginá dos consecuencias negativas. Marcá una como 'probable' y preguntale al oráculo con la tabla de sí/no. Si sale 'sí', pasa esa; si no, la otra.",
+        "roll_on_table": "Tirá en la tabla de Pagar el precio. Si te cuesta adaptar el resultado a la situación, volvé a tirar."
+      }
+    },
+    "ask_the_oracle": {
+      "name": "Preguntar al oráculo",
+      "trigger": "Cuando querés resolver preguntas, descubrir detalles del mundo, saber cómo reaccionan otros personajes o provocar encuentros o sucesos, podés...",
+      "options": {
+        "draw_a_conclusion": "Sacar una conclusión: decidí la respuesta según el resultado más interesante y obvio.",
+        "yes_no_question": "Hacer una pregunta de sí o no: decidí las probabilidades de un 'sí' y tirá en la tabla de sí/no.",
+        "pick_two": "Elegir entre dos: imaginá dos opciones, marcá una como 'probable' y tirá en la tabla de sí/no para ver si es cierta. Si no, es la otra.",
+        "spark_an_idea": "Buscar una idea: hacé una lluvia de ideas o usá un disparador al azar."
+      }
     }
   }
 }
