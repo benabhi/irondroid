@@ -21,6 +21,25 @@
         { "id": "ally_in_harms_way", "min": 95, "max": 98 },
         { "id": "roll_twice", "min": 99, "max": 100, "then": "roll_twice" }
       ]
+    },
+    {
+      "id": "endure_harm",
+      "rows": [
+        { "id": "mortal", "min": 1, "max": 10, "move": "face_death" },
+        { "id": "dying", "min": 11, "max": 20 },
+        { "id": "unconscious", "min": 21, "max": 35 },
+        { "id": "reeling", "min": 36, "max": 50 },
+        { "id": "battered", "min": 51, "max": 100 }
+      ]
+    },
+    {
+      "id": "endure_stress",
+      "rows": [
+        { "id": "overwhelmed", "min": 1, "max": 10, "move": "face_desolation" },
+        { "id": "give_up", "min": 11, "max": 25, "move": "forsake_your_vow" },
+        { "id": "fear_or_compulsion", "min": 26, "max": 50 },
+        { "id": "persevere", "min": 51, "max": 100 }
+      ]
     }
   ]
 }

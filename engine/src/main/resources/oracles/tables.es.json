@@ -21,6 +21,25 @@
         "ally_in_harms_way": "Un amigo, compañero o aliado queda en peligro (o vos, si estás solo).",
         "roll_twice": "Tirá dos veces más en esta tabla. Pasan los dos resultados. Si son el mismo resultado, empeoralo."
       }
+    },
+    "endure_harm": {
+      "name": "Soportar daño",
+      "rows": {
+        "mortal": "El daño es mortal. Enfrentá la muerte.",
+        "dying": "Te estás muriendo. Tenés que Curarte en una o dos horas, o Enfrentar la muerte.",
+        "unconscious": "Quedás inconsciente y fuera de combate. Si te dejan en paz, volvés en vos en una o dos horas. Si quedás a merced de un enemigo que no piensa tener piedad, Enfrentá la muerte.",
+        "reeling": "Te tambaleás y luchás por no perder el conocimiento. Si hacés alguna actividad exigente (como correr o pelear) antes de tomarte unos minutos para recuperar el aliento, volvé a tirar en esta tabla (antes de resolver el otro movimiento).",
+        "battered": "Estás golpeado, pero seguís de pie."
+      }
+    },
+    "endure_stress": {
+      "name": "Soportar estrés",
+      "rows": {
+        "overwhelmed": "Te sentís abrumado. Enfrentá la desolación.",
+        "give_up": "Te rendís. Abandoná tu voto (si es posible, uno relacionado con tu crisis actual).",
+        "fear_or_compulsion": "Cedés ante un miedo o una compulsión y actuás en contra de tus mejores instintos.",
+        "persevere": "Perseverás."
+      }
     }
   }
 }

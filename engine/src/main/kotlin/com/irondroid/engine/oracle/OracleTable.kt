@@ -20,13 +20,19 @@ enum class RowAction {
     @SerialName("roll_twice") ROLL_TWICE,
 }
 
-/** A row of an oracle table: the d100 results [min]..[max]. */
+/**
+ * A row of an oracle table: the d100 results [min]..[max].
+ *
+ * [move] is a move the row always leads to, such as Face Death on Endure Harm 1-10.
+ * Moves that depend on the situation stay in the row text for the narrator.
+ */
 @Serializable
 data class TableRow(
     val id: String,
     val min: Int,
     val max: Int,
     val then: RowAction? = null,
+    val move: String? = null,
 ) {
     operator fun contains(roll: Int): Boolean = roll in min..max
 }
@@ -76,6 +82,9 @@ data class TableRoll(
     /** Rows that apply in the end, leaving out the rows that only ask for more rolls. */
     val results: List<TableRow>
         get() = if (extra.isEmpty()) listOf(row) else extra.flatMap { it.results }
+
+    /** Moves the final rows lead to, in order. The caller makes them next, like a move's follow-ups. */
+    val moves: List<String> get() = results.mapNotNull { it.move }
 }
 
 /** Root of tables.json. */

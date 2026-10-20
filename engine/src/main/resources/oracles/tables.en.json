@@ -21,6 +21,25 @@
         "ally_in_harms_way": "A friend, companion, or ally is put in harm's way (or you are, if alone).",
         "roll_twice": "Roll twice more on this table. Both results occur. If they are the same result, make it worse."
       }
+    },
+    "endure_harm": {
+      "name": "Endure Harm",
+      "rows": {
+        "mortal": "The harm is mortal. Face Death.",
+        "dying": "You are dying. You need to Heal within an hour or two, or Face Death.",
+        "unconscious": "You are unconscious and out of action. If left alone, you come back to your senses in an hour or two. If you are vulnerable to a foe not inclined to show mercy, Face Death.",
+        "reeling": "You are reeling and fighting to stay conscious. If you engage in any vigorous activity (such as running or fighting) before taking a breather for a few minutes, roll on this table again (before resolving the other move).",
+        "battered": "You are battered but still standing."
+      }
+    },
+    "endure_stress": {
+      "name": "Endure Stress",
+      "rows": {
+        "overwhelmed": "You are overwhelmed. Face Desolation.",
+        "give_up": "You give up. Forsake Your Vow (if possible, one relevant to your current crisis).",
+        "fear_or_compulsion": "You give into a fear or compulsion, and act against your better instincts.",
+        "persevere": "You persevere."
+      }
     }
   }
 }
