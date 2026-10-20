@@ -54,3 +54,16 @@ adb devices              # the phone appears as "device" once USB debugging is a
 
 Project layout: `:app` (Android app, Compose), `:engine` (pure Kotlin/JVM rules engine) and `:data` (Android library for persistence).
 Versions live in `gradle/libs.versions.toml`. `compileSdk` is 37 because current AndroidX libraries require it; `targetSdk` stays at 36.
+
+## End-to-end check on the phone
+
+Used to verify the whole chain (first done in IRON-10):
+
+1. Clone `main` into an empty folder and run `.\gradlew.bat :engine:test :app:lintDebug` there, so only versioned files are used.
+2. From that clone run `.\scripts\run.ps1 -NoLogcat` with the phone connected.
+3. Check the app's logs and the crash buffer:
+   `adb logcat -d --pid=$(adb shell pidof -s com.irondroid)` and `adb logcat -d -b crash` (must be empty).
+   Lines tagged `QT`, `HWUI`, `Gralloc5`, `ashmem` or `[perfctl]` come from the phone's vendor libraries, not from the app.
+4. Portrait lock: `adb shell settings put system user_rotation 1` forces landscape; the app must stay portrait
+   (`adb shell dumpsys window displays` shows `mCurrentAppOrientation=SCREEN_ORIENTATION_PORTRAIT`).
+   Restore the phone with `adb shell settings put system user_rotation 0`.
