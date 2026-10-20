@@ -200,6 +200,83 @@
           }
         }
       }
+    },
+    {
+      "id": "swear_an_iron_vow",
+      "category": "quest",
+      "track": "vow",
+      "effects": [{ "type": "start_track" }],
+      "roll": {
+        "type": "action",
+        "sources": ["heart"],
+        "bonuses": [{ "id": "sworn_to_bond", "amount": 1 }]
+      },
+      "outcomes": {
+        "strong_hit": { "effects": [{ "type": "momentum", "amount": 2 }] },
+        "weak_hit": { "effects": [{ "type": "momentum", "amount": 1 }] },
+        "miss": {
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "press_on", "effects": [{ "type": "momentum", "amount": -2 }] },
+              { "id": "give_up", "effects": [{ "type": "trigger_move", "move": "forsake_your_vow" }] }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "reach_a_milestone",
+      "category": "quest",
+      "track": "vow",
+      "roll": { "type": "none" },
+      "effects": [{ "type": "mark_progress" }]
+    },
+    {
+      "id": "fulfill_your_vow",
+      "category": "quest",
+      "roll": { "type": "progress", "track": "vow" },
+      "outcomes": {
+        "strong_hit": { "effects": [{ "type": "mark_experience" }, { "type": "end_track" }] },
+        "weak_hit": {
+          "effects": [
+            { "type": "mark_experience", "rank_offset": -1 },
+            { "type": "end_track" },
+            { "type": "next_roll_bonus", "amount": 1, "move": "swear_an_iron_vow" }
+          ]
+        },
+        "miss": {
+          "choice": {
+            "count": 1,
+            "options": [
+              { "id": "recommit", "effects": [{ "type": "clear_progress", "keep_boxes": 1 }, { "type": "raise_rank" }] },
+              { "id": "give_up", "effects": [{ "type": "trigger_move", "move": "forsake_your_vow" }] }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "forsake_your_vow",
+      "category": "quest",
+      "track": "vow",
+      "roll": { "type": "none" },
+      "effects": [
+        { "type": "end_track" },
+        { "type": "trigger_move", "move": "endure_stress", "amount_by_rank": true }
+      ]
+    },
+    {
+      "id": "advance",
+      "category": "quest",
+      "roll": { "type": "none" },
+      "choice": {
+        "count": 1,
+        "options": [
+          { "id": "new_asset", "effects": [{ "type": "spend_experience", "amount": 3 }] },
+          { "id": "upgrade_asset", "effects": [{ "type": "spend_experience", "amount": 2 }] }
+        ]
+      }
     }
   ]
 }

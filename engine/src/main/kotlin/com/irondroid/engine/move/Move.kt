@@ -97,10 +97,36 @@ sealed interface Effect {
     @SerialName("next_roll_bonus")
     data class NextRollBonus(val amount: Int, val move: String? = null) : Effect
 
-    /** Another move follows, such as Pay the Price or Endure Harm with an [amount]. */
+    /**
+     * Another move follows, such as Pay the Price or Endure Harm with an [amount].
+     * With [amountByRank] the amount is the rank of the move's track (1 troublesome to 5 epic).
+     */
     @Serializable
     @SerialName("trigger_move")
-    data class TriggerMove(val move: String, val amount: Int? = null) : Effect
+    data class TriggerMove(
+        val move: String,
+        val amount: Int? = null,
+        @SerialName("amount_by_rank") val amountByRank: Boolean = false,
+    ) : Effect
+
+    /** Starts a new track of the move's type; the player names it and sets its rank. */
+    @Serializable
+    @SerialName("start_track")
+    data object StartTrack : Effect
+
+    /** The move's track is finished, fulfilled or forsaken, and is removed. */
+    @Serializable
+    @SerialName("end_track")
+    data object EndTrack : Effect
+
+    /** Marks the experience of the track's rank (1 to 5) plus [rankOffset], never below 0. */
+    @Serializable
+    @SerialName("mark_experience")
+    data class MarkExperience(@SerialName("rank_offset") val rankOffset: Int = 0) : Effect
+
+    @Serializable
+    @SerialName("spend_experience")
+    data class SpendExperience(val amount: Int) : Effect
 }
 
 /** One option of a choice, with the effects it applies when picked. */
@@ -126,7 +152,8 @@ data class MoveOutcomes(
 )
 
 /**
- * One move. Rolled moves need [outcomes]; moves without a roll apply [effects] directly.
+ * One move. Rolled moves need [outcomes]; moves without a roll apply [effects] and [choice] directly.
+ * On rolled moves, [effects] apply before rolling (Swear an Iron Vow starts its track, then rolls).
  *
  * [track] is the kind of progress track the move works on (a journey for Undertake a Journey),
  * for moves that change progress without a progress roll. [blockedBy] lists debilities that
@@ -139,12 +166,14 @@ data class MoveDefinition(
     val roll: MoveRoll,
     val outcomes: MoveOutcomes? = null,
     val effects: List<Effect> = emptyList(),
+    val choice: Choice? = null,
     val track: ProgressTrackType? = null,
     @SerialName("blocked_by") val blockedBy: List<Debility> = emptyList(),
 ) {
     /** Choices of every outcome. The same option may appear in several, like Make Camp's list. */
     val choices: List<Choice>
-        get() = listOfNotNull(outcomes?.strongHit, outcomes?.weakHit, outcomes?.miss).mapNotNull { it.choice }
+        get() = listOfNotNull(choice) +
+            listOfNotNull(outcomes?.strongHit, outcomes?.weakHit, outcomes?.miss).mapNotNull { it.choice }
 
     /** Every distinct option id of the move. */
     val optionIds: Set<String>
@@ -160,9 +189,8 @@ data class MoveDefinition(
 
     /** Every effect of the move, including those inside outcomes and options. */
     val allEffects: List<Effect>
-        get() = effects + listOfNotNull(outcomes?.strongHit, outcomes?.weakHit, outcomes?.miss).flatMap { outcome ->
-            outcome.effects + outcome.choice?.options.orEmpty().flatMap { it.effects }
-        }
+        get() = effects + listOfNotNull(outcomes?.strongHit, outcomes?.weakHit, outcomes?.miss).flatMap { it.effects } +
+            choices.flatMap { choice -> choice.options.flatMap { it.effects } }
 }
 
 /** Root of moves.json. */

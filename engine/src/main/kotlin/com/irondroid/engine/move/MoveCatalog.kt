@@ -95,6 +95,7 @@ object MoveLoader {
             if (roll is MoveRoll.Action && roll.sources.isEmpty()) errors += "$where: action roll needs at least one source"
             if (roll is MoveRoll.None && move.outcomes != null) errors += "$where: a move without a roll has no outcomes"
             if (roll !is MoveRoll.None && move.outcomes == null) errors += "$where: a rolled move needs outcomes"
+            if (roll !is MoveRoll.None && move.choice != null) errors += "$where: a rolled move puts its choices in outcomes"
 
             for (choice in move.choices) {
                 choice.options.groupBy { it.id }.filterValues { it.size > 1 }.keys.forEach { errors += "$where: option $it is repeated" }
@@ -116,20 +117,28 @@ object MoveLoader {
     }
 
     private fun validateEffect(effect: Effect, move: MoveDefinition): String? {
-        val needsTrack = effect is Effect.MarkProgress || effect is Effect.ClearProgress || effect is Effect.RaiseRank
+        val needsTrack = effect is Effect.MarkProgress || effect is Effect.ClearProgress || effect is Effect.RaiseRank ||
+            effect is Effect.StartTrack || effect is Effect.EndTrack || effect is Effect.MarkExperience ||
+            (effect is Effect.TriggerMove && effect.amountByRank)
         if (needsTrack && move.progressTrack == null) return "progress effects need the move's track"
         return when (effect) {
             is Effect.AdjustMomentum -> "momentum effect of 0".takeIf { effect.amount == 0 }
             is Effect.AdjustMeter -> "${effect.meter} effect of 0".takeIf { effect.amount == 0 }
             is Effect.MarkProgress -> "mark_progress needs times >= 1".takeIf { effect.times < 1 }
             is Effect.ClearProgress -> "clear_progress keeps 0..9 boxes".takeIf { effect.keepBoxes !in 0..9 }
-            is Effect.RaiseRank, is Effect.ClearDebility -> null
+            is Effect.RaiseRank, is Effect.ClearDebility, is Effect.StartTrack, is Effect.EndTrack -> null
+            is Effect.MarkExperience -> "mark_experience offset must be -4..0".takeIf { effect.rankOffset !in -4..0 }
+            is Effect.SpendExperience -> "spend_experience needs amount >= 1".takeIf { effect.amount < 1 }
             is Effect.NextRollBonus -> when {
                 effect.amount < 1 -> "next_roll_bonus needs amount >= 1"
                 effect.move != null && !idPattern.matches(effect.move) -> "next_roll_bonus for an invalid move id ${effect.move}"
                 else -> null
             }
-            is Effect.TriggerMove -> "trigger_move to an invalid id ${effect.move}".takeUnless { idPattern.matches(effect.move) }
+            is Effect.TriggerMove -> when {
+                !idPattern.matches(effect.move) -> "trigger_move to an invalid id ${effect.move}"
+                effect.amountByRank && effect.amount != null -> "trigger_move has both amount and amount_by_rank"
+                else -> null
+            }
         }
     }
 

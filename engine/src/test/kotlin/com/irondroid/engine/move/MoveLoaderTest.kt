@@ -206,4 +206,31 @@ class MoveLoaderTest {
         val text = validText.replace("\"miss\": \"c\"", "\"miss\": \"c\", \"options\": { \"rest\": \"Rest\" }")
         assertEquals(setOf("rest"), MoveLoader.load(structure(move), bothLanguages(text))["face_danger"]?.optionIds)
     }
+
+    @Test
+    fun `vow and experience effects are validated`() {
+        val errors = errorsOf(
+            structure(
+                """{ "id": "trackless", "category": "quest", "roll": { "type": "none" },
+                     "effects": [{ "type": "end_track" }, { "type": "mark_experience" },
+                                 { "type": "trigger_move", "move": "endure_stress", "amount_by_rank": true }] }""",
+                """{ "id": "odd_values", "category": "quest", "track": "vow", "roll": { "type": "none" },
+                     "effects": [{ "type": "mark_experience", "rank_offset": 1 }, { "type": "spend_experience", "amount": 0 },
+                                 { "type": "trigger_move", "move": "endure_stress", "amount": 2, "amount_by_rank": true }] }""",
+                """{ "id": "rolled_choice", "category": "quest", "roll": { "type": "action", "sources": ["heart"] },
+                     "choice": { "count": 1, "options": [{ "id": "a" }] },
+                     "outcomes": { "strong_hit": {}, "weak_hit": {}, "miss": {} } }""",
+            ),
+            mapOf("en" to texts(), "es" to texts()),
+        )
+        val expected = listOf(
+            "Move trackless: progress effects need the move's track",
+            "Move odd_values: mark_experience offset must be -4..0",
+            "Move odd_values: spend_experience needs amount >= 1",
+            "Move odd_values: trigger_move has both amount and amount_by_rank",
+            "Move rolled_choice: a rolled move puts its choices in outcomes",
+        )
+        expected.forEach { line -> assertTrue(line in errors, "Missing \"$line\" in $errors") }
+        assertEquals(3, errors.count { it == "Move trackless: progress effects need the move's track" })
+    }
 }
