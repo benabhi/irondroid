@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "tables": {
+    "pay_the_price": {
+      "name": "Pay the Price",
+      "rows": {
+        "roll_again_worse": "Roll again and apply that result but make it worse. If you roll this result yet again, think of something dreadful that changes the course of your quest (Ask the Oracle if unsure) and make it happen.",
+        "trust_lost": "A person or community you trusted loses faith in you, or acts against you.",
+        "loved_ones_in_danger": "A person or community you care about is exposed to danger.",
+        "separated": "You are separated from something or someone.",
+        "unintended_effect": "Your action has an unintended effect.",
+        "value_lost": "Something of value is lost or destroyed.",
+        "situation_worsens": "The current situation worsens.",
+        "new_danger": "A new danger or foe is revealed.",
+        "delay_or_disadvantage": "It causes a delay or puts you at a disadvantage.",
+        "harmful": "It is harmful.",
+        "stressful": "It is stressful.",
+        "surprising_development": "A surprising development complicates your quest.",
+        "wastes_resources": "It wastes resources.",
+        "against_intentions": "It forces you to act against your best intentions.",
+        "ally_in_harms_way": "A friend, companion, or ally is put in harm's way (or you are, if alone).",
+        "roll_twice": "Roll twice more on this table. Both results occur. If they are the same result, make it worse."
+      }
+    }
+  }
+}

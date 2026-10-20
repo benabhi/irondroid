@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "tables": {
+    "pay_the_price": {
+      "name": "Pagar el precio",
+      "rows": {
+        "roll_again_worse": "Tirá de nuevo y aplicá ese resultado, pero empeorado. Si vuelve a salir este resultado, pensá en algo terrible que cambie el rumbo de tu búsqueda (Preguntá al oráculo si tenés dudas) y hacelo realidad.",
+        "trust_lost": "Una persona o comunidad en la que confiabas pierde la fe en vos o actúa en tu contra.",
+        "loved_ones_in_danger": "Una persona o comunidad que te importa queda expuesta al peligro.",
+        "separated": "Quedás separado de algo o de alguien.",
+        "unintended_effect": "Tu acción tiene un efecto no deseado.",
+        "value_lost": "Algo de valor se pierde o se destruye.",
+        "situation_worsens": "La situación actual empeora.",
+        "new_danger": "Se revela un nuevo peligro o enemigo.",
+        "delay_or_disadvantage": "Provoca una demora o te deja en desventaja.",
+        "harmful": "Es dañino.",
+        "stressful": "Es estresante.",
+        "surprising_development": "Un giro sorprendente complica tu búsqueda.",
+        "wastes_resources": "Desperdicia recursos.",
+        "against_intentions": "Te obliga a actuar en contra de tus mejores intenciones.",
+        "ally_in_harms_way": "Un amigo, compañero o aliado queda en peligro (o vos, si estás solo).",
+        "roll_twice": "Tirá dos veces más en esta tabla. Pasan los dos resultados. Si son el mismo resultado, empeoralo."
+      }
+    }
+  }
+}

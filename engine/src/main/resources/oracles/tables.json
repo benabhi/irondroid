@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "tables": [
+    {
+      "id": "pay_the_price",
+      "rows": [
+        { "id": "roll_again_worse", "min": 1, "max": 2, "then": "roll_again" },
+        { "id": "trust_lost", "min": 3, "max": 5 },
+        { "id": "loved_ones_in_danger", "min": 6, "max": 9 },
+        { "id": "separated", "min": 10, "max": 16 },
+        { "id": "unintended_effect", "min": 17, "max": 23 },
+        { "id": "value_lost", "min": 24, "max": 32 },
+        { "id": "situation_worsens", "min": 33, "max": 41 },
+        { "id": "new_danger", "min": 42, "max": 50 },
+        { "id": "delay_or_disadvantage", "min": 51, "max": 59 },
+        { "id": "harmful", "min": 60, "max": 68 },
+        { "id": "stressful", "min": 69, "max": 77 },
+        { "id": "surprising_development", "min": 78, "max": 85 },
+        { "id": "wastes_resources", "min": 86, "max": 90 },
+        { "id": "against_intentions", "min": 91, "max": 94 },
+        { "id": "ally_in_harms_way", "min": 95, "max": 98 },
+        { "id": "roll_twice", "min": 99, "max": 100, "then": "roll_twice" }
+      ]
+    }
+  ]
+}
