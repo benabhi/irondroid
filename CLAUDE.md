@@ -52,26 +52,47 @@ Se usa el modelo propio de Lific, sin imitar otros gestores: no hay ciclos, spri
 
 ## Forma de trabajo (OBLIGATORIA)
 
-### Tareas secuenciales y aprobadas por el usuario
+### Un hilo por plan
 
-1. **Una tarea por vez.** No se empieza ninguna tarea, ni la primera, hasta que el usuario lo diga. Solo él da la confirmación para seguir con la siguiente.
-2. Al empezar: issue en `active`, comentario de inicio con el enfoque, y rama nueva de git (ver abajo).
-3. Al terminar la implementación: se instala en el celular por USB, se marca la espera con `link_issues(target='IRON-N', relation_type='blocks', user='benabhi', note='qué probar')` y se le avisa al usuario.
-4. **El usuario prueba y aprueba.** Recién con su confirmación: merge a `main`, se limpia la espera (`unlink_issues`) y el issue pasa a `done` con evidencia. Si pide cambios, se sigue en la misma rama y se vuelve al paso 3.
-5. No se pasa a la siguiente tarea hasta que el usuario lo indique.
+El usuario abre un **hilo nuevo en el proyecto de Claude por cada plan de Lific** (`IRON-PLAN-N`) y los planes se hacen de a uno. Dentro del hilo, las tareas del plan se hacen **de a una**, en el orden del plan. Al abrir el hilo:
+
+1. Leé este archivo y el plan con `get_plan(plan='IRON-PLAN-N')` (y `get_briefing` si hace falta contexto).
+2. Contale al usuario, en pocas líneas y en español, qué trae el plan y cuál es la primera tarea. **No arranques nada.**
+
+### Ciclo de cada tarea
+
+1. **Contar qué trae.** Antes de cada tarea, una explicación breve y sin jerga de qué se va a hacer y qué se va a poder probar. Si hace falta algo que solo tiene el usuario (una clave, una decisión), se dice ahí.
+2. **Esperar "implementar".** Ninguna tarea empieza, ni la primera, hasta que el usuario escribe "implementar" (o algo equivalente e inequívoco sobre esa tarea). Si dice algo más vago, como "quiero empezar el plan", se le pregunta si se implementa la tarea que sigue.
+3. **Arrancar.** Issue en `active`. Si es la primera tarea del plan, también el issue principal y su módulo en `active`. Comentario de inicio con el enfoque y las decisiones, y rama nueva desde `main` (ver Git).
+4. **Trabajar y comentar.** Comentarios en el issue con lo que se aprende (ver abajo) y el checklist del hilo actualizado.
+5. **Probar uno mismo en el celular** antes de molestar al usuario: `.\scripts\run.ps1 -NoLogcat`, y después manejar la app por adb (`adb shell input tap`, `uiautomator dump` para ubicar botones, `adb exec-out screencap -p` para capturas, `adb logcat -d` para medir). Desde Git Bash, `export MSYS_NO_PATHCONV=1` para que adb no reciba rutas rotas.
+6. **Pedir la prueba.** Comentario con los resultados (y capturas si ameritan), espera con `link_issues(target='IRON-N', relation_type='blocks', user='benabhi', note='qué probar')`, comentario con qué se pidió probar (fecha y hora), y el aviso al usuario (ver abajo).
+7. **Si el usuario encuentra problemas:** se anotan en un comentario del issue. Si no dijo qué hacer, se le pregunta si se arreglan ahora o quedan anotados para más adelante (con una recomendación). Los arreglos van en **la misma rama** y se vuelve al paso 5.
+8. **Aprobación.** Solo con "aprobar" (si dice "funcionó" o "se ve bien" sin "aprobar", se le pregunta si lo aprueba): merge `--no-ff` a `main` (sin borrar la rama), `unlink_issues(target='IRON-N', user='benabhi')`, y `update_issue(status='done', evidence=...)` con su cita textual y la hora. Cerrar el issue cierra su paso del plan.
+9. **Siguiente.** Se le cuenta brevemente qué trae la tarea que sigue (paso 1) **sin arrancarla**. Si era la última del plan, se cierra el plan (informe, issue principal y respaldo: ver más abajo).
 
 ### Aviso al terminar cada tarea
 
-Cada vez que se termina una tarea se le manda al usuario un **resumen corto, fácil de leer y sin jerga**: qué se hizo, qué tiene que probar y cómo (pasos concretos en el celular), y qué queda pendiente si algo quedó. Pocas líneas, no un informe.
+Cada vez que se termina una tarea se le manda al usuario un **resumen corto, fácil de leer y sin jerga**: qué se hizo, qué tiene que probar y cómo (pasos concretos en el celular), y qué queda pendiente si algo quedó. Pocas líneas, no un informe. Si hay una captura que lo muestra, se adjunta.
 
 ### Comentarios en los issues
 
 Cada issue se comenta con información útil mientras se trabaja, no solo al final:
 
 - Al empezar: enfoque elegido y decisiones tomadas.
-- Durante: problemas encontrados, cambios de rumbo, comandos o configuraciones relevantes.
+- Durante: problemas encontrados, cambios de rumbo, comandos o configuraciones relevantes, mediciones.
 - Al pedir aprobación: qué se pidió probar, con fecha y hora.
+- Lo que dice el usuario al probar: sus observaciones, casi textuales.
 - Al cerrar: resultado, cómo se verificó, rama y commits, y la confirmación del usuario (cuándo y qué dijo).
+- **Capturas**, solo cuando aportan (algo visual, un antes y después, una medición en pantalla): se suben al issue con `upload_attachment(entity='IRON-N', filename='IRON-N_<qué-muestra>.png', content_base64=...)` y se mencionan en el comentario.
+
+### Notas que pide el usuario
+
+Cuando el usuario pide "anotar" algo (una idea, una preferencia, una decisión), se registra donde corresponde y se le dice dónde quedó:
+
+- **Decisiones y preferencias** que cambian requisitos: en la página del SRD que corresponde, con `[Decidido]`, la fecha y que lo decidió benabhi. Si afecta a un issue ya planificado, también un comentario en ese issue.
+- **Ideas nuevas**: issue en `backlog`, módulo Ideas a futuro, y una línea en la sección 12 del SRD (IRON-DOC-8).
+- Si la tarea en curso no tiene que ver, se anota sin cambiar de rama ni de tarea.
 
 ### Informes (carpeta Informes)
 
@@ -112,6 +133,8 @@ Cada issue se comenta con información útil mientras se trabaja, no solo al fin
 - `.mcp.json` define el servidor `lific` (`lific --db <ruta a lific.db> mcp`, por stdio).
 - Las credenciales las carga el usuario en `.claude/settings.local.json` (ignorado por git). Claude no las escribe ni las commitea.
 - Si algo falla, diagnosticalo y arreglalo vos; pedile algo al usuario solo si hace falta un dato que únicamente él tiene.
+- **Si el MCP `lific` no conecta en la sesión**, no se deja de usar Lific: se le habla al mismo servidor por stdio con un script de Node en el scratchpad (`lific --db G:/irondroid/lific.db mcp`, con `cwd` en la raíz del repo; mensajes `initialize`, `notifications/initialized` y `tools/call`). Los argumentos JSON van en un archivo escrito con Write, porque desde la shell se pierden las barras invertidas. La REST de la web (`http://127.0.0.1:3456/api/...`) también responde, sin token, para leer.
+- Los merges que tocan `lific.db` fallan con el servicio corriendo (Windows bloquea el archivo): copia de la base, `lific service stop`, merge, `lific service restart`.
 
 ## Convenciones de código
 
