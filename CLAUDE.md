@@ -86,6 +86,17 @@ Cada issue se comenta con información útil mientras se trabaja, no solo al fin
 - También van ahí los informes de estado que sirvan para mantener al usuario al día (avance general, decisiones importantes, problemas).
 - Al cerrar un módulo o plan, enlazá su informe desde un comentario en el issue principal correspondiente.
 
+### Respaldo de Lific al cerrar cada plan (OBLIGATORIO, NO NEGOCIABLE)
+
+**Cada vez que se cierra un plan de Lific (`IRON-PLAN-N`) se hace un respaldo completo con `lific dump`.** Sin respaldo, el plan no se da por terminado.
+
+- Se hace después de escribir el informe y cerrar el issue principal, para que el respaldo incluya todo.
+- Comando, desde la raíz del repo (funciona con el servicio corriendo):
+  `lific dump --out backups/plans/IRON-PLAN-<N>_<AAAAMMDD-HHMM>.tar.gz`
+- La carpeta `backups/plans/` no va a git (`backups/` está en `.gitignore`). No se borra ni se rota: cada plan deja su archivo.
+- El `.tar.gz` trae la base, todos los adjuntos y un `manifest.json`. Se restaura con `lific restore`.
+- Se verifica que el archivo exista y pese más de 0 bytes, y se deja un comentario en el issue principal del plan con el nombre del archivo, el tamaño y la fecha.
+
 ## Git (OBLIGATORIO)
 
 - Rama principal: `main`. No se trabaja directo sobre `main`.
