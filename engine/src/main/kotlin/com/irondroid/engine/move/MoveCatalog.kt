@@ -33,6 +33,10 @@ class MoveCatalog internal constructor(
                 else -> null
             }
         }.toSet() - byId.keys
+
+    /** Oracle tables named by roll_table effects. They are loaded with the oracles, not with the moves. */
+    fun referencedTables(): Set<String> =
+        moves.flatMap { it.allEffects }.filterIsInstance<Effect.RollTable>().map { it.table }.toSet()
 }
 
 /** Reads and validates moves.json and its per-language text files. */
@@ -93,6 +97,9 @@ object MoveLoader {
             if (!idPattern.matches(move.id)) errors += "$where: id must be snake_case"
             val roll = move.roll
             if (roll is MoveRoll.Action && roll.sources.isEmpty()) errors += "$where: action roll needs at least one source"
+            if (roll is MoveRoll.Action && roll.pick != SourcePick.ANY && roll.sources.size < 2) {
+                errors += "$where: picking the highest or lowest needs two sources or more"
+            }
             if (roll is MoveRoll.None && move.outcomes != null) errors += "$where: a move without a roll has no outcomes"
             if (roll !is MoveRoll.None && move.outcomes == null) errors += "$where: a rolled move needs outcomes"
             if (roll !is MoveRoll.None && move.choice != null) errors += "$where: a rolled move puts its choices in outcomes"
@@ -126,7 +133,9 @@ object MoveLoader {
             is Effect.AdjustMeter -> "${effect.meter} effect of 0".takeIf { effect.amount == 0 }
             is Effect.MarkProgress -> "mark_progress needs times >= 1".takeIf { effect.times < 1 }
             is Effect.ClearProgress -> "clear_progress keeps 0..9 boxes".takeIf { effect.keepBoxes !in 0..9 }
-            is Effect.RaiseRank, is Effect.ClearDebility, is Effect.StartTrack, is Effect.EndTrack -> null
+            is Effect.RaiseRank, is Effect.ClearDebility, is Effect.StartTrack, is Effect.EndTrack,
+            is Effect.Suffer, is Effect.MarkDebility, is Effect.AskOracle, is Effect.EndCharacter -> null
+            is Effect.RollTable -> "roll_table with an invalid id ${effect.table}".takeUnless { idPattern.matches(effect.table) }
             is Effect.MarkExperience -> "mark_experience offset must be -4..0".takeIf { effect.rankOffset !in -4..0 }
             is Effect.SpendExperience -> "spend_experience needs amount >= 1".takeIf { effect.amount < 1 }
             is Effect.NextRollBonus -> when {

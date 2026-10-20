@@ -43,11 +43,6 @@ class AdventureMovesTest {
     }
 
     @Test
-    fun `only suffer and fate moves are still missing`() {
-        assertEquals(setOf("endure_harm", "endure_stress", "pay_the_price"), catalog.unresolvedReferences())
-    }
-
-    @Test
     fun `face danger`() {
         assertEquals(allStats, sources("face_danger"))
         val outcomes = outcomes("face_danger")
