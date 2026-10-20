@@ -29,6 +29,16 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // Lists the bundled languages so Android 13+ offers them in the per-app language settings.
+    androidResources {
+        generateLocaleConfig = true
+    }
+
+    lint {
+        error += "HardcodedText"
+        error += "MissingTranslation"
+    }
 }
 
 dependencies {

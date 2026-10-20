@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Base language (English). Every user-visible text lives here; translations go in values-<lang>. -->
 <resources>
     <string name="app_name" translatable="false">irondroid</string>
+    <string name="welcome_title">Welcome to irondroid</string>
+    <string name="welcome_subtitle">Your Ironsworn journey begins here.</string>
 </resources>
