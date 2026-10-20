@@ -7,11 +7,15 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.MotionEvent
+import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updateLayoutParams
 import androidx.webkit.WebViewAssetLoader
 import org.json.JSONObject
 
@@ -46,6 +50,14 @@ class DiceOverlayView(context: Context, private val listener: Listener) : WebVie
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
                 assetLoader.shouldInterceptRequest(request.url)
         }
+        // Keep the dice table clear of the status and navigation bars.
+        ViewCompat.setOnApplyWindowInsetsListener(this) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            view.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                setMargins(bars.left, bars.top, bars.right, bars.bottom)
+            }
+            insets
+        }
         addJavascriptInterface(Bridge(), "DiceBridge")
         loadUrl(PAGE_URL)
     }
@@ -78,6 +90,7 @@ class DiceOverlayView(context: Context, private val listener: Listener) : WebVie
 
         @JavascriptInterface
         fun onRollComplete(json: String) {
+            Log.d(TAG, "raw: $json")
             val report = DiceRollReport.fromJson(JSONObject(json))
             Log.i(TAG, "roll: $report")
             mainHandler.post { listener.onRollComplete(report) }
@@ -125,10 +138,14 @@ data class DiceRollReport(
     val avgFps: Double,
     val worstFrameMs: Double,
     val slowFrames: Int,
+    val simulationMs: Double,
+    /** Outcome of every hidden throw: "ok", or why it was redone ("stacked", "tilted", "slow"). */
+    val throws: List<String>,
 ) {
     companion object {
         fun fromJson(json: JSONObject): DiceRollReport {
             val shown = json.getJSONArray("shown")
+            val throws = json.getJSONArray("throws")
             return DiceRollReport(
                 shown = List(shown.length()) { shown.getInt(it) },
                 durationMs = json.getDouble("durationMs"),
@@ -137,6 +154,8 @@ data class DiceRollReport(
                 avgFps = json.getDouble("avgFps"),
                 worstFrameMs = json.getDouble("worstFrameMs"),
                 slowFrames = json.getInt("slowFrames"),
+                simulationMs = json.getDouble("simulationMs"),
+                throws = List(throws.length()) { throws.getString(it) },
             )
         }
     }

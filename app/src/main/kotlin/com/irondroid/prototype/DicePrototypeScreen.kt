@@ -152,6 +152,11 @@ private fun ResultsCard(state: DicePrototypeState) {
             val last = state.reports.lastOrNull()
             if (last != null && !state.rolling) {
                 val (roll, report) = last
+                val reasonLabels = mapOf(
+                    "stacked" to stringResource(R.string.dice_proto_reason_stacked),
+                    "tilted" to stringResource(R.string.dice_proto_reason_tilted),
+                    "slow" to stringResource(R.string.dice_proto_reason_slow),
+                )
                 val shown = report.shown
                 Text(
                     stringResource(R.string.dice_proto_shown, shown.getOrNull(0) ?: 0, shown.getOrNull(1) ?: 0, shown.getOrNull(2) ?: 0),
@@ -174,6 +179,15 @@ private fun ResultsCard(state: DicePrototypeState) {
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                 )
+                Text(
+                    stringResource(
+                        R.string.dice_proto_throws,
+                        report.throws.size - 1,
+                        report.throws.dropLast(1).joinToString(", ") { reasonLabels[it] ?: it }.ifEmpty { "-" },
+                        report.simulationMs.format(0),
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                )
                 val all = state.reports
                 Text(
                     stringResource(
@@ -183,6 +197,7 @@ private fun ResultsCard(state: DicePrototypeState) {
                         all.map { it.second.avgFps }.average().format(1),
                         all.minOf { it.second.avgFps }.format(1),
                         (all.map { it.second.durationMs }.average() / 1000).format(2),
+                        all.sumOf { it.second.throws.size - 1 },
                     ),
                     style = MaterialTheme.typography.bodySmall,
                 )

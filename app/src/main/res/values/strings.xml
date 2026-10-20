@@ -22,5 +22,9 @@
     <string name="dice_proto_match">The dice match the engine result</string>
     <string name="dice_proto_mismatch">The dice do NOT match the engine result</string>
     <string name="dice_proto_metrics">%1$s fps average · worst frame %2$s ms · %3$d slow frames of %4$d · lasted %5$s s · first frame after %6$s ms</string>
-    <string name="dice_proto_session">This session: %1$d rolls, %2$d matched · average %3$s fps, lowest %4$s fps · average duration %5$s s</string>
+    <string name="dice_proto_session">This session: %1$d rolls, %2$d matched · average %3$s fps, lowest %4$s fps · average duration %5$s s · %6$d hidden re-throws</string>
+    <string name="dice_proto_throws">Hidden re-throws: %1$d (%2$s) · physics precomputed in %3$s ms</string>
+    <string name="dice_proto_reason_stacked">die on top of another</string>
+    <string name="dice_proto_reason_tilted">die leaning</string>
+    <string name="dice_proto_reason_slow">slow to settle</string>
 </resources>

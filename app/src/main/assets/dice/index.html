@@ -23,8 +23,27 @@
     const CHALLENGE_SET = { name: "challenge", foreground: "#1c1c1c", background: "#e9e3d5", outline: "#e9e3d5", texture: "none", material: "plastic" };
 
     const SLOW_FRAME_MS = 20;
+    // Walls sit at this fraction of the visible area (the library uses 0.93), so dice tops seen
+    // in perspective do not spill past the screen edge.
+    const WALL_FRACTION = 0.88;
+    // A throw is redone, before anything is shown, if it needs more physics steps than this
+    // (60 per second) to settle: long settles are dice wobbling against each other.
+    const MAX_SETTLE_STEPS = 210;
+    const MAX_THROW_ATTEMPTS = 8;
+    // A die is unreadable if its lowest point is off the table (resting on another die) or its
+    // top face is tilted (leaning on another die).
+    const MAX_LIFT_FRACTION = 0.2;
+    const MAX_TILT_RAD = 0.15;
+    // Seconds a die must stay still to count as settled (the library waits 0.9 s, which makes
+    // the roll feel long after the dice have visibly stopped).
+    const SLEEP_TIME_LIMIT_S = 0.4;
+
     let box = null;
     let frameTimes = null;
+    let pendingNotation = null;
+    let throwLog = null;
+    let stepLog = null;
+    let simulationMs = 0;
 
     function report(method, payload) {
       if (bridge && bridge[method]) bridge[method](JSON.stringify(payload));
@@ -54,6 +73,80 @@
       };
     }
 
+    function shortenSettleWait() {
+      const spawnDice = box.spawnDice.bind(box);
+      box.spawnDice = function (vector, existing) {
+        spawnDice(vector, existing);
+        const die = existing || box.diceList[box.diceList.length - 1];
+        if (die && die.body) die.body.sleepTimeLimit = SLEEP_TIME_LIMIT_S;
+      };
+    }
+
+    function shrinkWalls() {
+      const makeWorldBox = box.makeWorldBox.bind(box);
+      box.makeWorldBox = function () {
+        makeWorldBox();
+        const k = WALL_FRACTION / 0.93;
+        const walls = box.box_body;
+        walls.topWall.position.y *= k;
+        walls.bottomWall.position.y *= k;
+        walls.leftWall.position.x *= k;
+        walls.rightWall.position.x *= k;
+      };
+    }
+
+    // Why a settled die cannot be read, or null if it lies flat on the table.
+    function unreadableReason(die) {
+      die.position.copy(die.body.position);
+      die.quaternion.copy(die.body.quaternion);
+      die.updateMatrixWorld(true);
+      const geometry = die.geometry;
+      if (!geometry.boundingSphere) geometry.computeBoundingSphere();
+      const radius = geometry.boundingSphere.radius;
+
+      const positions = geometry.getAttribute("position");
+      const v = die.position.clone();
+      let lowest = Infinity;
+      for (let i = 0; i < positions.count; i++) {
+        v.fromBufferAttribute(positions, i).applyMatrix4(die.matrixWorld);
+        lowest = Math.min(lowest, v.z);
+      }
+      if (lowest > radius * MAX_LIFT_FRACTION) return "stacked";
+
+      // Same face test the library uses to read the value: the face whose normal points up.
+      const normals = geometry.getAttribute("normal").array;
+      const up = v.clone().set(0, 0, die.shape === "d4" ? -1 : 1);
+      let tilt = Infinity;
+      for (let g = 0; g < geometry.groups.length; g++) {
+        if (geometry.groups[g].materialIndex === 0) continue;
+        const n = v.clone().set(normals[g * 9], normals[g * 9 + 1], normals[g * 9 + 2]);
+        tilt = Math.min(tilt, n.applyQuaternion(die.body.quaternion).angleTo(up));
+      }
+      return tilt > MAX_TILT_RAD ? "tilted" : null;
+    }
+
+    // The library simulates the whole throw before animating it. Inspect that hidden result and
+    // throw again until every die lands flat, apart and quickly enough.
+    function installCleanThrows() {
+      const simulate = box.simulateThrow.bind(box);
+      box.simulateThrow = function () {
+        const startedAt = performance.now();
+        for (let attempt = 1; ; attempt++) {
+          simulate();
+          let reason = box.iteration > MAX_SETTLE_STEPS ? "slow" : null;
+          for (const die of box.diceList) reason = reason || unreadableReason(die);
+          if (throwLog) throwLog.push(reason || "ok");
+          if (stepLog) stepLog.push(box.iteration);
+          if (!reason || attempt >= MAX_THROW_ATTEMPTS) break;
+          box.notationVectors = box.startClickThrow(pendingNotation);
+          for (const vector of box.notationVectors.vectors) box.spawnDice(vector);
+        }
+        simulationMs = performance.now() - startedAt;
+        // Frames drawn while clearing the table are not part of the animation.
+        if (frameTimes) frameTimes = [];
+      };
+    }
+
     function frameStats(times, startedAt) {
       const gaps = [];
       for (let i = 1; i < times.length; i++) gaps.push(times[i] - times[i - 1]);
@@ -71,6 +164,9 @@
       if (!box) return;
       const notation = "1d6+2d10@" + [action, challenge1, challenge2].join(",");
       frameTimes = [];
+      pendingNotation = notation;
+      throwLog = [];
+      stepLog = [];
       const startedAt = performance.now();
       try {
         const result = await box.roll(notation);
@@ -81,6 +177,9 @@
           notation: notation,
           shown: shown,
           durationMs: performance.now() - startedAt,
+          simulationMs: simulationMs,
+          throws: throwLog,
+          steps: stepLog,
         }, stats));
       } catch (e) {
         frameTimes = null;
@@ -98,8 +197,11 @@
           theme_material: "plastic",
           baseScale: 100,
         });
+        shrinkWalls();
         await box.initialize();
         await installPerDieColors();
+        installCleanThrows();
+        shortenSettleWait();
         instrumentRenderer();
         const gl = box.renderer.getContext();
         const info = gl.getExtension("WEBGL_debug_renderer_info");
