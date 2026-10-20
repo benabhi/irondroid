@@ -12,7 +12,7 @@ Everything below is installed per user, without administrator rights.
 | Gradle wrapper | 9.8.2 (bin distribution) | `gradlew`, `gradlew.bat`, `gradle/wrapper/` in this repo | `gradle wrapper --gradle-version 9.8.2 --distribution-type bin` |
 | Android SDK command-line tools | 23.0 (`commandlinetools-win-16111833`) | `C:\Android\Sdk\cmdline-tools\latest` | Official zip from `dl.google.com`, SHA-1 checked |
 | Android SDK Platform-Tools (adb) | 37.0.1 | `C:\Android\Sdk\platform-tools` | `sdkmanager "platform-tools"` |
-| Android SDK Platform | API 36 | `C:\Android\Sdk\platforms\android-36` | `sdkmanager "platforms/android-36"` |
+| Android SDK Platform | API 36 and API 37.0 | `C:AndroidSdkplatformsndroid-36`, `android-37.0` | `sdkmanager "platforms/android-36" "platforms/android-37.0"` |
 | Android SDK Build-Tools | 36.1.0 | `C:\Android\Sdk\build-tools\36.1.0` | `sdkmanager "build-tools/36.1.0"` |
 
 Always build with the wrapper (`.\gradlew.bat`), never with the global `gradle`.
@@ -42,3 +42,12 @@ adb devices              # the phone appears as "device" once USB debugging is a
 - `sdkmanager` prints a deprecation warning pointing to the new `android sdk` command; both work.
 - Package names use `/` (`platforms/android-36`). The old `;` form fails when calling `sdkmanager.bat` from PowerShell, because the batch file splits arguments on `;`.
 - Installing SDK packages requires accepting the Android SDK license (`sdkmanager --licenses`).
+
+## Building
+
+```powershell
+.\gradlew.bat assembleDebug   # APK at app\build\outputs\apk\debug\app-debug.apk
+```
+
+Project layout: `:app` (Android app, Compose), `:engine` (pure Kotlin/JVM rules engine) and `:data` (Android library for persistence).
+Versions live in `gradle/libs.versions.toml`. `compileSdk` is 37 because current AndroidX libraries require it; `targetSdk` stays at 36.
