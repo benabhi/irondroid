@@ -5,9 +5,11 @@ import android.content.Context
 import androidx.core.content.edit
 import com.irondroid.data.CampaignStore
 import com.irondroid.data.IrondroidDatabase
-import com.irondroid.engine.action.ActionCatalog
 import com.irondroid.engine.action.ActionDispatcher
-import com.irondroid.engine.action.CatalogVersion
+import com.irondroid.engine.dice.SeededDice
+import com.irondroid.engine.game.GameActions
+import com.irondroid.engine.move.MoveLoader
+import com.irondroid.engine.oracle.OracleTableLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -21,12 +23,19 @@ class IrondroidApp : Application() {
 
     val campaignStore: CampaignStore by lazy { CampaignStore(database) }
 
-    /** The single door for every action (RF-API-04). The actions themselves arrive with IRON-40 and later. */
-    val dispatcher: ActionDispatcher by lazy {
-        ActionDispatcher(ActionCatalog.of(CatalogVersion(1, 0), emptyList()), emptyMap())
+    val games: GameController by lazy { GameController(campaignStore, { dispatcher }, appScope) }
+
+    /**
+     * The actions of the MVP catalog (IRON-43), played on the open campaign. Rule texts follow the
+     * phone's language: Spanish when it is Spanish, English otherwise.
+     */
+    val actions: GameActions by lazy {
+        val language = if (resources.configuration.locales[0].language == "es") "es" else "en"
+        GameActions(games, MoveLoader.fromResources(), OracleTableLoader.fromResources(), SeededDice.fromSeed(System.nanoTime()), language)
     }
 
-    val games: GameController by lazy { GameController(campaignStore, dispatcher, appScope) }
+    /** The single door for every action (RF-API-04), for the screens and the AI alike. */
+    val dispatcher: ActionDispatcher by lazy { actions.dispatcher() }
 
     private val sessionPreferences by lazy { getSharedPreferences("session", Context.MODE_PRIVATE) }
 

@@ -128,37 +128,41 @@ object GameResources {
         put(
             "moves",
             JsonArray(
-                catalog.moves.map { move ->
-                    val text = checkNotNull(catalog.text(move.id, language)) { "Move ${move.id} has no $language text" }
-                    buildJsonObject {
-                        put("id", move.id)
-                        put("name", text.name)
-                        put("category", move.category.name.lowercase())
-                        put("trigger", text.trigger)
-                        put(
-                            "roll",
-                            when (val roll = move.roll) {
-                                is MoveRoll.Action -> buildJsonObject {
-                                    put("type", "action")
-                                    put("sources", JsonArray(roll.sources.map { JsonPrimitive(it.name.lowercase()) }))
-                                    put("pick", roll.pick.name.lowercase())
-                                }
-                                is MoveRoll.Progress -> buildJsonObject {
-                                    put("type", "progress")
-                                    put("track", roll.track.name.lowercase())
-                                }
-                                MoveRoll.None -> buildJsonObject { put("type", "none") }
-                            },
-                        )
-                        text.strongHit?.let { put("strong_hit", it) }
-                        text.weakHit?.let { put("weak_hit", it) }
-                        text.miss?.let { put("miss", it) }
-                        if (text.options.isNotEmpty()) put("options", JsonObject(text.options.mapValues { JsonPrimitive(it.value) }))
-                        if (text.bonuses.isNotEmpty()) put("bonuses", JsonObject(text.bonuses.mapValues { JsonPrimitive(it.value) }))
-                    }
-                },
+                catalog.moves.map { move(catalog, it.id, language) },
             ),
         )
+    }
+
+    /** One move with its texts in [language]. */
+    fun move(catalog: MoveCatalog, id: String, language: String): JsonObject {
+        val move = requireNotNull(catalog[id]) { "Unknown move $id" }
+        val text = checkNotNull(catalog.text(move.id, language)) { "Move ${move.id} has no $language text" }
+        return buildJsonObject {
+            put("id", move.id)
+            put("name", text.name)
+            put("category", move.category.name.lowercase())
+            put("trigger", text.trigger)
+            put(
+                "roll",
+                when (val roll = move.roll) {
+                    is MoveRoll.Action -> buildJsonObject {
+                        put("type", "action")
+                        put("sources", JsonArray(roll.sources.map { JsonPrimitive(it.name.lowercase()) }))
+                        put("pick", roll.pick.name.lowercase())
+                    }
+                    is MoveRoll.Progress -> buildJsonObject {
+                        put("type", "progress")
+                        put("track", roll.track.name.lowercase())
+                    }
+                    MoveRoll.None -> buildJsonObject { put("type", "none") }
+                },
+            )
+            text.strongHit?.let { put("strong_hit", it) }
+            text.weakHit?.let { put("weak_hit", it) }
+            text.miss?.let { put("miss", it) }
+            if (text.options.isNotEmpty()) put("options", JsonObject(text.options.mapValues { JsonPrimitive(it.value) }))
+            if (text.bonuses.isNotEmpty()) put("bonuses", JsonObject(text.bonuses.mapValues { JsonPrimitive(it.value) }))
+        }
     }
 
     fun oracles(catalog: OracleTableCatalog, language: String): JsonObject = buildJsonObject {
