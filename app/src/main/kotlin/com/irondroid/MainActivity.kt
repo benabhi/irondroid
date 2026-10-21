@@ -155,7 +155,15 @@ class MainActivity : ComponentActivity() {
                     val last = store.observeCampaigns().first().firstOrNull() ?: return@produceState
                     if (app.games.open(last.id) != null) value = last.title to ActionTools(app.dispatcher)
                 }
-                AiTestScreen(provider, app.aiSettings.model(), campaign?.second, campaign?.first, onBack = leaveTest)
+                AiTestScreen(
+                    provider,
+                    app.aiSettings.model(),
+                    campaign?.second,
+                    campaign?.first,
+                    characterName = campaign?.let { app.games.characterName },
+                    language = app.rulesLanguage,
+                    onBack = leaveTest,
+                )
             }
             Screen.ORACLE_TABLES -> {
                 BackHandler { screen = Screen.CAMPAIGNS }
