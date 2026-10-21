@@ -73,11 +73,31 @@
     <string name="ai_error_server">The AI provider is failing right now. Try again later.</string>
     <string name="ai_error_malformed">The AI sent an answer the app could not read.</string>
 
+    <!-- AI settings (IRON-49). -->
+    <string name="settings_open">Settings</string>
+    <string name="settings_back">Back</string>
+    <string name="settings_ai_title">AI narrator</string>
+    <string name="settings_ai_provider">Provider</string>
+    <string name="settings_ai_model">Model</string>
+    <string name="settings_ai_key">API key</string>
+    <string name="settings_ai_key_saved">Saved key: %1$s</string>
+    <string name="settings_ai_key_missing">No key saved yet.</string>
+    <string name="settings_ai_key_paste">Paste your API key</string>
+    <string name="settings_ai_key_replace">Paste a new key to replace it</string>
+    <string name="settings_ai_key_save">Save key</string>
+    <string name="settings_ai_key_delete">Delete key</string>
+    <string name="settings_ai_key_note">The key is stored encrypted on this phone and only sent to the provider.</string>
+    <string name="settings_ai_check">Test connection</string>
+    <string name="settings_ai_checking">Testing…</string>
+    <string name="settings_ai_check_ready">Everything works: the key is valid and the model can play with the game\'s actions.</string>
+    <string name="settings_ai_check_no_tools">The key works, but this model did not use the game\'s actions. Try another model.</string>
+    <string name="settings_ai_check_time">Answered in %1$d ms</string>
+
     <!-- AI test screen (IRON-47). Development builds only. -->
     <string name="ai_test_open">AI test (development)</string>
     <string name="ai_test_title">AI test</string>
     <string name="ai_test_back">Back</string>
-    <string name="ai_test_no_key">No API key is loaded for the AI provider. In development it is loaded over adb (see IRON-47).</string>
+    <string name="ai_test_no_key">No API key is saved for the AI provider. Add it in Settings.</string>
     <string name="ai_test_provider">Provider: %1$s</string>
     <string name="ai_test_input">What do you do?</string>
     <string name="ai_test_send">Send</string>

@@ -166,7 +166,6 @@ Cuando el usuario pide "anotar" algo (una idea, una preferencia, una decisión),
 | Correr los tests del motor (JUnit 6, sin celular) | `.\gradlew.bat :engine:test` (informe en `engine\build\reports\tests\test\index.html`) |
 | Correr los tests de la capa de proveedores de IA (JUnit 6, sin celular ni internet; `check` también exige 95 % de cobertura) | `.\gradlew.bat :ai:check` |
 | Probar DeepSeek de verdad desde la PC (usa `DEEPSEEK_API_KEY` del entorno; se saltea si no está; no corre con `check`) | `.\gradlew.bat :ai:liveTest` |
-| Cargar la clave de DeepSeek en la app de desarrollo del celular (queda cifrada; nunca en el repo) | `adb shell am start -n com.irondroid/.MainActivity --es dev_deepseek_api_key ([Environment]::GetEnvironmentVariable('DEEPSEEK_API_KEY','User'))` |
 | Correr los tests de la base de datos (Room con Robolectric, sin celular) | `.\gradlew.bat :data:testDebugUnitTest` |
 | Probar la base de datos en el celular (instala y desinstala un APK de prueba) | `.\gradlew.bat :data:connectedDebugAndroidTest` |
 | Ver la cobertura de los tests del motor (Kover; `check` falla si baja de 95 % de líneas) | `.\gradlew.bat :engine:koverHtmlReport` (informe en `engine\build\reports\kover\html\index.html`) |

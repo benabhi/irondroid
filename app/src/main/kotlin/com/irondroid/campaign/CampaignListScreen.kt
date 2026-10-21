@@ -40,6 +40,7 @@ fun CampaignListScreen(
     onDelete: (Long) -> Unit,
     onOpenDicePrototype: () -> Unit,
     onOpenAiTest: (() -> Unit)?,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var pendingDelete by remember { mutableStateOf<CampaignSummary?>(null) }
@@ -51,7 +52,10 @@ fun CampaignListScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(stringResource(R.string.campaigns_title), style = MaterialTheme.typography.headlineMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(R.string.campaigns_title), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
+            TextButton(onClick = onOpenSettings) { Text(stringResource(R.string.settings_open)) }
+        }
         Button(onClick = onNew, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.campaigns_new))
         }
