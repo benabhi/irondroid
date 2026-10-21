@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Backups on Android 11 and lower. Encrypted API keys stay out: their Keystore key is not backed up (IRON-36). -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="api_keys.xml" />
+</full-backup-content>
