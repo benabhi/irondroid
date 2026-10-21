@@ -201,6 +201,14 @@ class NarratorTest {
     }
 
     @Test
+    fun `a price the player wrote is told as a consequence, not as an action`() = runTest {
+        val (ai, narrator) = narrator(ScriptedTurn.text("Te roban."))
+        narrator.afterChoice("Me roban el cuchillo", "{}", emptyList(), ownConsequence = true)
+        val last = assertIs<ChatMessage.User>(ai.requests.single().messages.last()).text
+        assertTrue("wrote this consequence themselves" in last && "Me roban el cuchillo" in last, last)
+    }
+
+    @Test
     fun `after a choice the model gets what the player picked and the result`() = runTest {
         val (ai, narrator) = narrator(ScriptedTurn.text("Eliges seguir."))
         narrator.afterChoice("Seguir adelante", """{"summary":"ok"}""", listOf(PastTurn("Salto", "Caes.")))

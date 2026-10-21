@@ -340,10 +340,15 @@ class GameActions(
                 string("choice", "Id of the open choice")
                 array("options", "Ids of the options you suggest", JsonSchema.StringValue("Option id"))
                 string("why", "Why, in one short sentence")
+                string(
+                    "proposal",
+                    "For an option that leaves the outcome open, such as obvious_outcome of Pay the Price: the concrete outcome you propose, in one short sentence in the player's language",
+                    required = false,
+                )
             },
         ) { args, _ ->
             val picked = optionIds(args)
-            choices.suggest(args.string("choice"), picked, args.string("why"))
+            choices.suggest(args.string("choice"), picked, args.string("why"), args.stringOrNull("proposal"))
             ActionResult("Suggested ${picked.joinToString(", ")}")
         }
 
@@ -391,6 +396,7 @@ class GameActions(
                             ChoiceOption(BURN, "Burn momentum: ${outcomeName(step.burnOutcome)}, momentum back to ${step.character.momentum.reset}"),
                             ChoiceOption(KEEP, "Keep the ${outcomeName(outcome)}"),
                         ),
+                        move = step.record.move,
                     ) { picked -> moveResult(step.character, rules { resolver.decideBurn(step, picked.single() == BURN) }) },
                 )
             }
@@ -404,6 +410,7 @@ class GameActions(
                         "$name: pick ${step.choice.count}",
                         step.choice.options.map { ChoiceOption(it.id, text?.options?.get(it.id) ?: it.id) },
                         step.choice.count,
+                        move = step.record.move,
                     ) { picked -> moveResult(step.character, rules { resolver.choose(step, picked) }) },
                 )
             }

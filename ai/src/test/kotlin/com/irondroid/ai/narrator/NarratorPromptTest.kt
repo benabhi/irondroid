@@ -8,6 +8,7 @@ import com.irondroid.engine.game.GameAccess
 import com.irondroid.engine.game.GameActions
 import com.irondroid.engine.move.MoveLoader
 import com.irondroid.engine.oracle.OracleTableLoader
+import kotlinx.serialization.json.jsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -74,7 +75,10 @@ class NarratorPromptTest {
             override fun save() {}
         }
         val tools = ActionTools.forNarrator(GameActions(game, MoveLoader.fromResources(), oracles, SeededDice.fromSeed(1), "es").dispatcher())
-        val known = tools.specs.map { it.name }.toSet() + oracles.tables.map { it.id }
+        // Besides tools and tables, the prompt may name a tool's parameters, a move's option ids and the result's pending_choice.
+        val parameters = tools.specs.flatMap { it.parameters["properties"]?.jsonObject?.keys.orEmpty() }
+        val options = MoveLoader.fromResources().moves.flatMap { move -> move.choice?.options.orEmpty().map { it.id } }
+        val known = tools.specs.map { it.name }.toSet() + oracles.tables.map { it.id } + parameters + options + "pending_choice"
         val named = Regex("`([a-z_0-9]+)`").findAll(spanish + NarratorPrompt.build("Kira", style = NarratorStyle.SOBER)).map { it.groupValues[1] }.toSet()
         assertTrue(named.isNotEmpty())
         assertEquals(emptySet(), named - known)

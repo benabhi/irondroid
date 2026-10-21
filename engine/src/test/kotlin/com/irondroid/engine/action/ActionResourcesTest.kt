@@ -146,7 +146,7 @@ class ActionResourcesTest {
         assertEquals("Pagar el precio", price.getValue("name").jsonPrimitive.content)
         val firstRow = price.getValue("rows").jsonArray.first().jsonObject
         assertEquals(1, firstRow.getValue("min").jsonPrimitive.int)
-        assertTrue(firstRow.getValue("text").jsonPrimitive.content.startsWith("Tirá de nuevo"))
+        assertTrue(firstRow.getValue("text").jsonPrimitive.content.startsWith("Tira de nuevo"))
         assertFailsWith<IllegalStateException> { GameResources.oracles(oracles, "fr") }
     }
 

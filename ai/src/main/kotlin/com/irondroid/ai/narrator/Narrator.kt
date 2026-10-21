@@ -85,10 +85,16 @@ class Narrator(
 
     /**
      * Narrates what follows a choice the player just made with `choose_option` (RF-ENV-11): the
-     * model gets [chosen], the text of the options picked, and the action's [result] as JSON.
+     * model gets [chosen], the text of the options picked, and the action's [result] as JSON. With
+     * [ownConsequence], [chosen] is the price the player wrote themselves for Pay the Price (RF-ENV-07).
      */
-    suspend fun afterChoice(chosen: String, result: String, past: List<PastTurn>, onEvent: (TurnEvent) -> Unit = {}): TurnOutcome =
-        run(listOf(ChatMessage.User(CHOICE_NOTE.format(chosen, result))), past, onEvent)
+    suspend fun afterChoice(
+        chosen: String,
+        result: String,
+        past: List<PastTurn>,
+        ownConsequence: Boolean = false,
+        onEvent: (TurnEvent) -> Unit = {},
+    ): TurnOutcome = run(listOf(ChatMessage.User((if (ownConsequence) OWN_PRICE_NOTE else CHOICE_NOTE).format(chosen, result))), past, onEvent)
 
     private suspend fun run(newMessages: List<ChatMessage>, past: List<PastTurn>, onEvent: (TurnEvent) -> Unit): TurnOutcome {
         val started = clock()
@@ -205,5 +211,11 @@ class Narrator(
         private const val CHOICE_NOTE =
             "(The player chose: %s. Result of choose_option, already applied by the engine: %s) " +
                 "Narrate what follows from this choice."
+
+        /** Model-facing note when the player wrote the price their character pays. */
+        private const val OWN_PRICE_NOTE =
+            "(To pay the price, the player wrote this consequence themselves: \"%s\". It is something bad that happens to " +
+                "their character, not an action of theirs. Result of choose_option, already applied by the engine: %s) " +
+                "Narrate this consequence happening, then give control back."
     }
 }

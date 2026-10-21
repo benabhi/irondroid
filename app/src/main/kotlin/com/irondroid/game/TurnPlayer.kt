@@ -105,8 +105,11 @@ class TurnPlayer(
         run(input.trim()) { onEvent -> narrator.play(input.trim(), past(), onEvent) }
     }
 
-    /** The player picks [optionIds] of the open choice; the narrator tells what follows. */
-    suspend fun choose(optionIds: List<String>) {
+    /**
+     * The player picks [optionIds] of the open choice, shown to them as [chosen] (or the consequence
+     * they wrote themselves); the narrator tells what follows.
+     */
+    suspend fun choose(optionIds: List<String>, chosen: String, ownConsequence: Boolean = false) {
         val narrator = narrator ?: return
         val open = choice ?: return
         if (busy) return
@@ -120,8 +123,7 @@ class TurnPlayer(
             return
         }
         choice = dispatcher.choices.current
-        val chosen = open.options.filter { it.id in optionIds }.joinToString(" · ") { it.text }
-        run(chosen) { onEvent -> narrator.afterChoice(chosen, result.result.toJson().toString(), past(), onEvent) }
+        run(chosen) { onEvent -> narrator.afterChoice(chosen, result.result.toJson().toString(), past(), ownConsequence, onEvent) }
     }
 
     private suspend fun run(input: String, play: suspend ((TurnEvent) -> Unit) -> TurnOutcome) {

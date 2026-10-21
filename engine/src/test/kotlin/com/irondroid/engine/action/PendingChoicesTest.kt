@@ -5,6 +5,7 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlin.test.Test
@@ -219,7 +220,7 @@ class PendingChoicesTest {
                 { "summary": "Weak hit: you make it, at a cost",
                   "data": { "outcome": "weak_hit", "action_die": 4 },
                   "changes": [],
-                  "pending_choice": { "id": "choice_1", "prompt": "Pick the cost of the weak hit", "count": 1,
+                  "pending_choice": { "id": "choice_1", "prompt": "Pick the cost of the weak hit", "count": 1, "move": null,
                     "options": [ { "id": "lose_momentum", "text": "Suffer -1 momentum" }, { "id": "lose_supply", "text": "Suffer -1 supply" } ],
                     "suggestion": null } }
                 """,
@@ -243,6 +244,22 @@ class PendingChoicesTest {
             changes.getValue("changes"),
         )
         assertEquals(3, changes.getValue("changes").jsonArray.size)
+    }
+
+    @Test
+    fun `a suggestion can carry the outcome the AI proposes`() {
+        val choices = PendingChoices()
+        val choice = PendingChoice("Pay the Price", listOf(ChoiceOption("obvious_outcome", "Obvious"), ChoiceOption("roll_on_table", "Table")), move = "pay_the_price") {
+            ActionResult("")
+        }
+        choices.open(choice)
+        choices.suggest(choice.id, listOf("obvious_outcome"), "It fits", "  El puente cede.  ")
+        assertEquals(Suggestion(listOf("obvious_outcome"), "It fits", "El puente cede."), choice.suggestion)
+        val json = choice.toJson()
+        assertEquals("pay_the_price", json.getValue("move").jsonPrimitive.content)
+        assertEquals("El puente cede.", json.getValue("suggestion").jsonObject.getValue("proposal").jsonPrimitive.content)
+        choices.suggest(choice.id, listOf("roll_on_table"), "Fresh", " ")
+        assertEquals(null, choice.suggestion?.proposal)
     }
 
     @Test
