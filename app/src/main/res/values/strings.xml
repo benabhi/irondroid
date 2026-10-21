@@ -141,4 +141,14 @@
     <string name="meter_health">Health</string>
     <string name="meter_spirit">Spirit</string>
     <string name="meter_supply">Supply</string>
+    <string name="choice_title_one">%1$s: choose one</string>
+    <string name="choice_title_many">%1$s: choose %2$d</string>
+    <string name="choice_burn_title">%1$s: burn your momentum (%2$+d) to improve the result?</string>
+    <string name="choice_burn">Burn momentum</string>
+    <string name="choice_keep">Keep the result</string>
+    <string name="choice_suggested">★ %1$s</string>
+    <string name="choice_why">The narrator suggests ★: %1$s</string>
+    <string name="choice_proposal">The narrator\'s proposal: %1$s</string>
+    <string name="choice_write_own">Write my own</string>
+    <string name="choice_write_own_hint">What does it cost you?</string>
 </resources>

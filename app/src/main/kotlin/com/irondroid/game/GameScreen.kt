@@ -38,6 +38,7 @@ import com.irondroid.R
 import com.irondroid.ai.narrator.MoveDecision
 import com.irondroid.ai.narrator.MoveProposal
 import com.irondroid.engine.character.Character
+import com.irondroid.engine.action.ChoiceOption
 import com.irondroid.engine.action.PendingChoice
 import com.irondroid.settings.aiErrorText
 import kotlinx.coroutines.launch
@@ -101,7 +102,7 @@ fun GameScreen(
         when {
             !player.hasNarrator -> Text(stringResource(R.string.game_no_key), color = MaterialTheme.colorScheme.error)
             pendingMove != null -> MovePanel(pendingMove.proposal, player)
-            choice != null && live == null -> ChoicePanel(choice) { picked -> scope.launch { player.choose(picked) } }
+            choice != null && live == null -> ChoicePanel(choice, player, sheet.momentum.value) { picked, text, own -> scope.launch { player.choose(picked, text, own) } }
             else -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = input,
@@ -143,19 +144,48 @@ private fun TurnView(turn: PlayedTurn, playing: Boolean) {
     }
 }
 
-/** The options of [choice], picked by the player. Choices of several options wait for all of them. */
+/**
+ * The options of [choice], picked by the player (RF-ENV-11), with the narrator's suggestion marked
+ * and why. Choices of several options wait for all of them. Pay the Price (RF-ENV-07) shows the
+ * consequence the narrator proposes and lets the player write their own instead.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun ChoicePanel(choice: PendingChoice, onChoose: (List<String>) -> Unit) {
+private fun ChoicePanel(choice: PendingChoice, player: TurnPlayer, momentum: Int, onChoose: (List<String>, String, Boolean) -> Unit) {
     var picked by remember(choice.id) { mutableStateOf(emptyList<String>()) }
+    var writing by remember(choice.id) { mutableStateOf(false) }
+    var own by remember(choice.id) { mutableStateOf("") }
+    val suggestion = choice.suggestion
+    val isBurn = choice.options.map { it.id }.toSet() == setOf(BURN, KEEP)
+    val isPayThePrice = choice.move == PAY_THE_PRICE && choice.options.any { it.id == OBVIOUS_OUTCOME }
+    val moveName = choice.move?.let(player::moveName).orEmpty()
+
+    @Composable
+    fun label(option: ChoiceOption): String = when {
+        isBurn && option.id == BURN -> stringResource(R.string.choice_burn)
+        isBurn -> stringResource(R.string.choice_keep)
+        isPayThePrice && option.id == OBVIOUS_OUTCOME && suggestion?.proposal != null -> stringResource(R.string.choice_proposal, suggestion.proposal!!)
+        else -> option.text
+    }
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(choice.prompt, style = MaterialTheme.typography.titleSmall)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                when {
+                    isBurn -> stringResource(R.string.choice_burn_title, moveName, momentum)
+                    choice.count == 1 -> stringResource(R.string.choice_title_one, moveName)
+                    else -> stringResource(R.string.choice_title_many, moveName, choice.count)
+                },
+                style = MaterialTheme.typography.titleSmall,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 choice.options.forEach { option ->
+                    val suggested = suggestion?.optionIds?.contains(option.id) == true
+                    val text = label(option)
                     FilterChip(
-                        selected = option.id in picked,
+                        selected = option.id in picked && !writing,
                         onClick = {
+                            writing = false
                             picked = when {
                                 option.id in picked -> picked - option.id
                                 choice.count == 1 -> listOf(option.id)
@@ -163,16 +193,50 @@ private fun ChoicePanel(choice: PendingChoice, onChoose: (List<String>) -> Unit)
                                 else -> picked
                             }
                         },
-                        label = { Text(option.text) },
+                        label = { Text(if (suggested) stringResource(R.string.choice_suggested, text) else text) },
+                    )
+                }
+                if (isPayThePrice) {
+                    FilterChip(
+                        selected = writing,
+                        onClick = {
+                            writing = !writing
+                            picked = emptyList()
+                        },
+                        label = { Text(stringResource(R.string.choice_write_own)) },
                     )
                 }
             }
-            Button(enabled = picked.size == choice.count, onClick = { onChoose(picked) }) {
-                Text(stringResource(R.string.game_choose))
+            if (suggestion != null) {
+                Text(stringResource(R.string.choice_why, suggestion.why), style = MaterialTheme.typography.bodySmall)
             }
+            if (writing) {
+                OutlinedTextField(
+                    value = own,
+                    onValueChange = { own = it },
+                    label = { Text(stringResource(R.string.choice_write_own_hint)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3,
+                )
+            }
+            val labels = choice.options.associate { it.id to label(it) }
+            Button(
+                enabled = if (writing) own.isNotBlank() else picked.size == choice.count,
+                onClick = {
+                    // Writing their own consequence is the obvious outcome, told by the player.
+                    if (writing) onChoose(listOf(OBVIOUS_OUTCOME), own.trim(), true)
+                    else onChoose(picked, picked.joinToString(" · ") { labels.getValue(it) }, false)
+                },
+            ) { Text(stringResource(R.string.game_choose)) }
         }
     }
 }
+
+/** Option ids of the engine's choices that the panel shows its own way. */
+private const val BURN = "burn"
+private const val KEEP = "keep"
+private const val PAY_THE_PRICE = "pay_the_price"
+private const val OBVIOUS_OUTCOME = "obvious_outcome"
 
 /**
  * The move the narrator wants to roll (RF-ENV-04): the player rolls it, changes its stat or the

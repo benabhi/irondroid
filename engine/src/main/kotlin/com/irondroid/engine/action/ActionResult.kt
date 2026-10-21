@@ -45,8 +45,11 @@ data class ActionResult(
 /** One option of a [PendingChoice]: [id] to pick it, [text] to describe it. */
 data class ChoiceOption(val id: String, val text: String)
 
-/** What the AI suggests picking, and [why] (RF-ENV-11). */
-data class Suggestion(val optionIds: List<String>, val why: String)
+/**
+ * What the AI suggests picking, and [why] (RF-ENV-11). [proposal] is the concrete outcome it proposes
+ * for an open-ended option, such as the consequence of Pay the Price (RF-ENV-07).
+ */
+data class Suggestion(val optionIds: List<String>, val why: String, val proposal: String? = null)
 
 /**
  * A decision only the player makes (RF-API-07): pick [count] of [options]. The AI may mark a
@@ -57,6 +60,8 @@ class PendingChoice(
     val prompt: String,
     val options: List<ChoiceOption>,
     val count: Int = 1,
+    /** The move that asks, so a screen can name it in the player's language; null for other choices. */
+    val move: String? = null,
     private val resume: (List<String>) -> ActionResult,
 ) {
     init {
@@ -78,6 +83,7 @@ class PendingChoice(
         put("id", id)
         put("prompt", prompt)
         put("count", count)
+        put("move", move?.let(::JsonPrimitive) ?: JsonNull)
         put(
             "options",
             JsonArray(
@@ -95,6 +101,7 @@ class PendingChoice(
                 buildJsonObject {
                     put("option_ids", JsonArray(s.optionIds.map(::JsonPrimitive)))
                     put("why", s.why)
+                    s.proposal?.let { put("proposal", it) }
                 }
             } ?: JsonNull,
         )

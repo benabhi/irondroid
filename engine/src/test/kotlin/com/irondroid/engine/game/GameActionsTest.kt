@@ -330,7 +330,7 @@ class GameActionsTest {
 
         roll(1, 50)
         val price = ok("roll_oracle_table", """{"table":"pay_the_price"}""")
-        assertTrue(price.summary.startsWith("Tirá de nuevo"), price.summary)
+        assertTrue(price.summary.startsWith("Tira de nuevo"), price.summary)
         assertTrue(price.summary.contains(" / "))
         val extra = price.data.getValue("extra").jsonArray.single().jsonObject
         assertEquals(50, extra.getValue("roll").jsonPrimitive.int)

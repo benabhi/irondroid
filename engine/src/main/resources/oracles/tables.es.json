@@ -4,10 +4,10 @@
     "pay_the_price": {
       "name": "Pagar el precio",
       "rows": {
-        "roll_again_worse": "Tirá de nuevo y aplicá ese resultado, pero empeorado. Si vuelve a salir este resultado, pensá en algo terrible que cambie el rumbo de tu búsqueda (Preguntá al oráculo si tenés dudas) y hacelo realidad.",
-        "trust_lost": "Una persona o comunidad en la que confiabas pierde la fe en vos o actúa en tu contra.",
+        "roll_again_worse": "Tira de nuevo y aplica ese resultado, pero empeorado. Si vuelve a salir este resultado, piensa en algo terrible que cambie el rumbo de tu búsqueda (Pregunta al oráculo si tienes dudas) y hazlo realidad.",
+        "trust_lost": "Una persona o comunidad en la que confiabas pierde la fe en ti o actúa en tu contra.",
         "loved_ones_in_danger": "Una persona o comunidad que te importa queda expuesta al peligro.",
-        "separated": "Quedás separado de algo o de alguien.",
+        "separated": "Quedas separado de algo o de alguien.",
         "unintended_effect": "Tu acción tiene un efecto no deseado.",
         "value_lost": "Algo de valor se pierde o se destruye.",
         "situation_worsens": "La situación actual empeora.",
@@ -18,27 +18,27 @@
         "surprising_development": "Un giro sorprendente complica tu búsqueda.",
         "wastes_resources": "Desperdicia recursos.",
         "against_intentions": "Te obliga a actuar en contra de tus mejores intenciones.",
-        "ally_in_harms_way": "Un amigo, compañero o aliado queda en peligro (o vos, si estás solo).",
-        "roll_twice": "Tirá dos veces más en esta tabla. Pasan los dos resultados. Si son el mismo resultado, empeoralo."
+        "ally_in_harms_way": "Un amigo, compañero o aliado queda en peligro (o tú, si estás solo).",
+        "roll_twice": "Tira dos veces más en esta tabla. Pasan los dos resultados. Si son el mismo resultado, empeóralo."
       }
     },
     "endure_harm": {
       "name": "Soportar daño",
       "rows": {
-        "mortal": "El daño es mortal. Enfrentá la muerte.",
-        "dying": "Te estás muriendo. Tenés que Curarte en una o dos horas, o Enfrentar la muerte.",
-        "unconscious": "Quedás inconsciente y fuera de combate. Si te dejan en paz, volvés en vos en una o dos horas. Si quedás a merced de un enemigo que no piensa tener piedad, Enfrentá la muerte.",
-        "reeling": "Te tambaleás y luchás por no perder el conocimiento. Si hacés alguna actividad exigente (como correr o pelear) antes de tomarte unos minutos para recuperar el aliento, volvé a tirar en esta tabla (antes de resolver el otro movimiento).",
-        "battered": "Estás golpeado, pero seguís de pie."
+        "mortal": "El daño es mortal. Enfrenta la muerte.",
+        "dying": "Te estás muriendo. Tienes que Curarte en una o dos horas, o Enfrentar la muerte.",
+        "unconscious": "Quedas inconsciente y fuera de combate. Si te dejan en paz, vuelves en ti en una o dos horas. Si quedas a merced de un enemigo que no piensa tener piedad, Enfrenta la muerte.",
+        "reeling": "Te tambaleas y luchas por no perder el conocimiento. Si haces alguna actividad exigente (como correr o pelear) antes de tomarte unos minutos para recuperar el aliento, vuelve a tirar en esta tabla (antes de resolver el otro movimiento).",
+        "battered": "Estás golpeado, pero sigues de pie."
       }
     },
     "endure_stress": {
       "name": "Soportar estrés",
       "rows": {
-        "overwhelmed": "Te sentís abrumado. Enfrentá la desolación.",
-        "give_up": "Te rendís. Abandoná tu voto (si es posible, uno relacionado con tu crisis actual).",
-        "fear_or_compulsion": "Cedés ante un miedo o una compulsión y actuás en contra de tus mejores instintos.",
-        "persevere": "Perseverás."
+        "overwhelmed": "Te sientes abrumado. Enfrenta la desolación.",
+        "give_up": "Te rindes. Abandona tu voto (si es posible, uno relacionado con tu crisis actual).",
+        "fear_or_compulsion": "Cedes ante un miedo o una compulsión y actúas en contra de tus mejores instintos.",
+        "persevere": "Perseveras."
       }
     },
     "action": {

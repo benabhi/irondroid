@@ -3,221 +3,221 @@
   "moves": {
     "face_danger": {
       "name": "Enfrentar el peligro",
-      "trigger": "Cuando intentás algo arriesgado o reaccionás ante una amenaza inminente, imaginá tu acción y tirá. Si actuás...\n- Con velocidad, agilidad o precisión: tirá +filo.\n- Con encanto, lealtad o coraje: tirá +corazón.\n- Con acción agresiva, defensa contundente, fuerza o aguante: tirá +hierro.\n- Con engaño, sigilo o artimañas: tirá +sombra.\n- Con pericia, intuición u observación: tirá +ingenio.",
-      "strong_hit": "Lo lográs. Tomá +1 de impulso.",
-      "weak_hit": "Lo lográs, pero enfrentás un costo molesto. Elegí uno.",
-      "miss": "Fallás, o un giro dramático y costoso de los acontecimientos socava tu avance. Pagá el precio.",
+      "trigger": "Cuando intentas algo arriesgado o reaccionas ante una amenaza inminente, imagina tu acción y tira. Si actúas...\n- Con velocidad, agilidad o precisión: tira +filo.\n- Con encanto, lealtad o coraje: tira +corazón.\n- Con acción agresiva, defensa contundente, fuerza o aguante: tira +hierro.\n- Con engaño, sigilo o artimañas: tira +sombra.\n- Con pericia, intuición u observación: tira +ingenio.",
+      "strong_hit": "Lo logras. Toma +1 de impulso.",
+      "weak_hit": "Lo logras, pero enfrentas un costo molesto. Elige uno.",
+      "miss": "Fallas, o un giro dramático y costoso de los acontecimientos socava tu avance. Paga el precio.",
       "options": {
-        "lose_momentum": "Te demorás, perdés ventaja o enfrentás un peligro nuevo: sufrí -1 de impulso.",
+        "lose_momentum": "Te demoras, pierdes ventaja o enfrentas un peligro nuevo: sufre -1 de impulso.",
         "endure_harm": "Estás cansado o herido: Soportar daño (1 de daño).",
         "endure_stress": "Estás desanimado o con miedo: Soportar estrés (1 de estrés).",
-        "lose_supply": "Sacrificás recursos: sufrí -1 de suministros."
+        "lose_supply": "Sacrificas recursos: sufre -1 de suministros."
       }
     },
     "secure_an_advantage": {
       "name": "Asegurar una ventaja",
-      "trigger": "Cuando evaluás una situación, hacés preparativos o intentás sacar ventaja, imaginá tu acción y tirá. Si actuás...\n- Con velocidad, agilidad o precisión: tirá +filo.\n- Con encanto, lealtad o coraje: tirá +corazón.\n- Con acción agresiva, defensa contundente, fuerza o aguante: tirá +hierro.\n- Con engaño, sigilo o artimañas: tirá +sombra.\n- Con pericia, intuición u observación: tirá +ingenio.",
-      "strong_hit": "Ganás ventaja. Elegí uno.",
-      "weak_hit": "Tu ventaja dura poco. Tomá +1 de impulso.",
-      "miss": "Fallás o tus suposiciones te traicionan. Pagá el precio.",
+      "trigger": "Cuando evalúas una situación, haces preparativos o intentas sacar ventaja, imagina tu acción y tira. Si actúas...\n- Con velocidad, agilidad o precisión: tira +filo.\n- Con encanto, lealtad o coraje: tira +corazón.\n- Con acción agresiva, defensa contundente, fuerza o aguante: tira +hierro.\n- Con engaño, sigilo o artimañas: tira +sombra.\n- Con pericia, intuición u observación: tira +ingenio.",
+      "strong_hit": "Ganas ventaja. Elige uno.",
+      "weak_hit": "Tu ventaja dura poco. Toma +1 de impulso.",
+      "miss": "Fallas o tus suposiciones te traicionan. Paga el precio.",
       "options": {
-        "take_control": "Tomar el control: hacé otro movimiento ahora (no de progreso); cuando lo hagas, sumá +1.",
-        "prepare_to_act": "Prepararte para actuar: tomá +2 de impulso."
+        "take_control": "Tomar el control: haz otro movimiento ahora (no de progreso); cuando lo hagas, suma +1.",
+        "prepare_to_act": "Prepararte para actuar: toma +2 de impulso."
       }
     },
     "gather_information": {
       "name": "Reunir información",
-      "trigger": "Cuando registrás un lugar, hacés preguntas, llevás adelante una investigación o seguís un rastro, tirá +ingenio.",
-      "strong_hit": "Descubrís algo útil y concreto. Queda claro el camino que tenés que seguir o lo que tenés que hacer para avanzar. Imaginá lo que averiguás (preguntale al oráculo si no estás seguro) y tomá +2 de impulso.",
-      "weak_hit": "La información complica tu misión o trae un peligro nuevo. Imaginá lo que descubrís (preguntale al oráculo si no estás seguro) y tomá +1 de impulso.",
-      "miss": "Tu investigación saca a la luz una amenaza terrible o revela una verdad indeseada que socava tu misión. Pagá el precio.",
+      "trigger": "Cuando registras un lugar, haces preguntas, llevas adelante una investigación o sigues un rastro, tira +ingenio.",
+      "strong_hit": "Descubres algo útil y concreto. Queda claro el camino que tienes que seguir o lo que tienes que hacer para avanzar. Imagina lo que averiguas (pregúntale al oráculo si no estás seguro) y toma +2 de impulso.",
+      "weak_hit": "La información complica tu misión o trae un peligro nuevo. Imagina lo que descubres (pregúntale al oráculo si no estás seguro) y toma +1 de impulso.",
+      "miss": "Tu investigación saca a la luz una amenaza terrible o revela una verdad indeseada que socava tu misión. Paga el precio.",
       "bonuses": {
-        "community_or_bond": "Actuás dentro de una comunidad o le preguntás a alguien con quien tenés un vínculo: sumá +1."
+        "community_or_bond": "Actúas dentro de una comunidad o le preguntas a alguien con quien tienes un vínculo: suma +1."
       }
     },
     "heal": {
       "name": "Curar",
-      "trigger": "Cuando tratás una herida o una enfermedad, tirá +ingenio. Si estás curando tus propias heridas, tirá +ingenio o +hierro, el que sea menor.",
-      "strong_hit": "Tus cuidados sirven. Si vos (o el aliado que atendés) tienen la condición herido, pueden limpiarla. Después tomá o dale hasta +2 de salud.",
-      "weak_hit": "Como arriba, pero tenés que sufrir -1 de suministros o -1 de impulso (a tu elección).",
-      "miss": "Tu ayuda no sirve. Pagá el precio.",
+      "trigger": "Cuando tratas una herida o una enfermedad, tira +ingenio. Si estás curando tus propias heridas, tira +ingenio o +hierro, el que sea menor.",
+      "strong_hit": "Tus cuidados sirven. Si tú (o el aliado que atiendes) tienen la condición herido, pueden limpiarla. Después toma o dale hasta +2 de salud.",
+      "weak_hit": "Como arriba, pero tienes que sufrir -1 de suministros o -1 de impulso (a tu elección).",
+      "miss": "Tu ayuda no sirve. Paga el precio.",
       "options": {
-        "lose_supply": "Sufrí -1 de suministros.",
-        "lose_momentum": "Sufrí -1 de impulso."
+        "lose_supply": "Sufre -1 de suministros.",
+        "lose_momentum": "Sufre -1 de impulso."
       }
     },
     "resupply": {
       "name": "Reabastecerse",
-      "trigger": "Cuando cazás, recolectás o rebuscás, tirá +ingenio. No podés hacerlo si estás desabastecido.",
-      "strong_hit": "Reforzás tus recursos. Tomá +2 de suministros.",
-      "weak_hit": "Tomá hasta +2 de suministros, pero sufrí -1 de impulso por cada uno.",
-      "miss": "No encontrás nada útil. Pagá el precio.",
+      "trigger": "Cuando cazas, recolectas o rebuscas, tira +ingenio. No puedes hacerlo si estás desabastecido.",
+      "strong_hit": "Refuerzas tus recursos. Toma +2 de suministros.",
+      "weak_hit": "Toma hasta +2 de suministros, pero sufre -1 de impulso por cada uno.",
+      "miss": "No encuentras nada útil. Paga el precio.",
       "options": {
-        "take_one_supply": "Tomá +1 de suministros y sufrí -1 de impulso.",
-        "take_two_supply": "Tomá +2 de suministros y sufrí -2 de impulso."
+        "take_one_supply": "Toma +1 de suministros y sufre -1 de impulso.",
+        "take_two_supply": "Toma +2 de suministros y sufre -2 de impulso."
       }
     },
     "make_camp": {
       "name": "Hacer campamento",
-      "trigger": "Cuando descansás y te recuperás durante varias horas en la naturaleza, tirá +suministros.",
-      "strong_hit": "Vos y tus aliados pueden elegir dos cada uno.",
-      "weak_hit": "Elegí uno.",
-      "miss": "No encontrás consuelo. Pagá el precio.",
+      "trigger": "Cuando descansas y te recuperas durante varias horas en la naturaleza, tira +suministros.",
+      "strong_hit": "Tú y tus aliados pueden elegir dos cada uno.",
+      "weak_hit": "Elige uno.",
+      "miss": "No encuentras consuelo. Paga el precio.",
       "options": {
-        "recuperate": "Recuperarte: tomá +1 de salud para vos y tus compañeros.",
-        "partake": "Comer bien: sufrí -1 de suministros y tomá +1 de salud para vos y tus compañeros.",
-        "relax": "Relajarte: tomá +1 de espíritu.",
-        "focus": "Concentrarte: tomá +1 de impulso.",
-        "prepare": "Prepararte: al levantar el campamento, sumá +1 si emprendés un viaje."
+        "recuperate": "Recuperarte: toma +1 de salud para ti y tus compañeros.",
+        "partake": "Comer bien: sufre -1 de suministros y toma +1 de salud para ti y tus compañeros.",
+        "relax": "Relajarte: toma +1 de espíritu.",
+        "focus": "Concentrarte: toma +1 de impulso.",
+        "prepare": "Prepararte: al levantar el campamento, suma +1 si emprendes un viaje."
       }
     },
     "undertake_a_journey": {
       "name": "Emprender un viaje",
-      "trigger": "Cuando viajás por tierras peligrosas o desconocidas, primero fijá el rango del viaje. Después, por cada tramo del viaje, tirá +ingenio.",
-      "strong_hit": "Llegás a un punto de paso. Si no lo conocés, imaginalo (preguntale al oráculo si no estás seguro). Después elegí uno.",
-      "weak_hit": "Llegás a un punto de paso y marcás progreso, pero sufrí -1 de suministros.",
-      "miss": "Un suceso peligroso te detiene. Pagá el precio.",
+      "trigger": "Cuando viajas por tierras peligrosas o desconocidas, primero fija el rango del viaje. Después, por cada tramo del viaje, tira +ingenio.",
+      "strong_hit": "Llegas a un punto de paso. Si no lo conoces, imagínalo (pregúntale al oráculo si no estás seguro). Después elige uno.",
+      "weak_hit": "Llegas a un punto de paso y marcas progreso, pero sufre -1 de suministros.",
+      "miss": "Un suceso peligroso te detiene. Paga el precio.",
       "options": {
-        "use_resources": "Aprovechás bien tus recursos: marcá progreso.",
-        "move_at_speed": "Avanzás rápido: marcá progreso y tomá +1 de impulso, pero sufrí -1 de suministros."
+        "use_resources": "Aprovechas bien tus recursos: marca progreso.",
+        "move_at_speed": "Avanzas rápido: marca progreso y toma +1 de impulso, pero sufre -1 de suministros."
       },
       "bonuses": {
-        "bonded_community": "Salís de una comunidad con la que tenés un vínculo: sumá +1 a la primera tirada."
+        "bonded_community": "Sales de una comunidad con la que tienes un vínculo: suma +1 a la primera tirada."
       }
     },
     "reach_your_destination": {
       "name": "Llegar a destino",
-      "trigger": "Cuando tu viaje llega a su fin, tirá los dados de desafío y comparalos con tu progreso. El impulso no cuenta en esta tirada.",
-      "strong_hit": "La situación en tu destino te favorece. Elegí uno.",
-      "weak_hit": "Llegás, pero te encontrás con un peligro o una complicación inesperada. Imaginá lo que encontrás (preguntale al oráculo si no estás seguro).",
+      "trigger": "Cuando tu viaje llega a su fin, tira los dados de desafío y comparalos con tu progreso. El impulso no cuenta en esta tirada.",
+      "strong_hit": "La situación en tu destino te favorece. Elige uno.",
+      "weak_hit": "Llegas, pero te encuentras con un peligro o una complicación inesperada. Imagina lo que encuentras (pregúntale al oráculo si no estás seguro).",
       "miss": "Te perdiste sin remedio, tu objetivo se te escapó o te engañaron sobre tu destino.",
       "options": {
-        "make_another_move": "Hacé otro movimiento ahora (no de progreso) y sumá +1.",
-        "take_momentum": "Tomá +1 de impulso.",
+        "make_another_move": "Haz otro movimiento ahora (no de progreso) y suma +1.",
+        "take_momentum": "Toma +1 de impulso.",
         "journey_ends": "Tu viaje termina acá.",
-        "journey_continues": "Tu viaje sigue: borrá todo el progreso completo salvo una casilla y subí el rango del viaje en uno (si no es épico)."
+        "journey_continues": "Tu viaje sigue: borra todo el progreso completo salvo una casilla y sube el rango del viaje en uno (si no es épico)."
       }
     },
     "swear_an_iron_vow": {
       "name": "Jurar un voto de hierro",
-      "trigger": "Cuando jurás sobre el hierro cumplir una misión, escribí tu voto y dale un rango a la misión. Después tirá +corazón.",
-      "strong_hit": "Te sentís con coraje y tenés claro qué hacer a continuación (preguntale al oráculo si no estás seguro). Tomá +2 de impulso.",
-      "weak_hit": "Estás decidido, pero empezás la misión con más preguntas que respuestas. Tomá +1 de impulso e imaginá qué hacés para encontrar el camino.",
-      "miss": "Te topás con un obstáculo importante antes de poder empezar la misión. Imaginá qué se interpone (preguntale al oráculo si no estás seguro) y elegí uno.",
+      "trigger": "Cuando juras sobre el hierro cumplir una misión, escribe tu voto y dale un rango a la misión. Después tira +corazón.",
+      "strong_hit": "Te sientes con coraje y tienes claro qué hacer a continuación (pregúntale al oráculo si no estás seguro). Toma +2 de impulso.",
+      "weak_hit": "Estás decidido, pero empiezas la misión con más preguntas que respuestas. Toma +1 de impulso e imagina qué haces para encontrar el camino.",
+      "miss": "Te topas con un obstáculo importante antes de poder empezar la misión. Imagina qué se interpone (pregúntale al oráculo si no estás seguro) y elige uno.",
       "options": {
-        "press_on": "Seguís adelante: sufrí -2 de impulso y hacé lo que haga falta para superar el obstáculo.",
-        "give_up": "Te rendís: Abandonar tu voto."
+        "press_on": "Sigues adelante: sufre -2 de impulso y haz lo que haga falta para superar el obstáculo.",
+        "give_up": "Te rindes: Abandonar tu voto."
       },
       "bonuses": {
-        "sworn_to_bond": "Le hacés el voto a una persona o comunidad con la que tenés un vínculo: sumá +1."
+        "sworn_to_bond": "Le haces el voto a una persona o comunidad con la que tienes un vínculo: suma +1."
       }
     },
     "reach_a_milestone": {
       "name": "Alcanzar un hito",
-      "trigger": "Cuando avanzás de forma importante en tu misión al superar un obstáculo clave, completar un viaje peligroso, resolver un misterio complejo, derrotar una amenaza poderosa, conseguir un apoyo vital u obtener un objeto crucial, podés marcar progreso.\n- Misión problemática: marcá 3 de progreso.\n- Misión peligrosa: marcá 2 de progreso.\n- Misión formidable: marcá 1 de progreso.\n- Misión extrema: marcá 2 marcas.\n- Misión épica: marcá 1 marca."
+      "trigger": "Cuando avanzas de forma importante en tu misión al superar un obstáculo clave, completar un viaje peligroso, resolver un misterio complejo, derrotar una amenaza poderosa, conseguir un apoyo vital u obtener un objeto crucial, puedes marcar progreso.\n- Misión problemática: marca 3 de progreso.\n- Misión peligrosa: marca 2 de progreso.\n- Misión formidable: marca 1 de progreso.\n- Misión extrema: marca 2 marcas.\n- Misión épica: marca 1 marca."
     },
     "fulfill_your_vow": {
       "name": "Cumplir tu voto",
-      "trigger": "Cuando lográs lo que creés que cumple tu voto, tirá los dados de desafío y comparalos con tu progreso. El impulso no cuenta en esta tirada.",
-      "strong_hit": "Tu misión está cumplida. Marcá experiencia (problemática=1; peligrosa=2; formidable=3; extrema=4; épica=5).",
-      "weak_hit": "Queda más por hacer o descubrís la verdad de tu misión. Imaginá qué descubrís (preguntale al oráculo si no estás seguro). Después marcá experiencia (problemática=0; peligrosa=1; formidable=2; extrema=3; épica=4). Podés Jurar un voto de hierro para arreglar las cosas; si lo hacés, sumá +1.",
-      "miss": "Tu misión se deshace. Imaginá qué pasa (preguntale al oráculo si no estás seguro) y elegí uno.",
+      "trigger": "Cuando logras lo que crees que cumple tu voto, tira los dados de desafío y comparalos con tu progreso. El impulso no cuenta en esta tirada.",
+      "strong_hit": "Tu misión está cumplida. Marca experiencia (problemática=1; peligrosa=2; formidable=3; extrema=4; épica=5).",
+      "weak_hit": "Queda más por hacer o descubres la verdad de tu misión. Imagina qué descubres (pregúntale al oráculo si no estás seguro). Después marca experiencia (problemática=0; peligrosa=1; formidable=2; extrema=3; épica=4). Puedes Jurar un voto de hierro para arreglar las cosas; si lo haces, suma +1.",
+      "miss": "Tu misión se deshace. Imagina qué pasa (pregúntale al oráculo si no estás seguro) y elige uno.",
       "options": {
-        "recommit": "Te volvés a comprometer: borrá todo el progreso completo salvo una casilla y subí el rango de la misión en uno (si no es épica).",
-        "give_up": "Te rendís: Abandonar tu voto."
+        "recommit": "Te vuelves a comprometer: borra todo el progreso completo salvo una casilla y sube el rango de la misión en uno (si no es épica).",
+        "give_up": "Te rindes: Abandonar tu voto."
       }
     },
     "forsake_your_vow": {
       "name": "Abandonar tu voto",
-      "trigger": "Cuando renunciás a tu misión, traicionás tu promesa o el objetivo se pierde, borrá el voto y hacé Soportar estrés. Sufrís -espíritu igual al rango de la misión (problemática=1; peligrosa=2; formidable=3; extrema=4; épica=5)."
+      "trigger": "Cuando renuncias a tu misión, traicionas tu promesa o el objetivo se pierde, borra el voto y haz Soportar estrés. Sufres -espíritu igual al rango de la misión (problemática=1; peligrosa=2; formidable=3; extrema=4; épica=5)."
     },
     "advance": {
       "name": "Avanzar",
-      "trigger": "Cuando te concentrás en tus habilidades, recibís entrenamiento, encontrás inspiración, ganás una recompensa o sumás un compañero, podés gastar 3 de experiencia para sumar una ventaja nueva o 2 para mejorar una ventaja.",
+      "trigger": "Cuando te concentras en tus habilidades, recibes entrenamiento, encuentras inspiración, ganas una recompensa o sumas un compañero, puedes gastar 3 de experiencia para sumar una ventaja nueva o 2 para mejorar una ventaja.",
       "options": {
-        "new_asset": "Gastá 3 de experiencia para sumar una ventaja nueva.",
-        "upgrade_asset": "Gastá 2 de experiencia para mejorar una ventaja."
+        "new_asset": "Gasta 3 de experiencia para sumar una ventaja nueva.",
+        "upgrade_asset": "Gasta 2 de experiencia para mejorar una ventaja."
       }
     },
     "endure_harm": {
       "name": "Soportar daño",
-      "trigger": "Cuando sufrís daño físico, sufrí -salud igual al rango de tu enemigo o según la situación. Si tu salud está en 0, sufrí -impulso igual a lo que falte de -salud. Después tirá +salud o +hierro, el que sea mayor.",
-      "strong_hit": "Elegí uno.",
-      "weak_hit": "Seguís adelante.",
-      "miss": "Además sufrí -1 de impulso. Si estás con salud 0, tenés que marcar herido o mutilado (si no los tenés marcados) o tirar en la tabla de Soportar daño.",
+      "trigger": "Cuando sufres daño físico, sufre -salud igual al rango de tu enemigo o según la situación. Si tu salud está en 0, sufre -impulso igual a lo que falte de -salud. Después tira +salud o +hierro, el que sea mayor.",
+      "strong_hit": "Elige uno.",
+      "weak_hit": "Sigues adelante.",
+      "miss": "Además sufre -1 de impulso. Si estás con salud 0, tienes que marcar herido o mutilado (si no los tienes marcados) o tirar en la tabla de Soportar daño.",
       "options": {
-        "shake_it_off": "Sacudírtelo: si tu salud es mayor que 0, sufrí -1 de impulso a cambio de +1 de salud.",
-        "embrace_the_pain": "Abrazar el dolor: tomá +1 de impulso.",
-        "mark_wounded": "Marcá herido.",
-        "mark_maimed": "Marcá mutilado.",
-        "roll_consequence": "Tirá en la tabla de Soportar daño."
+        "shake_it_off": "Sacudírtelo: si tu salud es mayor que 0, sufre -1 de impulso a cambio de +1 de salud.",
+        "embrace_the_pain": "Abrazar el dolor: toma +1 de impulso.",
+        "mark_wounded": "Marca herido.",
+        "mark_maimed": "Marca mutilado.",
+        "roll_consequence": "Tira en la tabla de Soportar daño."
       }
     },
     "face_death": {
       "name": "Enfrentar la muerte",
-      "trigger": "Cuando quedás al borde de la muerte y vislumbrás el mundo del más allá, tirá +corazón.",
-      "strong_hit": "La muerte te rechaza. Volvés al mundo de los vivos.",
-      "weak_hit": "Elegí uno.",
+      "trigger": "Cuando quedas al borde de la muerte y vislumbras el mundo del más allá, tira +corazón.",
+      "strong_hit": "La muerte te rechaza. Vuelves al mundo de los vivos.",
+      "weak_hit": "Elige uno.",
       "miss": "Estás muerto.",
       "options": {
-        "noble_sacrifice": "Morís, pero no sin antes hacer un sacrificio noble. Imaginá tus últimos momentos.",
-        "bargain_with_death": "La muerte quiere algo de vos a cambio de tu vida. Imaginá qué quiere (preguntale al oráculo si no estás seguro) y Jurá un voto de hierro (formidable o extremo) para cumplir esa misión. Si no sacás un éxito al jurar, o rechazás la misión, estás muerto. Si no, volvés al mundo de los vivos y ahora estás maldito. Solo podés limpiar la debilidad maldito cumpliendo la misión."
+        "noble_sacrifice": "Mueres, pero no sin antes hacer un sacrificio noble. Imagina tus últimos momentos.",
+        "bargain_with_death": "La muerte quiere algo de ti a cambio de tu vida. Imagina qué quiere (pregúntale al oráculo si no estás seguro) y Jura un voto de hierro (formidable o extremo) para cumplir esa misión. Si no sacas un éxito al jurar, o rechazas la misión, estás muerto. Si no, vuelves al mundo de los vivos y ahora estás maldito. Solo puedes limpiar la debilidad maldito cumpliendo la misión."
       }
     },
     "endure_stress": {
       "name": "Soportar estrés",
-      "trigger": "Cuando sufrís un golpe mental o caés en la desesperación, sufrí -espíritu igual al rango de tu enemigo o según la situación. Si tu espíritu está en 0, sufrí -impulso igual a lo que falte de -espíritu. Después tirá +corazón o +espíritu, el que sea mayor.",
-      "strong_hit": "Elegí uno.",
-      "weak_hit": "Seguís adelante.",
-      "miss": "Además sufrí -1 de impulso. Si estás con espíritu 0, tenés que marcar conmocionado o corrompido (si no los tenés marcados) o tirar en la tabla de Soportar estrés.",
+      "trigger": "Cuando sufres un golpe mental o caes en la desesperación, sufre -espíritu igual al rango de tu enemigo o según la situación. Si tu espíritu está en 0, sufre -impulso igual a lo que falte de -espíritu. Después tira +corazón o +espíritu, el que sea mayor.",
+      "strong_hit": "Elige uno.",
+      "weak_hit": "Sigues adelante.",
+      "miss": "Además sufre -1 de impulso. Si estás con espíritu 0, tienes que marcar conmocionado o corrompido (si no los tienes marcados) o tirar en la tabla de Soportar estrés.",
       "options": {
-        "shake_it_off": "Sacudírtelo: si tu espíritu es mayor que 0, sufrí -1 de impulso a cambio de +1 de espíritu.",
-        "embrace_the_darkness": "Abrazar la oscuridad: tomá +1 de impulso.",
-        "mark_shaken": "Marcá conmocionado.",
-        "mark_corrupted": "Marcá corrompido.",
-        "roll_consequence": "Tirá en la tabla de Soportar estrés."
+        "shake_it_off": "Sacudírtelo: si tu espíritu es mayor que 0, sufre -1 de impulso a cambio de +1 de espíritu.",
+        "embrace_the_darkness": "Abrazar la oscuridad: toma +1 de impulso.",
+        "mark_shaken": "Marca conmocionado.",
+        "mark_corrupted": "Marca corrompido.",
+        "roll_consequence": "Tira en la tabla de Soportar estrés."
       }
     },
     "face_desolation": {
       "name": "Enfrentar la desolación",
-      "trigger": "Cuando quedás al borde de la desolación, tirá +corazón.",
-      "strong_hit": "Resistís y seguís adelante.",
-      "weak_hit": "Elegí uno.",
-      "miss": "Sucumbís a la desesperación o al horror y estás perdido.",
+      "trigger": "Cuando quedas al borde de la desolación, tira +corazón.",
+      "strong_hit": "Resistes y sigues adelante.",
+      "weak_hit": "Elige uno.",
+      "miss": "Sucumbes a la desesperación o al horror y estás perdido.",
       "options": {
-        "noble_sacrifice": "Tu espíritu o tu cordura se quiebran, pero no sin antes hacer un sacrificio noble. Imaginá tus últimos momentos.",
-        "dreaded_vision": "Tenés la visión de un hecho temido que se va a cumplir. Imaginá ese futuro oscuro (preguntale al oráculo si no estás seguro) y Jurá un voto de hierro (formidable o extremo) para impedirlo. Si no sacás un éxito al jurar, o rechazás la misión, estás perdido. Si no, volvés en vos y ahora estás atormentado. Solo podés limpiar la debilidad atormentado cumpliendo la misión."
+        "noble_sacrifice": "Tu espíritu o tu cordura se quiebran, pero no sin antes hacer un sacrificio noble. Imagina tus últimos momentos.",
+        "dreaded_vision": "Tienes la visión de un hecho temido que se va a cumplir. Imagina ese futuro oscuro (pregúntale al oráculo si no estás seguro) y Jura un voto de hierro (formidable o extremo) para impedirlo. Si no sacas un éxito al jurar, o rechazas la misión, estás perdido. Si no, vuelves en ti y ahora estás atormentado. Solo puedes limpiar la debilidad atormentado cumpliendo la misión."
       }
     },
     "out_of_supply": {
       "name": "Sin suministros",
-      "trigger": "Cuando se te agotan los suministros (bajan a 0), marcá desabastecido. Si sufrís más -suministros estando desabastecido, tenés que cambiar cada -suministro extra por cualquier combinación de -salud, -espíritu o -impulso, según las circunstancias."
+      "trigger": "Cuando se te agotan los suministros (bajan a 0), marca desabastecido. Si sufres más -suministros estando desabastecido, tienes que cambiar cada -suministro extra por cualquier combinación de -salud, -espíritu o -impulso, según las circunstancias."
     },
     "face_a_setback": {
       "name": "Enfrentar un revés",
-      "trigger": "Cuando tu impulso está en su mínimo (-6) y sufrís más -impulso, elegí uno.",
+      "trigger": "Cuando tu impulso está en su mínimo (-6) y sufres más -impulso, elige uno.",
       "options": {
-        "exchange_momentum": "Cambiá cada -impulso extra por cualquier combinación de -salud, -espíritu o -suministros, según las circunstancias.",
-        "lose_progress": "Imaginá un suceso o un descubrimiento (preguntale al oráculo si no estás seguro) que socava tu progreso en una misión, un viaje o una pelea en curso. Después, por cada -impulso extra, borrá 1 unidad de progreso en esa pista según su rango (problemática=3 de progreso; peligrosa=2; formidable=1; extrema=2 marcas; épica=1 marca)."
+        "exchange_momentum": "Cambia cada -impulso extra por cualquier combinación de -salud, -espíritu o -suministros, según las circunstancias.",
+        "lose_progress": "Imagina un suceso o un descubrimiento (pregúntale al oráculo si no estás seguro) que socava tu progreso en una misión, un viaje o una pelea en curso. Después, por cada -impulso extra, borra 1 unidad de progreso en esa pista según su rango (problemática=3 de progreso; peligrosa=2; formidable=1; extrema=2 marcas; épica=1 marca)."
       }
     },
     "pay_the_price": {
       "name": "Pagar el precio",
-      "trigger": "Cuando sufrís el resultado de un movimiento, elegí uno.",
+      "trigger": "Cuando sufres el resultado de un movimiento, elige uno.",
       "options": {
-        "obvious_outcome": "Hacé que pase la consecuencia negativa más obvia.",
-        "ask_the_oracle": "Imaginá dos consecuencias negativas. Marcá una como 'probable' y preguntale al oráculo con la tabla de sí/no. Si sale 'sí', pasa esa; si no, la otra.",
-        "roll_on_table": "Tirá en la tabla de Pagar el precio. Si te cuesta adaptar el resultado a la situación, volvé a tirar."
+        "obvious_outcome": "Haz que pase la consecuencia negativa más obvia.",
+        "ask_the_oracle": "Imagina dos consecuencias negativas. Marca una como 'probable' y pregúntale al oráculo con la tabla de sí/no. Si sale 'sí', pasa esa; si no, la otra.",
+        "roll_on_table": "Tira en la tabla de Pagar el precio. Si te cuesta adaptar el resultado a la situación, vuelve a tirar."
       }
     },
     "ask_the_oracle": {
       "name": "Preguntar al oráculo",
-      "trigger": "Cuando querés resolver preguntas, descubrir detalles del mundo, saber cómo reaccionan otros personajes o provocar encuentros o sucesos, podés...",
+      "trigger": "Cuando quieres resolver preguntas, descubrir detalles del mundo, saber cómo reaccionan otros personajes o provocar encuentros o sucesos, puedes...",
       "options": {
-        "draw_a_conclusion": "Sacar una conclusión: decidí la respuesta según el resultado más interesante y obvio.",
-        "yes_no_question": "Hacer una pregunta de sí o no: decidí las probabilidades de un 'sí' y tirá en la tabla de sí/no.",
-        "pick_two": "Elegir entre dos: imaginá dos opciones, marcá una como 'probable' y tirá en la tabla de sí/no para ver si es cierta. Si no, es la otra.",
-        "spark_an_idea": "Buscar una idea: hacé una lluvia de ideas o usá un disparador al azar."
+        "draw_a_conclusion": "Sacar una conclusión: decide la respuesta según el resultado más interesante y obvio.",
+        "yes_no_question": "Hacer una pregunta de sí o no: decide las probabilidades de un 'sí' y tira en la tabla de sí/no.",
+        "pick_two": "Elegir entre dos: imagina dos opciones, marca una como 'probable' y tira en la tabla de sí/no para ver si es cierta. Si no, es la otra.",
+        "spark_an_idea": "Buscar una idea: haz una lluvia de ideas o usa un disparador al azar."
       }
     }
   }

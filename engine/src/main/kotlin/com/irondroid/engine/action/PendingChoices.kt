@@ -22,11 +22,11 @@ class PendingChoices {
     }
 
     /** Marks what the AI (or anyone helping the player) suggests, replacing an earlier suggestion. */
-    fun suggest(choiceId: String, optionIds: List<String>, why: String) {
+    fun suggest(choiceId: String, optionIds: List<String>, why: String, proposal: String? = null) {
         val choice = find(choiceId)
         checkOptions(choice, optionIds, exact = false)
         if (why.isBlank()) throw ActionRejectedException.rule("Say why you suggest it")
-        choice.suggestion = Suggestion(optionIds, why)
+        choice.suggestion = Suggestion(optionIds, why, proposal?.trim()?.ifBlank { null })
     }
 
     /**
