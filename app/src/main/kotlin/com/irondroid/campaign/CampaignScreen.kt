@@ -24,7 +24,7 @@ import com.irondroid.engine.character.Stat
 /** Everything the campaign screen shows, loaded from the database. */
 data class CampaignDetails(val campaign: CampaignEntity, val world: WorldEntity?, val character: SavedCharacter?)
 
-/** Temporary campaign screen with the saved data, until the game screen exists. */
+/** The campaign and its character sheet, opened from the play screen until the full sheet exists (Interfaz plan). */
 @Composable
 fun CampaignScreen(details: CampaignDetails?, onBack: () -> Unit, modifier: Modifier = Modifier) {
     Column(
@@ -69,11 +69,6 @@ fun CampaignScreen(details: CampaignDetails?, onBack: () -> Unit, modifier: Modi
                     ),
                 )
             }
-            Text(
-                stringResource(R.string.campaign_game_soon),
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 16.dp),
-            )
         }
         OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.common_back))

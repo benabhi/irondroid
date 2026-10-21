@@ -73,7 +73,7 @@ class NarratorPromptTest {
             override fun update(change: (Character) -> Character) {}
             override fun save() {}
         }
-        val tools = ActionTools(GameActions(game, MoveLoader.fromResources(), oracles, SeededDice.fromSeed(1), "es").dispatcher())
+        val tools = ActionTools.forNarrator(GameActions(game, MoveLoader.fromResources(), oracles, SeededDice.fromSeed(1), "es").dispatcher())
         val known = tools.specs.map { it.name }.toSet() + oracles.tables.map { it.id }
         val named = Regex("`([a-z_0-9]+)`").findAll(spanish + NarratorPrompt.build("Kira", style = NarratorStyle.SOBER)).map { it.groupValues[1] }.toSet()
         assertTrue(named.isNotEmpty())

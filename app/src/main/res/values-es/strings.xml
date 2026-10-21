@@ -37,7 +37,6 @@
     <string name="campaign_sheet_pending">Ficha pendiente: se completa en la creación guiada.</string>
     <string name="campaign_stats">Filo %1$d · Corazón %2$d · Hierro %3$d · Sombra %4$d · Ingenio %5$d</string>
     <string name="campaign_meters">Salud %1$d · Espíritu %2$d · Suministros %3$d · Impulso %4$+d</string>
-    <string name="campaign_game_soon">La pantalla de juego llega en una próxima versión.</string>
 
     <!-- Prototipo de dados 3D (IRON-12). Pantalla temporal. -->
     <string name="dice_proto_open">Prototipo de dados 3D</string>
@@ -113,4 +112,14 @@
     <string name="oracle_tables_repeated">Las dos tiradas cayeron en el mismo resultado: hazlo más intenso.</string>
     <string name="ai_test_style_performed">Interpretado</string>
     <string name="ai_test_style_sober">Sobrio</string>
+    <string name="game_header">%1$s · %2$s</string>
+    <string name="game_sheet">Ficha</string>
+    <string name="game_empty">Tu historia empieza aquí. Cuéntale al narrador qué hace tu personaje.</string>
+    <string name="game_input">¿Qué haces?</string>
+    <string name="game_send">Enviar</string>
+    <string name="game_thinking">El narrador está pensando…</string>
+    <string name="game_step">⚄ %1$s</string>
+    <string name="game_error">El narrador no respondió: %1$s</string>
+    <string name="game_no_key">Para jugar, agrega tu clave de la IA en Ajustes.</string>
+    <string name="game_choose">Elegir</string>
 </resources>
