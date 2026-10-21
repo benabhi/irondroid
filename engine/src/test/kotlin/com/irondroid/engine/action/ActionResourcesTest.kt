@@ -141,7 +141,7 @@ class ActionResourcesTest {
     @Test
     fun `the oracle tables come with their rows`() {
         val tables = content(GameResources.ORACLES).getValue("tables").jsonArray.map { it.jsonObject }
-        assertEquals(listOf("pay_the_price", "endure_harm", "endure_stress"), tables.map { it.getValue("id").jsonPrimitive.content })
+        assertEquals(oracles.tables.map { it.id }, tables.map { it.getValue("id").jsonPrimitive.content })
         val price = tables.first()
         assertEquals("Pagar el precio", price.getValue("name").jsonPrimitive.content)
         val firstRow = price.getValue("rows").jsonArray.first().jsonObject

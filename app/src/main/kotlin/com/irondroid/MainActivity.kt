@@ -38,11 +38,12 @@ import com.irondroid.prototype.ActionRoll
 import com.irondroid.prototype.AiTestScreen
 import com.irondroid.prototype.DicePrototypeScreen
 import com.irondroid.prototype.DicePrototypeState
+import com.irondroid.prototype.OracleTablesScreen
 import com.irondroid.settings.AiSettingsScreen
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-private enum class Screen { CAMPAIGNS, NEW_CAMPAIGN, CAMPAIGN, DICE_PROTOTYPE, AI_TEST, AI_SETTINGS }
+private enum class Screen { CAMPAIGNS, NEW_CAMPAIGN, CAMPAIGN, DICE_PROTOTYPE, AI_TEST, AI_SETTINGS, ORACLE_TABLES }
 
 /** Sheet saved for a new campaign until guided character creation exists (IRON-PLAN-11): every stat at 0. */
 private val PENDING_SHEET = Character.create(edge = 0, heart = 0, iron = 0, shadow = 0, wits = 0)
@@ -101,6 +102,7 @@ class MainActivity : ComponentActivity() {
                     onOpenDicePrototype = { screen = Screen.DICE_PROTOTYPE },
                     onOpenSettings = { screen = Screen.AI_SETTINGS },
                     onOpenAiTest = if (BuildConfig.DEBUG) ({ screen = Screen.AI_TEST }) else null,
+                    onOpenOracleTables = if (BuildConfig.DEBUG) ({ screen = Screen.ORACLE_TABLES }) else null,
                 )
             }
             Screen.NEW_CAMPAIGN -> {
@@ -154,6 +156,10 @@ class MainActivity : ComponentActivity() {
                     if (app.games.open(last.id) != null) value = last.title to ActionTools(app.dispatcher)
                 }
                 AiTestScreen(provider, app.aiSettings.model(), campaign?.second, campaign?.first, onBack = leaveTest)
+            }
+            Screen.ORACLE_TABLES -> {
+                BackHandler { screen = Screen.CAMPAIGNS }
+                OracleTablesScreen(app.oracles, app.rulesLanguage, onBack = { screen = Screen.CAMPAIGNS })
             }
             Screen.AI_SETTINGS -> {
                 BackHandler { screen = Screen.CAMPAIGNS }

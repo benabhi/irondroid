@@ -107,4 +107,10 @@
     <string name="ai_test_no_campaign">No campaign to play the actions on: create one first.</string>
     <string name="ai_test_waiting">Waiting for the answer…</string>
     <string name="ai_test_metrics">First text after %1$d ms · total %2$d ms · tokens: %3$d in (%4$d cached), %5$d out</string>
+    <string name="oracle_tables_open">Oracle tables (development)</string>
+    <string name="oracle_tables_title">Oracle tables</string>
+    <string name="oracle_tables_hint">Tap a table to roll 1d100 on it. The latest roll is on top.</string>
+    <string name="oracle_tables_result">%1$s · %2$d: %3$s</string>
+    <string name="oracle_tables_extra">↳ %1$d: %2$s</string>
+    <string name="oracle_tables_repeated">Both rolls landed on the same result: make it stronger.</string>
 </resources>
