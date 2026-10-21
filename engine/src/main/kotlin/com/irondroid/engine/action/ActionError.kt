@@ -5,6 +5,9 @@ enum class ActionErrorCode {
     /** No action has that name. */
     UNKNOWN_ACTION,
 
+    /** No read-only resource has that URI. */
+    UNKNOWN_RESOURCE,
+
     /** The arguments do not fit the action's parameters. */
     INVALID_ARGUMENTS,
 
