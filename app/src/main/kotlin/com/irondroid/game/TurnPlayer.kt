@@ -6,6 +6,9 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.irondroid.ai.AiException
+import com.irondroid.ai.narrator.MoveConfirmer
+import com.irondroid.ai.narrator.MoveDecision
+import com.irondroid.ai.narrator.MoveProposal
 import com.irondroid.ai.narrator.Narrator
 import com.irondroid.ai.narrator.NarratorStep
 import com.irondroid.ai.narrator.PastTurn
@@ -18,6 +21,10 @@ import com.irondroid.engine.action.ActionDispatcher
 import com.irondroid.engine.action.Caller
 import com.irondroid.engine.action.DispatchResult
 import com.irondroid.engine.action.PendingChoice
+import com.irondroid.engine.move.MoveCatalog
+import com.irondroid.engine.move.MoveRoll
+import com.irondroid.engine.move.SourcePick
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -44,11 +51,24 @@ class TurnPlayer(
     private val campaignId: Long,
     private val store: CampaignStore,
     private val dispatcher: ActionDispatcher,
-    /** Null when the AI has no API key yet. */
-    private val narrator: Narrator?,
+    private val moves: MoveCatalog,
+    /** Language of the move names. */
+    private val language: String,
+    /** Whether moves wait for the player before the dice (RF-ENV-04), read at each roll. */
+    private val confirmMoves: () -> Boolean,
+    /** Makes the narrator that asks this player before rolling; null when the AI has no API key yet. */
+    narrator: ((MoveConfirmer) -> Narrator)?,
     /** Waits for the pending writes of the open game, so the turn's calls get its number. */
     private val flush: suspend () -> Unit,
-) {
+) : MoveConfirmer {
+    /** A move waiting for the player, with the answer the narrator waits on. */
+    class PendingMove(val proposal: MoveProposal, internal val answer: CompletableDeferred<MoveDecision>)
+
+    private val narrator: Narrator? = narrator?.invoke(this)
+
+    /** The move the narrator wants to roll, waiting for the player (IRON-53). */
+    var pendingMove by mutableStateOf<PendingMove?>(null)
+        private set
     /** The saved turns, oldest first, then the one being played. */
     val turns = mutableStateListOf<PlayedTurn>()
 
@@ -120,6 +140,39 @@ class TurnPlayer(
         turns += PlayedTurn(input, outcome.steps.mapNotNull(::cardSummary), outcome.narration, outcome.error)
         live = null
         choice = dispatcher.choices.current
+    }
+
+    override fun needsConfirmation(move: String): Boolean = confirmMoves() && moves[move]?.let { it.roll !is MoveRoll.None } == true
+
+    override suspend fun confirm(proposal: MoveProposal): MoveDecision {
+        val pending = PendingMove(proposal, CompletableDeferred())
+        pendingMove = pending
+        return try {
+            pending.answer.await()
+        } finally {
+            pendingMove = null
+        }
+    }
+
+    /** The player's answer to the move waiting. */
+    fun answer(decision: MoveDecision) {
+        pendingMove?.answer?.complete(decision)
+    }
+
+    /** The moves the player can switch to: those with dice, by name. */
+    val rollableMoves: List<Pair<String, String>> by lazy {
+        moves.moves.filter { it.roll !is MoveRoll.None }
+            .map { it.id to (moves.text(it.id, language)?.name ?: it.id) }
+            .sortedBy { it.second }
+    }
+
+    /** The name of [move] in the player's language. */
+    fun moveName(move: String): String = moves.text(move, language)?.name ?: move
+
+    /** The stats or meters the player can pick for [move]; empty when the move picks it itself. */
+    fun sources(move: String): List<String> {
+        val roll = moves[move]?.roll as? MoveRoll.Action ?: return emptyList()
+        return if (roll.pick == SourcePick.ANY) roll.sources.map { it.name.lowercase() } else emptyList()
     }
 
     private fun past() = turns.map { PastTurn(it.playerInput, it.narration.ifBlank { null }) }

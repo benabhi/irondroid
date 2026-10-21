@@ -18,6 +18,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -34,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.irondroid.R
+import com.irondroid.ai.narrator.MoveDecision
+import com.irondroid.ai.narrator.MoveProposal
 import com.irondroid.engine.character.Character
 import com.irondroid.engine.action.PendingChoice
 import com.irondroid.settings.aiErrorText
@@ -94,8 +97,10 @@ fun GameScreen(
         }
 
         val choice = player.choice
+        val pendingMove = player.pendingMove
         when {
             !player.hasNarrator -> Text(stringResource(R.string.game_no_key), color = MaterialTheme.colorScheme.error)
+            pendingMove != null -> MovePanel(pendingMove.proposal, player)
             choice != null && live == null -> ChoicePanel(choice) { picked -> scope.launch { player.choose(picked) } }
             else -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -167,4 +172,74 @@ private fun ChoicePanel(choice: PendingChoice, onChoose: (List<String>) -> Unit)
             }
         }
     }
+}
+
+/**
+ * The move the narrator wants to roll (RF-ENV-04): the player rolls it, changes its stat or the
+ * move, or skips the roll.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MovePanel(proposal: MoveProposal, player: TurnPlayer) {
+    var move by remember(proposal) { mutableStateOf(proposal.move) }
+    var source by remember(proposal) { mutableStateOf(proposal.source) }
+    var picking by remember(proposal) { mutableStateOf(false) }
+    val sources = player.sources(move)
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            val name = player.moveName(move)
+            val shownSource = source?.takeIf { it in sources }
+            Text(
+                if (shownSource != null) {
+                    stringResource(R.string.move_confirm_title_stat, name, stringResource(sourceName(shownSource)))
+                } else {
+                    stringResource(R.string.move_confirm_title, name)
+                },
+                style = MaterialTheme.typography.titleSmall,
+            )
+            if (sources.size > 1) {
+                Text(stringResource(R.string.move_confirm_stat), style = MaterialTheme.typography.bodySmall)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    sources.forEach { option ->
+                        FilterChip(selected = option == source, onClick = { source = option }, label = { Text(stringResource(sourceName(option))) })
+                    }
+                }
+            }
+            if (picking) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    player.rollableMoves.forEach { (id, label) ->
+                        FilterChip(
+                            selected = id == move,
+                            onClick = {
+                                move = id
+                                val allowed = player.sources(id)
+                                if (source !in allowed) source = allowed.firstOrNull()
+                                picking = false
+                            },
+                            label = { Text(label) },
+                        )
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // A move that picks its own source keeps whatever the narrator sent.
+                val rolled = if (sources.isEmpty()) proposal.source.takeIf { move == proposal.move } else source
+                Button(onClick = { player.answer(MoveDecision.Roll(move, rolled)) }) { Text(stringResource(R.string.move_confirm_roll)) }
+                OutlinedButton(onClick = { picking = !picking }) { Text(stringResource(R.string.move_confirm_other)) }
+                TextButton(onClick = { player.answer(MoveDecision.Skip) }) { Text(stringResource(R.string.move_confirm_skip)) }
+            }
+        }
+    }
+}
+
+/** The name of a roll source, such as `edge`. */
+private fun sourceName(source: String): Int = when (source) {
+    "edge" -> R.string.stat_edge
+    "heart" -> R.string.stat_heart
+    "iron" -> R.string.stat_iron
+    "shadow" -> R.string.stat_shadow
+    "wits" -> R.string.stat_wits
+    "health" -> R.string.meter_health
+    "spirit" -> R.string.meter_spirit
+    else -> R.string.meter_supply
 }

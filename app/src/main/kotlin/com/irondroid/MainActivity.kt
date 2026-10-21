@@ -33,6 +33,7 @@ import com.irondroid.dice.DiceOverlayView
 import com.irondroid.dice.DiceReadyInfo
 import com.irondroid.dice.DiceRollReport
 import com.irondroid.engine.character.Character
+import com.irondroid.ai.narrator.MoveConfirmer
 import com.irondroid.ai.narrator.Narrator
 import com.irondroid.ai.narrator.NarratorPrompt
 import com.irondroid.ai.narrator.NarratorStyle
@@ -153,11 +154,26 @@ class MainActivity : ComponentActivity() {
                     val sheet by session.sheet.collectAsState()
                     val player = remember(openCampaignId) {
                         val narrator = app.aiProvider()?.let { provider ->
-                            Narrator(provider, app.aiSettings.model(), ActionTools.forNarrator(app.dispatcher), {
-                                NarratorPrompt.build(session.characterName, app.rulesLanguage, NarratorStyle.PERFORMED)
-                            })
+                            { confirmer: MoveConfirmer ->
+                                Narrator(
+                                    provider,
+                                    app.aiSettings.model(),
+                                    ActionTools.forNarrator(app.dispatcher),
+                                    { NarratorPrompt.build(session.characterName, app.rulesLanguage, NarratorStyle.PERFORMED) },
+                                    confirmer = confirmer,
+                                )
+                            }
                         }
-                        TurnPlayer(openCampaignId, store, app.dispatcher, narrator, flush = app.games::flushNow)
+                        TurnPlayer(
+                            openCampaignId,
+                            store,
+                            app.dispatcher,
+                            app.moves,
+                            app.rulesLanguage,
+                            confirmMoves = { app.playSettings.confirmMoves },
+                            narrator = narrator,
+                            flush = app.games::flushNow,
+                        )
                     }
                     LaunchedEffect(player) { player.load() }
                     if (showSheet) {

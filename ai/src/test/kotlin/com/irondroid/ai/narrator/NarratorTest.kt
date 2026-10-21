@@ -19,6 +19,7 @@ import com.irondroid.engine.oracle.OracleTableLoader
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -40,8 +41,66 @@ class NarratorTest {
     private val tools = ActionTools.forNarrator(actions.dispatcher())
     private var now = 0L
 
-    private fun narrator(vararg turns: ScriptedTurn, maxRounds: Int = Narrator.MAX_ROUNDS) =
-        ScriptedAiProvider(turns.toList()).let { it to Narrator(it, "scripted", tools, { "PROMPT" }, maxRounds, clock = { now += 100; now }) }
+    private fun narrator(vararg turns: ScriptedTurn, maxRounds: Int = Narrator.MAX_ROUNDS, confirmer: MoveConfirmer? = null) =
+        ScriptedAiProvider(turns.toList()).let {
+            it to Narrator(it, "scripted", tools, { "PROMPT" }, maxRounds, clock = { now += 100; now }, confirmer = confirmer)
+        }
+
+    /** Answers every proposal with [answer] and keeps what it was asked. */
+    private class Confirmer(val answer: (MoveProposal) -> MoveDecision) : MoveConfirmer {
+        val asked = mutableListOf<MoveProposal>()
+        override fun needsConfirmation(move: String) = move != "pay_the_price"
+        override suspend fun confirm(proposal: MoveProposal) = answer(proposal).also { asked += proposal }
+    }
+
+    private val faceDanger = ToolCall("c1", "roll_move", """{"move":"face_danger","source":"edge"}""")
+
+    @Test
+    fun `a move waits for the player and rolls as proposed when accepted`() = runTest {
+        val confirmer = Confirmer { MoveDecision.Roll(it.move, it.source) }
+        val (ai, narrator) = narrator(ScriptedTurn.toolCalls(faceDanger), ScriptedTurn.text("Saltas."), confirmer = confirmer)
+        val outcome = narrator.play("Salto", emptyList())
+        assertEquals(listOf(MoveProposal("face_danger", "edge")), confirmer.asked)
+        assertTrue(outcome.steps.single().succeeded)
+        val result = assertIs<ChatMessage.ToolResult>(ai.requests[1].messages.last()).content
+        assertFalse("player_changed" in result)
+    }
+
+    @Test
+    fun `the player can change the stat or the move and the model is told`() = runTest {
+        val confirmer = Confirmer { MoveDecision.Roll("secure_an_advantage", "wits") }
+        val (ai, narrator) = narrator(ScriptedTurn.toolCalls(faceDanger), ScriptedTurn.text("Observas."), confirmer = confirmer)
+        val step = narrator.play("Salto", emptyList()).steps.single()
+        assertEquals("roll_move", step.action)
+        assertTrue("secure_an_advantage" in step.arguments && "wits" in step.arguments, step.arguments)
+        assertTrue(step.summary.startsWith("Asegurar una ventaja"), step.summary)
+        val result = assertIs<ChatMessage.ToolResult>(ai.requests[1].messages.last()).content
+        assertTrue("player_changed" in result, result)
+    }
+
+    @Test
+    fun `skipping the roll tells the model and rolls nothing`() = runTest {
+        val momentum = game.sheet.momentum.value
+        val confirmer = Confirmer { MoveDecision.Skip }
+        val (ai, narrator) = narrator(ScriptedTurn.toolCalls(faceDanger), ScriptedTurn.text("Esperas."), confirmer = confirmer)
+        val outcome = narrator.play("Salto", emptyList())
+        assertFalse(outcome.steps.single().succeeded)
+        assertEquals(momentum, game.sheet.momentum.value)
+        val result = assertIs<ChatMessage.ToolResult>(ai.requests[1].messages.last()).content
+        assertTrue("declined" in result, result)
+    }
+
+    @Test
+    fun `moves without confirmation and other tools are not asked about`() = runTest {
+        val confirmer = Confirmer { error("not asked") }
+        val (_, narrator) = narrator(
+            ScriptedTurn.toolCalls(ToolCall("c1", "get_scene", "{}"), ToolCall("c2", "roll_move", """{"move":"pay_the_price"}""")),
+            ScriptedTurn.text("Pagas."),
+            confirmer = confirmer,
+        )
+        narrator.play("Sigo", emptyList())
+        assertEquals(emptyList(), confirmer.asked)
+    }
 
     @Test
     fun `a turn without stakes is narrated in one request`() = runTest {
