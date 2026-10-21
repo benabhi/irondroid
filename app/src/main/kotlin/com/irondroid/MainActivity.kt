@@ -72,10 +72,18 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun AppContent() {
-        val store = (application as IrondroidApp).campaignStore
+        val app = application as IrondroidApp
+        val store = app.campaignStore
         val scope = rememberCoroutineScope()
-        var screen by rememberSaveable { mutableStateOf(Screen.CAMPAIGNS) }
-        var openCampaignId by rememberSaveable { mutableLongStateOf(0L) }
+        // Back where the player left: the campaign that was open when the app was closed (IRON-34).
+        val resumeId = remember { app.lastCampaignId }
+        var screen by rememberSaveable { mutableStateOf(if (resumeId != null) Screen.CAMPAIGN else Screen.CAMPAIGNS) }
+        var openCampaignId by rememberSaveable { mutableLongStateOf(resumeId ?: 0L) }
+        val leaveCampaign = {
+            app.games.close()
+            app.lastCampaignId = null
+            screen = Screen.CAMPAIGNS
+        }
         var creating by remember { mutableStateOf(false) }
 
         when (screen) {
@@ -115,13 +123,17 @@ class MainActivity : ComponentActivity() {
                 }
             }
             Screen.CAMPAIGN -> {
-                BackHandler { screen = Screen.CAMPAIGNS }
+                BackHandler(onBack = leaveCampaign)
                 val details by produceState<CampaignDetails?>(null, openCampaignId) {
-                    value = store.campaign(openCampaignId)?.let { campaign ->
-                        CampaignDetails(campaign, store.world(campaign.worldId), store.loadCharacter(campaign.id))
+                    val campaign = store.campaign(openCampaignId)
+                    if (campaign == null || app.games.open(openCampaignId) == null) {
+                        leaveCampaign()
+                        return@produceState
                     }
+                    app.lastCampaignId = campaign.id
+                    value = CampaignDetails(campaign, store.world(campaign.worldId), store.loadCharacter(campaign.id))
                 }
-                CampaignScreen(details, onBack = { screen = Screen.CAMPAIGNS })
+                CampaignScreen(details, onBack = leaveCampaign)
             }
             Screen.DICE_PROTOTYPE -> {
                 BackHandler { screen = Screen.CAMPAIGNS; hideDiceOverlay() }
@@ -137,6 +149,12 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(Unit) { showDiceOverlay() }
             }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Leaving the screen may be the last chance before the system ends the app: write pending saves now.
+        (application as IrondroidApp).games.flush()
     }
 
     /** Creates the overlay on first use, so the WebView does not slow down app start. */
