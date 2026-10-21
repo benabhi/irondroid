@@ -118,6 +118,14 @@ Cuando el usuario pide "anotar" algo (una idea, una preferencia, una decisión),
 - El `.tar.gz` trae la base, todos los adjuntos y un `manifest.json`. Se restaura con `lific restore`.
 - Se verifica que el archivo exista y pese más de 0 bytes, y se deja un comentario en el issue principal del plan con el nombre del archivo, el tamaño y la fecha.
 
+### Tag de versión al cerrar cada plan (decisión de benabhi, 21/10/2026, IRON-105)
+
+- **Cada plan cerrado lleva un tag anotado de git `v0.<N>.0`**, donde N es el número del plan (`IRON-PLAN-8` → `v0.8.0`). El MVP terminado será `v1.0.0`.
+- Antes del tag, en una rama `chore/IRON-<n principal>-version-0.<N>.0` (o en la rama de la última tarea, si todavía no se mergeó): subir en `app/build.gradle.kts` `versionName` a `0.<N>.0` y `versionCode` en 1, y mergear a `main` como siempre.
+- El tag va sobre ese commit de `main`: `git tag -a v0.<N>.0 -m "IRON-PLAN-<N>: <título del plan>"` y `git push origin v0.<N>.0`.
+- El informe del plan nombra el tag, y el comentario de cierre del issue principal también.
+- Los planes 1 a 7 se cerraron sin tag; se les pusieron después (IRON-105) sobre el merge de su última tarea, con la app todavía en `versionName` 0.1.0.
+
 ## Git (OBLIGATORIO)
 
 - Rama principal: `main`. No se trabaja directo sobre `main`.
