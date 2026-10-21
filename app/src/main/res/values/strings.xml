@@ -2,8 +2,44 @@
 <!-- Base language (English). Every user-visible text lives here; translations go in values-<lang>. -->
 <resources>
     <string name="app_name" translatable="false">irondroid</string>
-    <string name="welcome_title">Welcome to irondroid</string>
-    <string name="welcome_subtitle">Your Ironsworn journey begins here.</string>
+
+    <!-- Shared -->
+    <string name="common_cancel">Cancel</string>
+    <string name="common_back">Back</string>
+
+    <!-- Campaigns (IRON-35) -->
+    <string name="campaigns_title">Campaigns</string>
+    <string name="campaigns_new">New campaign</string>
+    <string name="campaigns_empty">No campaigns yet. Start your first one and swear your iron vow.</string>
+    <string name="campaign_row_details">%1$s · last played %2$s</string>
+    <string name="campaign_status_active">In progress</string>
+    <string name="campaign_status_dead">Dead</string>
+    <string name="campaign_status_desolate">Lost to desolation</string>
+    <string name="campaign_status_retired">Retired</string>
+    <string name="campaign_delete">Delete</string>
+    <string name="campaign_delete_title">Delete campaign?</string>
+    <string name="campaign_delete_message">“%1$s” will be deleted with its character and history. The world stays for other campaigns. This cannot be undone.</string>
+    <string name="campaign_delete_confirm">Delete</string>
+    <string name="campaign_new_title">New campaign</string>
+    <string name="campaign_new_name">Campaign title</string>
+    <string name="campaign_new_character">Character name</string>
+    <string name="campaign_new_world">World</string>
+    <string name="campaign_new_world_new">A new world</string>
+    <string name="campaign_new_world_name">World name</string>
+    <string name="campaign_new_world_existing">Continue in %1$s · %2$s</string>
+    <string name="campaign_new_world_empty">no campaigns</string>
+    <string name="campaign_new_world_taken">A world with this name already exists. Try “%1$s”.</string>
+    <string name="campaign_new_pending_sheet">Truths, stats and assets will be chosen in the guided creation, which arrives in a later version.</string>
+    <string name="campaign_new_create">Create campaign</string>
+    <string name="world_default_name">The Ironlands</string>
+    <string name="campaign_world">World: %1$s</string>
+    <string name="campaign_status">Status: %1$s</string>
+    <string name="campaign_created">Started: %1$s</string>
+    <string name="campaign_updated">Last played: %1$s</string>
+    <string name="campaign_sheet_pending">Character sheet pending: it will be filled in during guided creation.</string>
+    <string name="campaign_stats">Edge %1$d · Heart %2$d · Iron %3$d · Shadow %4$d · Wits %5$d</string>
+    <string name="campaign_meters">Health %1$d · Spirit %2$d · Supply %3$d · Momentum %4$+d</string>
+    <string name="campaign_game_soon">The game screen arrives in a later version.</string>
 
     <!-- 3D dice prototype (IRON-12). Temporary screen. -->
     <string name="dice_proto_open">3D dice prototype</string>

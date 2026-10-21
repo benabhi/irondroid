@@ -1,8 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Traducción al español latino neutro. -->
 <resources>
-    <string name="welcome_title">Te damos la bienvenida a irondroid</string>
-    <string name="welcome_subtitle">Tu travesía por Ironsworn empieza aquí.</string>
+    <!-- Compartidos -->
+    <string name="common_cancel">Cancelar</string>
+    <string name="common_back">Volver</string>
+
+    <!-- Campañas (IRON-35) -->
+    <string name="campaigns_title">Campañas</string>
+    <string name="campaigns_new">Nueva campaña</string>
+    <string name="campaigns_empty">Todavía no hay campañas. Empieza la primera y jura tu voto de hierro.</string>
+    <string name="campaign_row_details">%1$s · jugada por última vez el %2$s</string>
+    <string name="campaign_status_active">En curso</string>
+    <string name="campaign_status_dead">Muerto</string>
+    <string name="campaign_status_desolate">Perdido en la desolación</string>
+    <string name="campaign_status_retired">Retirado</string>
+    <string name="campaign_delete">Borrar</string>
+    <string name="campaign_delete_title">¿Borrar la campaña?</string>
+    <string name="campaign_delete_message">Se borrará “%1$s” con su personaje y su historial. El mundo queda para otras campañas. No se puede deshacer.</string>
+    <string name="campaign_delete_confirm">Borrar</string>
+    <string name="campaign_new_title">Nueva campaña</string>
+    <string name="campaign_new_name">Título de la campaña</string>
+    <string name="campaign_new_character">Nombre del personaje</string>
+    <string name="campaign_new_world">Mundo</string>
+    <string name="campaign_new_world_new">Un mundo nuevo</string>
+    <string name="campaign_new_world_name">Nombre del mundo</string>
+    <string name="campaign_new_world_existing">Seguir en %1$s · %2$s</string>
+    <string name="campaign_new_world_empty">sin campañas</string>
+    <string name="campaign_new_world_taken">Ya existe un mundo con ese nombre. Prueba con “%1$s”.</string>
+    <string name="campaign_new_pending_sheet">Las verdades, los atributos y los recursos se eligen en la creación guiada, que llega en una próxima versión.</string>
+    <string name="campaign_new_create">Crear campaña</string>
+    <string name="world_default_name">Las Tierras de Hierro</string>
+    <string name="campaign_world">Mundo: %1$s</string>
+    <string name="campaign_status">Estado: %1$s</string>
+    <string name="campaign_created">Empezada: %1$s</string>
+    <string name="campaign_updated">Jugada por última vez: %1$s</string>
+    <string name="campaign_sheet_pending">Ficha pendiente: se completa en la creación guiada.</string>
+    <string name="campaign_stats">Filo %1$d · Corazón %2$d · Hierro %3$d · Sombra %4$d · Ingenio %5$d</string>
+    <string name="campaign_meters">Salud %1$d · Espíritu %2$d · Suministros %3$d · Impulso %4$+d</string>
+    <string name="campaign_game_soon">La pantalla de juego llega en una próxima versión.</string>
 
     <!-- Prototipo de dados 3D (IRON-12). Pantalla temporal. -->
     <string name="dice_proto_open">Prototipo de dados 3D</string>

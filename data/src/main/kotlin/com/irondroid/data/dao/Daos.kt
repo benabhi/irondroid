@@ -29,9 +29,27 @@ interface WorldDao {
     @Query("SELECT * FROM worlds ORDER BY createdAt, id")
     suspend fun all(): List<WorldEntity>
 
+    /** One row per campaign of each world, or one row with no character for a world without campaigns. */
+    @Query(
+        """
+        SELECT w.id AS worldId, w.name AS worldName, ch.name AS characterName
+        FROM worlds w
+        LEFT JOIN campaigns c ON c.worldId = w.id
+        LEFT JOIN characters ch ON ch.campaignId = c.id
+        ORDER BY w.createdAt, w.id, c.createdAt, c.id
+        """,
+    )
+    suspend fun residents(): List<WorldResidentRow>
+
+    @Query("SELECT COUNT(*) FROM worlds WHERE name = :name COLLATE NOCASE")
+    suspend fun countNamed(name: String): Int
+
     @Query("SELECT * FROM world_truths WHERE worldId = :worldId ORDER BY truthKey")
     suspend fun truths(worldId: Long): List<WorldTruthEntity>
 }
+
+/** A world and one character living in it, or null when the world has no campaigns. */
+data class WorldResidentRow(val worldId: Long, val worldName: String, val characterName: String?)
 
 /** A campaign as the campaign list shows it. */
 data class CampaignSummary(
