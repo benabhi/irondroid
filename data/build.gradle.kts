@@ -43,17 +43,20 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
+    implementation(libs.kotlinx.coroutines.core)
 
     // Room needs an Android Context, so the database tests run on the JVM with Robolectric (JUnit 4).
     testImplementation(libs.junit4)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.kotlinx.serialization.json)
     testImplementation(kotlin("test"))
 
     // A smoke test on the phone checks the real SQLite of the device: `.\gradlew.bat :data:connectedDebugAndroidTest`.
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.kotlinx.coroutines.test)
+    androidTestImplementation(libs.kotlinx.serialization.json)
     androidTestImplementation(kotlin("test"))
 }
