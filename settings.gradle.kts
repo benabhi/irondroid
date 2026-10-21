@@ -16,4 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "irondroid"
 
-include(":app", ":engine", ":data")
+include(":app", ":engine", ":data", ":ai")
