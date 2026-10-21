@@ -19,6 +19,7 @@ import com.irondroid.engine.action.ActionDispatcher
 import com.irondroid.engine.dice.SeededDice
 import com.irondroid.engine.game.GameActions
 import com.irondroid.engine.move.MoveLoader
+import com.irondroid.engine.oracle.OracleTableCatalog
 import com.irondroid.engine.oracle.OracleTableLoader
 import com.irondroid.settings.AiSettings
 import com.irondroid.settings.AiSettingsActions
@@ -37,13 +38,15 @@ class IrondroidApp : Application() {
 
     val games: GameController by lazy { GameController(campaignStore, { dispatcher }, appScope) }
 
-    /**
-     * The actions of the MVP catalog (IRON-43), played on the open campaign. Rule texts follow the
-     * phone's language: Spanish when it is Spanish, English otherwise.
-     */
+    /** Language of the rule texts: Spanish when the phone is in Spanish, English otherwise. */
+    val rulesLanguage: String by lazy { if (resources.configuration.locales[0].language == "es") "es" else "en" }
+
+    /** The oracle tables (RF-ORA-02), with the inspiration tables of IRON-103. */
+    val oracles: OracleTableCatalog by lazy { OracleTableLoader.fromResources() }
+
+    /** The actions of the MVP catalog (IRON-43), played on the open campaign, with texts in [rulesLanguage]. */
     val actions: GameActions by lazy {
-        val language = if (resources.configuration.locales[0].language == "es") "es" else "en"
-        GameActions(games, MoveLoader.fromResources(), OracleTableLoader.fromResources(), SeededDice.fromSeed(System.nanoTime()), language)
+        GameActions(games, MoveLoader.fromResources(), oracles, SeededDice.fromSeed(System.nanoTime()), rulesLanguage)
     }
 
     /** The single door for every action (RF-API-04), for the screens and the AI alike. */

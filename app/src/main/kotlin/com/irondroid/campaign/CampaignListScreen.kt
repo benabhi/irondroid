@@ -40,6 +40,7 @@ fun CampaignListScreen(
     onDelete: (Long) -> Unit,
     onOpenDicePrototype: () -> Unit,
     onOpenAiTest: (() -> Unit)?,
+    onOpenOracleTables: (() -> Unit)?,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -85,6 +86,11 @@ fun CampaignListScreen(
         onOpenAiTest?.let {
             OutlinedButton(onClick = it, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.ai_test_open))
+            }
+        }
+        onOpenOracleTables?.let {
+            OutlinedButton(onClick = it, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.oracle_tables_open))
             }
         }
     }

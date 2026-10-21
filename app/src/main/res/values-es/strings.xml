@@ -105,4 +105,10 @@
     <string name="ai_test_no_campaign">No hay campaña donde jugar las acciones: crea una primero.</string>
     <string name="ai_test_waiting">Esperando la respuesta…</string>
     <string name="ai_test_metrics">Primer texto a los %1$d ms · total %2$d ms · tokens: %3$d de entrada (%4$d en caché), %5$d de salida</string>
+    <string name="oracle_tables_open">Tablas de oráculos (desarrollo)</string>
+    <string name="oracle_tables_title">Tablas de oráculos</string>
+    <string name="oracle_tables_hint">Toca una tabla para tirar 1d100 en ella. La última tirada queda arriba.</string>
+    <string name="oracle_tables_result">%1$s · %2$d: %3$s</string>
+    <string name="oracle_tables_extra">↳ %1$d: %2$s</string>
+    <string name="oracle_tables_repeated">Las dos tiradas cayeron en el mismo resultado: hazlo más intenso.</string>
 </resources>

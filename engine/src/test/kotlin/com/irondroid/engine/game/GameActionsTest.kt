@@ -334,7 +334,7 @@ class GameActionsTest {
         assertTrue(price.summary.contains(" / "))
         val extra = price.data.getValue("extra").jsonArray.single().jsonObject
         assertEquals(50, extra.getValue("roll").jsonPrimitive.int)
-        assertEquals(3, ok("list_oracle_tables").data.getValue("tables").jsonArray.size)
+        assertEquals(16, ok("list_oracle_tables").data.getValue("tables").jsonArray.size)
         assertEquals("Pagar el precio", ok("list_oracle_tables").data.getValue("tables").jsonArray.first().jsonObject.getValue("name").jsonPrimitive.content)
     }
 
@@ -345,7 +345,7 @@ class GameActionsTest {
         assertEquals(JsonNull, ok("get_scene").data.getValue("scene"))
         assertEquals("Rules of Enfrentar el peligro", ok("get_move", """{"move":"face_danger"}""").summary)
         assertTrue(ok("get_rules", """{"section":"moves"}""").summary.endsWith("moves"))
-        assertEquals("3 oracle tables", ok("get_rules", """{"section":"oracles"}""").summary)
+        assertEquals("16 oracle tables", ok("get_rules", """{"section":"oracles"}""").summary)
         val quest = ok("list_moves", """{"category":"quest"}""").data.getValue("moves").jsonArray
         assertTrue(quest.all { it.jsonObject.getValue("category").jsonPrimitive.content == "quest" })
         assertEquals(21, ok("list_moves").data.getValue("moves").jsonArray.size)
