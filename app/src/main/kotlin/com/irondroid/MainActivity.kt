@@ -210,7 +210,7 @@ class MainActivity : ComponentActivity() {
             }
             Screen.ORACLE_TABLES -> {
                 BackHandler { screen = Screen.CAMPAIGNS }
-                OracleTablesScreen(app.oracles, app.rulesLanguage, onBack = { screen = Screen.CAMPAIGNS })
+                OracleTablesScreen(app.oracles, app.rulesLanguage, app.dice, onBack = { screen = Screen.CAMPAIGNS })
             }
             Screen.AI_SETTINGS -> {
                 BackHandler { screen = Screen.CAMPAIGNS }

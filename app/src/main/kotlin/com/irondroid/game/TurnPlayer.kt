@@ -34,9 +34,15 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 
 /** One turn on the play screen: what the player said, the actions run and the narration. */
+/**
+ * A roll or oracle answer of a turn, as its history card keeps it: the engine's [summary] (for the
+ * AI) and the result's [data], from which the screen writes its own line in the player's language.
+ */
+data class StepCard(val action: String, val summary: String, val data: JsonObject?)
+
 data class PlayedTurn(
     val playerInput: String?,
-    val steps: List<String>,
+    val steps: List<StepCard>,
     val narration: String,
     /** Why the narrator did not answer, when it failed. */
     val error: AiException? = null,
@@ -92,7 +98,7 @@ class TurnPlayer(
         val cards = history.entries.groupBy { it.turnId }
         turns.clear()
         history.turns.forEach { turn ->
-            turns += PlayedTurn(turn.playerInput, cards[turn.id].orEmpty().mapNotNull { summary(it.payload) }, turn.narration.orEmpty())
+            turns += PlayedTurn(turn.playerInput, cards[turn.id].orEmpty().mapNotNull { fromPayload(it.payload) }, turn.narration.orEmpty())
         }
         choice = dispatcher.choices.current
         loaded = true
@@ -192,7 +198,7 @@ class TurnPlayer(
             else -> null
         }
 
-        private fun cardSummary(step: NarratorStep): String? = step.summary.takeIf { kind(step) != null }
+        private fun cardSummary(step: NarratorStep): StepCard? = StepCard(step.action, step.summary, step.data).takeIf { kind(step) != null }
 
         private fun card(step: NarratorStep): NewHistoryEntry? = kind(step)?.let { kind ->
             NewHistoryEntry(
@@ -201,12 +207,19 @@ class TurnPlayer(
                     put("action", step.action)
                     put("arguments", step.arguments)
                     put("summary", step.summary)
+                    step.data?.let { put("data", it) }
                 }.toString(),
             )
         }
 
-        private fun summary(payload: String): String? = try {
-            (json.parseToJsonElement(payload) as? JsonObject)?.get("summary")?.jsonPrimitive?.content
+        private fun fromPayload(payload: String): StepCard? = try {
+            (json.parseToJsonElement(payload) as? JsonObject)?.let { card ->
+                StepCard(
+                    card["action"]?.jsonPrimitive?.content.orEmpty(),
+                    card["summary"]?.jsonPrimitive?.content ?: return@let null,
+                    card["data"] as? JsonObject,
+                )
+            }
         } catch (_: IllegalArgumentException) {
             null
         }
