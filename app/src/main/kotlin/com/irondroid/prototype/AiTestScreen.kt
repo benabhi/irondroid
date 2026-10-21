@@ -38,6 +38,8 @@ import com.irondroid.ai.ChatRequest
 import com.irondroid.ai.ReasoningEffort
 import com.irondroid.ai.TokenUsage
 import com.irondroid.ai.collectReply
+import com.irondroid.ai.narrator.NarratorPrompt
+import com.irondroid.ai.narrator.NarratorStyle
 import com.irondroid.ai.tools.ActionTools
 import com.irondroid.engine.action.DispatchResult
 import com.irondroid.settings.aiErrorText
@@ -59,17 +61,26 @@ private data class AiTestResult(
 /**
  * Development-only screen (IRON-47) to talk to the real AI provider and watch the answer stream in.
  * [provider] is null when no API key is saved; [defaultModel] is the one chosen in the settings. With [tools] (IRON-48) the AI can run the game's
- * actions on [campaignTitle], the last campaign played. The system prompt is a short stand-in until
- * the narrator prompt exists (IRON-51), so it is not player-facing text.
+ * actions on [campaignTitle], the last campaign played, whose character is [characterName]. The
+ * system prompt is the narrator's (IRON-51), in [language], with the style chosen on the screen.
  */
 @Composable
-fun AiTestScreen(provider: AiProvider?, defaultModel: String, tools: ActionTools?, campaignTitle: String?, onBack: () -> Unit) {
+fun AiTestScreen(
+    provider: AiProvider?,
+    defaultModel: String,
+    tools: ActionTools?,
+    campaignTitle: String?,
+    characterName: String?,
+    language: String,
+    onBack: () -> Unit,
+) {
     val scope = rememberCoroutineScope()
     var input by remember { mutableStateOf("") }
     var model by remember { mutableStateOf(defaultModel) }
     var result by remember { mutableStateOf<AiTestResult?>(null) }
     var job by remember { mutableStateOf<Job?>(null) }
     var withActions by remember { mutableStateOf(false) }
+    var style by remember { mutableStateOf(NarratorStyle.PERFORMED) }
     val running = job?.isActive == true
 
     Column(
@@ -102,6 +113,16 @@ fun AiTestScreen(provider: AiProvider?, defaultModel: String, tools: ActionTools
                 onClick = { withActions = !withActions },
                 label = { Text(stringResource(R.string.ai_test_with_actions)) },
             )
+            FilterChip(
+                selected = style == NarratorStyle.PERFORMED,
+                onClick = { style = NarratorStyle.PERFORMED },
+                label = { Text(stringResource(R.string.ai_test_style_performed)) },
+            )
+            FilterChip(
+                selected = style == NarratorStyle.SOBER,
+                onClick = { style = NarratorStyle.SOBER },
+                label = { Text(stringResource(R.string.ai_test_style_sober)) },
+            )
         }
         Text(
             if (campaignTitle != null) stringResource(R.string.ai_test_campaign, campaignTitle) else stringResource(R.string.ai_test_no_campaign),
@@ -120,7 +141,8 @@ fun AiTestScreen(provider: AiProvider?, defaultModel: String, tools: ActionTools
                 onClick = {
                     job = scope.launch {
                         result = AiTestResult()
-                        result = ask(provider, model, input.trim(), tools.takeIf { withActions }) { result = it }
+                        val prompt = NarratorPrompt.build(characterName ?: DEFAULT_CHARACTER, language, style)
+                        result = ask(provider, model, prompt, input.trim(), tools.takeIf { withActions }) { result = it }
                     }
                 },
             ) { Text(stringResource(R.string.ai_test_send)) }
@@ -161,13 +183,14 @@ fun AiTestScreen(provider: AiProvider?, defaultModel: String, tools: ActionTools
 private suspend fun ask(
     provider: AiProvider,
     model: String,
+    narratorPrompt: String,
     input: String,
     tools: ActionTools?,
     onUpdate: (AiTestResult) -> Unit,
 ): AiTestResult {
     val started = SystemClock.elapsedRealtime()
     var current = AiTestResult()
-    val conversation = mutableListOf<ChatMessage>(ChatMessage.System(if (tools == null) TEST_PROMPT else TOOLS_PROMPT), ChatMessage.User(input))
+    val conversation = mutableListOf<ChatMessage>(ChatMessage.System(if (tools == null) narratorPrompt + NO_TOOLS_NOTE else narratorPrompt), ChatMessage.User(input))
     var usage: TokenUsage? = null
     return try {
         for (step in 1..MAX_STEPS) {
@@ -211,12 +234,9 @@ private const val TAG = "AiTest"
 /** Most tool rounds in one test answer. */
 private const val MAX_STEPS = 6
 
-/** Stand-in instructions for the test; the real narrator prompt is IRON-51. */
-private const val TEST_PROMPT =
-    "You narrate a dark fantasy solo game set in the Ironlands, in neutral Latin American Spanish, " +
-        "in second person, in 2 to 4 sentences, ending by giving control back to the player."
+/** Name for the narrator when there is no campaign to play on; model-facing, not shown. */
+private const val DEFAULT_CHARACTER = "the wanderer"
 
-/** Stand-in instructions to play with the actions; the real narrator prompt is IRON-51. */
-private const val TOOLS_PROMPT = TEST_PROMPT + " When the player's action is risky, roll the move that fits with the tools; " +
-    "never invent a roll. After the roll, narrate the outcome without numbers. If the player has to choose, " +
-    "mark your suggestion with suggest_option and do not narrate the choice."
+/** Without actions the tools the prompt names are missing: the model must know it cannot call them. */
+private const val NO_TOOLS_NOTE = "\n## Test without tools\n\n" +
+    "In this test no tools are available: narrate only, and leave anything that would need a roll unresolved.\n"
