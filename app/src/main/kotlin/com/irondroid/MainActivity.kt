@@ -28,7 +28,7 @@ import com.irondroid.campaign.CampaignDetails
 import com.irondroid.campaign.CampaignListScreen
 import com.irondroid.campaign.CampaignScreen
 import com.irondroid.campaign.NewCampaignScreen
-import com.irondroid.data.entity.WorldEntity
+import com.irondroid.data.WorldSummary
 import com.irondroid.dice.DiceOverlayView
 import com.irondroid.dice.DiceReadyInfo
 import com.irondroid.dice.DiceRollReport
@@ -91,25 +91,28 @@ class MainActivity : ComponentActivity() {
             }
             Screen.NEW_CAMPAIGN -> {
                 BackHandler { screen = Screen.CAMPAIGNS }
-                val worlds by produceState(emptyList<WorldEntity>()) { value = store.worlds() }
-                NewCampaignScreen(
-                    worlds = worlds,
-                    onCreate = { new ->
-                        if (!creating) {
-                            creating = true
-                            scope.launch {
-                                openCampaignId = if (new.worldId == null) {
-                                    store.createCampaignInNewWorld(new.newWorldName, new.title, new.characterName, PENDING_SHEET)
-                                } else {
-                                    store.createCampaign(new.worldId, new.title, new.characterName, PENDING_SHEET)
+                val worlds by produceState<List<WorldSummary>?>(null) { value = store.worldSummaries() }
+                // Waits for the worlds so the suggested world name already avoids the taken ones.
+                worlds?.let { loaded ->
+                    NewCampaignScreen(
+                        worlds = loaded,
+                        onCreate = { new ->
+                            if (!creating) {
+                                creating = true
+                                scope.launch {
+                                    openCampaignId = if (new.worldId == null) {
+                                        store.createCampaignInNewWorld(new.newWorldName, new.title, new.characterName, PENDING_SHEET)
+                                    } else {
+                                        store.createCampaign(new.worldId, new.title, new.characterName, PENDING_SHEET)
+                                    }
+                                    creating = false
+                                    screen = Screen.CAMPAIGN
                                 }
-                                creating = false
-                                screen = Screen.CAMPAIGN
                             }
-                        }
-                    },
-                    onCancel = { screen = Screen.CAMPAIGNS },
-                )
+                        },
+                        onCancel = { screen = Screen.CAMPAIGNS },
+                    )
+                }
             }
             Screen.CAMPAIGN -> {
                 BackHandler { screen = Screen.CAMPAIGNS }

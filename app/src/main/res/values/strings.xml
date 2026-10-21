@@ -26,7 +26,9 @@
     <string name="campaign_new_world">World</string>
     <string name="campaign_new_world_new">A new world</string>
     <string name="campaign_new_world_name">World name</string>
-    <string name="campaign_new_world_existing">Continue in %1$s</string>
+    <string name="campaign_new_world_existing">Continue in %1$s · %2$s</string>
+    <string name="campaign_new_world_empty">no campaigns</string>
+    <string name="campaign_new_world_taken">A world with this name already exists. Try “%1$s”.</string>
     <string name="campaign_new_pending_sheet">Truths, stats and assets will be chosen in the guided creation, which arrives in a later version.</string>
     <string name="campaign_new_create">Create campaign</string>
     <string name="world_default_name">The Ironlands</string>

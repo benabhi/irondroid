@@ -15,6 +15,9 @@ import kotlinx.coroutines.flow.Flow
 /** A truth to save with a new world; [optionId] is null for one the player wrote. */
 data class WorldTruth(val truthKey: String, val optionId: String?, val text: String)
 
+/** A world with the characters of its campaigns, oldest first, to tell worlds apart. */
+data class WorldSummary(val id: Long, val name: String, val characterNames: List<String>)
+
 /** A saved character: its name and the engine sheet. */
 data class SavedCharacter(val id: Long, val campaignId: Long, val name: String, val sheet: Character)
 
@@ -37,9 +40,11 @@ class CampaignStore(
     private val characters = database.characters()
     private val history = database.history()
 
-    /** Creates a world with its truths and returns its id. */
+    /** Creates a world with its truths and returns its id. World names are unique, ignoring case. */
     suspend fun createWorld(name: String, truths: List<WorldTruth> = emptyList()): Long = database.withTransaction {
-        val worldId = worlds.insert(WorldEntity(name = name, createdAt = clock()))
+        require(name.isNotBlank()) { "A world needs a name" }
+        require(worlds.countNamed(name.trim()) == 0) { "A world named \"${name.trim()}\" already exists" }
+        val worldId = worlds.insert(WorldEntity(name = name.trim(), createdAt = clock()))
         worlds.insertTruths(truths.map { WorldTruthEntity(worldId, it.truthKey, it.optionId, it.text) })
         worldId
     }
@@ -47,6 +52,12 @@ class CampaignStore(
     suspend fun worlds(): List<WorldEntity> = worlds.all()
 
     suspend fun world(worldId: Long): WorldEntity? = worlds.get(worldId)
+
+    /** Every world, oldest first, with who lives in it. */
+    suspend fun worldSummaries(): List<WorldSummary> =
+        worlds.residents().groupBy { it.worldId }.map { (worldId, rows) ->
+            WorldSummary(worldId, rows.first().worldName, rows.mapNotNull { it.characterName })
+        }
 
     suspend fun truths(worldId: Long): List<WorldTruth> =
         worlds.truths(worldId).map { WorldTruth(it.truthKey, it.optionId, it.text) }

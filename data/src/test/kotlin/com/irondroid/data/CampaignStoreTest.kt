@@ -226,6 +226,30 @@ class CampaignStoreTest {
     }
 
     @Test
+    fun `two worlds cannot share a name`() = runTest {
+        store.createWorld("Ironlands")
+
+        assertFailsWith<IllegalArgumentException> { store.createWorld("  ironlands ") }
+        assertFailsWith<IllegalArgumentException> { store.createCampaignInNewWorld("IRONLANDS", "T", "K", playedSheet()) }
+        assertFailsWith<IllegalArgumentException> { store.createWorld(" ") }
+        assertEquals(1, store.worlds().size)
+        assertEquals(emptyList(), store.observeCampaigns().first())
+    }
+
+    @Test
+    fun `world summaries list who lives in each world`() = runTest {
+        val shared = store.createWorld("Ironlands")
+        store.createCampaign(shared, "First", "Kira", playedSheet())
+        store.createCampaign(shared, "Second", "Arn", playedSheet())
+        val empty = store.createWorld("Empty lands")
+
+        assertEquals(
+            listOf(WorldSummary(shared, "Ironlands", listOf("Kira", "Arn")), WorldSummary(empty, "Empty lands", emptyList())),
+            store.worldSummaries(),
+        )
+    }
+
+    @Test
     fun `the default clock stamps real time`() = runTest {
         val realStore = CampaignStore(database)
         val start = System.currentTimeMillis()

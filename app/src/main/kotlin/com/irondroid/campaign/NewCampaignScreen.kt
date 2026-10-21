@@ -29,7 +29,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.irondroid.R
-import com.irondroid.data.entity.WorldEntity
+import com.irondroid.data.WorldNames
+import com.irondroid.data.WorldSummary
 
 /** What the player filled in to start a campaign. [worldId] is null for a new world named [newWorldName]. */
 data class NewCampaign(val title: String, val characterName: String, val worldId: Long?, val newWorldName: String)
@@ -42,18 +43,21 @@ private const val NEW_WORLD = -1L
  */
 @Composable
 fun NewCampaignScreen(
-    worlds: List<WorldEntity>,
+    worlds: List<WorldSummary>,
     onCreate: (NewCampaign) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val defaultWorldName = stringResource(R.string.world_default_name)
+    val worldNames = worlds.map { it.name }
+    val defaultWorldName = WorldNames.suggest(stringResource(R.string.world_default_name), worldNames)
     var title by rememberSaveable { mutableStateOf("") }
     var characterName by rememberSaveable { mutableStateOf("") }
     var worldName by rememberSaveable { mutableStateOf(defaultWorldName) }
     var selectedWorld by rememberSaveable { mutableLongStateOf(NEW_WORLD) }
     val isNewWorld = selectedWorld == NEW_WORLD
-    val canCreate = title.isNotBlank() && characterName.isNotBlank() && (!isNewWorld || worldName.isNotBlank())
+    val worldNameTaken = isNewWorld && WorldNames.isTaken(worldName, worldNames)
+    val canCreate = title.isNotBlank() && characterName.isNotBlank() &&
+        (!isNewWorld || (worldName.isNotBlank() && !worldNameTaken))
 
     Column(
         modifier = modifier
@@ -86,6 +90,12 @@ fun NewCampaignScreen(
                 value = worldName,
                 onValueChange = { worldName = it },
                 label = { Text(stringResource(R.string.campaign_new_world_name)) },
+                isError = worldNameTaken,
+                supportingText = if (worldNameTaken) {
+                    { Text(stringResource(R.string.campaign_new_world_taken, WorldNames.suggest(worldName, worldNames))) }
+                } else {
+                    null
+                },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -93,8 +103,13 @@ fun NewCampaignScreen(
             )
         }
         worlds.forEach { world ->
+            val residents = if (world.characterNames.isEmpty()) {
+                stringResource(R.string.campaign_new_world_empty)
+            } else {
+                world.characterNames.joinToString(", ")
+            }
             WorldOption(
-                stringResource(R.string.campaign_new_world_existing, world.name),
+                stringResource(R.string.campaign_new_world_existing, world.name, residents),
                 selected = selectedWorld == world.id,
             ) { selectedWorld = world.id }
         }

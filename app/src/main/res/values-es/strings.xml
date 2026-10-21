@@ -24,7 +24,9 @@
     <string name="campaign_new_world">Mundo</string>
     <string name="campaign_new_world_new">Un mundo nuevo</string>
     <string name="campaign_new_world_name">Nombre del mundo</string>
-    <string name="campaign_new_world_existing">Seguir en %1$s</string>
+    <string name="campaign_new_world_existing">Seguir en %1$s · %2$s</string>
+    <string name="campaign_new_world_empty">sin campañas</string>
+    <string name="campaign_new_world_taken">Ya existe un mundo con ese nombre. Prueba con “%1$s”.</string>
     <string name="campaign_new_pending_sheet">Las verdades, los atributos y los recursos se eligen en la creación guiada, que llega en una próxima versión.</string>
     <string name="campaign_new_create">Crear campaña</string>
     <string name="world_default_name">Las Tierras de Hierro</string>
