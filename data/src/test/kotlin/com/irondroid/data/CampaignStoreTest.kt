@@ -216,6 +216,16 @@ class CampaignStoreTest {
     }
 
     @Test
+    fun `a campaign can start in a new world in one step`() = runTest {
+        val campaignId = store.createCampaignInNewWorld("Ironlands", "First", "Kira", playedSheet())
+
+        val campaign = store.campaign(campaignId)!!
+        assertEquals("Ironlands", store.world(campaign.worldId)!!.name)
+        assertEquals("Kira", store.loadCharacter(campaignId)!!.name)
+        assertNull(store.world(campaign.worldId + 1))
+    }
+
+    @Test
     fun `the default clock stamps real time`() = runTest {
         val realStore = CampaignStore(database)
         val start = System.currentTimeMillis()

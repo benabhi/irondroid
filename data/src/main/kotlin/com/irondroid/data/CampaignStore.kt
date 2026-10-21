@@ -46,6 +46,8 @@ class CampaignStore(
 
     suspend fun worlds(): List<WorldEntity> = worlds.all()
 
+    suspend fun world(worldId: Long): WorldEntity? = worlds.get(worldId)
+
     suspend fun truths(worldId: Long): List<WorldTruth> =
         worlds.truths(worldId).map { WorldTruth(it.truthKey, it.optionId, it.text) }
 
@@ -61,6 +63,10 @@ class CampaignStore(
             characters.insertPendingBonuses(CharacterMapper.bonusesToEntities(sheet, characterId))
             campaignId
         }
+
+    /** Creates a new world and starts a campaign in it, both or neither. Returns the campaign id. */
+    suspend fun createCampaignInNewWorld(worldName: String, title: String, characterName: String, sheet: Character): Long =
+        database.withTransaction { createCampaign(createWorld(worldName), title, characterName, sheet) }
 
     suspend fun campaign(campaignId: Long): CampaignEntity? = campaigns.get(campaignId)
 

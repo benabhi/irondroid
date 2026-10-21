@@ -8,33 +8,40 @@ import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import com.irondroid.campaign.CampaignDetails
+import com.irondroid.campaign.CampaignListScreen
+import com.irondroid.campaign.CampaignScreen
+import com.irondroid.campaign.NewCampaignScreen
+import com.irondroid.data.entity.WorldEntity
 import com.irondroid.dice.DiceOverlayView
 import com.irondroid.dice.DiceReadyInfo
 import com.irondroid.dice.DiceRollReport
+import com.irondroid.engine.character.Character
 import com.irondroid.prototype.ActionRoll
 import com.irondroid.prototype.DicePrototypeScreen
 import com.irondroid.prototype.DicePrototypeState
+import kotlinx.coroutines.launch
+
+private enum class Screen { CAMPAIGNS, NEW_CAMPAIGN, CAMPAIGN, DICE_PROTOTYPE }
+
+/** Sheet saved for a new campaign until guided character creation exists (IRON-PLAN-11): every stat at 0. */
+private val PENDING_SHEET = Character.create(edge = 0, heart = 0, iron = 0, shadow = 0, wits = 0)
 
 /**
  * Single activity. The Compose UI fills the window and the 3D dice overlay sits above it as a
@@ -65,21 +72,67 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun AppContent() {
-        var showDicePrototype by rememberSaveable { mutableStateOf(false) }
-        if (showDicePrototype) {
-            BackHandler { showDicePrototype = false; hideDiceOverlay() }
-            DicePrototypeScreen(
-                state = diceState,
-                onRoll = ::rollDice,
-                onSharpChange = { sharp ->
-                    diceState.sharp = sharp
-                    diceOverlay?.setSharp(sharp)
-                },
-                onBack = { showDicePrototype = false; hideDiceOverlay() },
-            )
-            LaunchedEffect(Unit) { showDiceOverlay() }
-        } else {
-            WelcomeScreen(onOpenDicePrototype = { showDicePrototype = true })
+        val store = (application as IrondroidApp).campaignStore
+        val scope = rememberCoroutineScope()
+        var screen by rememberSaveable { mutableStateOf(Screen.CAMPAIGNS) }
+        var openCampaignId by rememberSaveable { mutableLongStateOf(0L) }
+        var creating by remember { mutableStateOf(false) }
+
+        when (screen) {
+            Screen.CAMPAIGNS -> {
+                val campaigns by remember { store.observeCampaigns() }.collectAsState(initial = null)
+                CampaignListScreen(
+                    campaigns = campaigns,
+                    onOpen = { openCampaignId = it; screen = Screen.CAMPAIGN },
+                    onNew = { screen = Screen.NEW_CAMPAIGN },
+                    onDelete = { id -> scope.launch { store.deleteCampaign(id) } },
+                    onOpenDicePrototype = { screen = Screen.DICE_PROTOTYPE },
+                )
+            }
+            Screen.NEW_CAMPAIGN -> {
+                BackHandler { screen = Screen.CAMPAIGNS }
+                val worlds by produceState(emptyList<WorldEntity>()) { value = store.worlds() }
+                NewCampaignScreen(
+                    worlds = worlds,
+                    onCreate = { new ->
+                        if (!creating) {
+                            creating = true
+                            scope.launch {
+                                openCampaignId = if (new.worldId == null) {
+                                    store.createCampaignInNewWorld(new.newWorldName, new.title, new.characterName, PENDING_SHEET)
+                                } else {
+                                    store.createCampaign(new.worldId, new.title, new.characterName, PENDING_SHEET)
+                                }
+                                creating = false
+                                screen = Screen.CAMPAIGN
+                            }
+                        }
+                    },
+                    onCancel = { screen = Screen.CAMPAIGNS },
+                )
+            }
+            Screen.CAMPAIGN -> {
+                BackHandler { screen = Screen.CAMPAIGNS }
+                val details by produceState<CampaignDetails?>(null, openCampaignId) {
+                    value = store.campaign(openCampaignId)?.let { campaign ->
+                        CampaignDetails(campaign, store.world(campaign.worldId), store.loadCharacter(campaign.id))
+                    }
+                }
+                CampaignScreen(details, onBack = { screen = Screen.CAMPAIGNS })
+            }
+            Screen.DICE_PROTOTYPE -> {
+                BackHandler { screen = Screen.CAMPAIGNS; hideDiceOverlay() }
+                DicePrototypeScreen(
+                    state = diceState,
+                    onRoll = ::rollDice,
+                    onSharpChange = { sharp ->
+                        diceState.sharp = sharp
+                        diceOverlay?.setSharp(sharp)
+                    },
+                    onBack = { screen = Screen.CAMPAIGNS; hideDiceOverlay() },
+                )
+                LaunchedEffect(Unit) { showDiceOverlay() }
+            }
         }
     }
 
@@ -120,36 +173,4 @@ class MainActivity : ComponentActivity() {
             diceState.rolling = false
         }
     }
-}
-
-/** Placeholder start screen; for now it also opens the dice prototype. */
-@Composable
-fun WelcomeScreen(onOpenDicePrototype: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = stringResource(R.string.welcome_title),
-            style = MaterialTheme.typography.headlineMedium,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = stringResource(R.string.welcome_subtitle),
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-        )
-        OutlinedButton(onClick = onOpenDicePrototype) {
-            Text(stringResource(R.string.dice_proto_open))
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun WelcomeScreenPreview() {
-    MaterialTheme { WelcomeScreen(onOpenDicePrototype = {}) }
 }
