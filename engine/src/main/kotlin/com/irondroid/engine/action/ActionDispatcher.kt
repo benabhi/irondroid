@@ -61,13 +61,15 @@ fun interface ActionListener {
  * those that answer the choice run. Listeners run after every success; a listener that fails does not
  * undo the action.
  */
-class ActionDispatcher(val catalog: ActionCatalog, handlers: Map<String, ActionHandler>) {
+class ActionDispatcher(
+    val catalog: ActionCatalog,
+    handlers: Map<String, ActionHandler>,
+    /** The choice the player has to make, opened by the results of the actions; shared with the handlers that answer it. */
+    val choices: PendingChoices = PendingChoices(),
+) {
     private val handlers = handlers.toMap()
     private val listeners = mutableListOf<ActionListener>()
     private val lock = Any()
-
-    /** The choice the player has to make, opened by the results of the actions. */
-    val choices = PendingChoices()
 
     init {
         val names = catalog.actions.map { it.name }.toSet()
