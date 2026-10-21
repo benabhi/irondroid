@@ -10,6 +10,9 @@ sealed interface ChatEvent {
     /** A piece of the answer's text, to show as soon as it arrives. */
     data class TextDelta(val text: String) : ChatEvent
 
+    /** A piece of the model's reasoning, for models that show it; it is not shown to the player. */
+    data class ReasoningDelta(val text: String) : ChatEvent
+
     /** A complete tool call: its arguments are all there. */
     data class ToolCallRequested(val call: ToolCall) : ChatEvent
 
@@ -57,10 +60,14 @@ data class ChatReply(
     val toolCalls: List<ToolCall>,
     val finishReason: FinishReason,
     val usage: TokenUsage?,
+    val reasoning: String = "",
 ) {
     /** The answer as the assistant message of the conversation, or null when it was empty. */
-    fun toMessage(): ChatMessage.Assistant? =
-        if (text.isBlank() && toolCalls.isEmpty()) null else ChatMessage.Assistant(text.ifBlank { null }, toolCalls)
+    fun toMessage(): ChatMessage.Assistant? = if (text.isBlank() && toolCalls.isEmpty()) {
+        null
+    } else {
+        ChatMessage.Assistant(text.ifBlank { null }, toolCalls, reasoning.ifBlank { null })
+    }
 }
 
 /**
@@ -70,6 +77,7 @@ data class ChatReply(
  */
 suspend fun Flow<ChatEvent>.collectReply(onText: (String) -> Unit = {}): ChatReply {
     val text = StringBuilder()
+    val reasoning = StringBuilder()
     val calls = mutableListOf<ToolCall>()
     var finished: ChatEvent.Finished? = null
     collect { event ->
@@ -79,10 +87,11 @@ suspend fun Flow<ChatEvent>.collectReply(onText: (String) -> Unit = {}): ChatRep
                 text.append(event.text)
                 onText(event.text)
             }
+            is ChatEvent.ReasoningDelta -> reasoning.append(event.text)
             is ChatEvent.ToolCallRequested -> calls += event.call
             is ChatEvent.Finished -> finished = event
         }
     }
     val end = finished ?: throw AiException(AiErrorKind.MALFORMED_RESPONSE, "The answer ended without finishing")
-    return ChatReply(text.toString(), calls, end.reason, end.usage)
+    return ChatReply(text.toString(), calls, end.reason, end.usage, reasoning.toString())
 }

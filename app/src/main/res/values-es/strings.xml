@@ -61,4 +61,25 @@
     <string name="dice_proto_reason_stacked">dado encima de otro</string>
     <string name="dice_proto_reason_tilted">dado torcido</string>
     <string name="dice_proto_reason_slow">tardó en acomodarse</string>
+    <!-- Errores de los proveedores de IA (IRON-47). -->
+    <string name="ai_error_authentication">La clave de la API fue rechazada. Revísala en los ajustes.</string>
+    <string name="ai_error_balance">La cuenta de la IA no tiene saldo.</string>
+    <string name="ai_error_rate_limited">Demasiados pedidos a la IA. Prueba de nuevo en un momento.</string>
+    <string name="ai_error_model">El proveedor de IA no ofrece ese modelo.</string>
+    <string name="ai_error_invalid_request">El proveedor de IA rechazó el pedido.</string>
+    <string name="ai_error_network">No se pudo conectar con la IA. Revisa tu conexión a internet.</string>
+    <string name="ai_error_server">El proveedor de IA está fallando. Prueba más tarde.</string>
+    <string name="ai_error_malformed">La IA mandó una respuesta que la app no pudo leer.</string>
+
+    <!-- Pantalla de prueba de la IA (IRON-47). Solo en la versión de desarrollo. -->
+    <string name="ai_test_open">Prueba de IA (desarrollo)</string>
+    <string name="ai_test_title">Prueba de IA</string>
+    <string name="ai_test_back">Volver</string>
+    <string name="ai_test_no_key">No hay una clave de API cargada para el proveedor de IA. En desarrollo se carga por adb (ver IRON-47).</string>
+    <string name="ai_test_provider">Proveedor: %1$s</string>
+    <string name="ai_test_input">¿Qué haces?</string>
+    <string name="ai_test_send">Enviar</string>
+    <string name="ai_test_stop">Detener</string>
+    <string name="ai_test_waiting">Esperando la respuesta…</string>
+    <string name="ai_test_metrics">Primer texto a los %1$d ms · total %2$d ms · tokens: %3$d de entrada (%4$d en caché), %5$d de salida</string>
 </resources>

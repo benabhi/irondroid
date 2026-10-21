@@ -33,12 +33,14 @@ import com.irondroid.dice.DiceOverlayView
 import com.irondroid.dice.DiceReadyInfo
 import com.irondroid.dice.DiceRollReport
 import com.irondroid.engine.character.Character
+import com.irondroid.ai.openai.DeepSeek
 import com.irondroid.prototype.ActionRoll
+import com.irondroid.prototype.AiTestScreen
 import com.irondroid.prototype.DicePrototypeScreen
 import com.irondroid.prototype.DicePrototypeState
 import kotlinx.coroutines.launch
 
-private enum class Screen { CAMPAIGNS, NEW_CAMPAIGN, CAMPAIGN, DICE_PROTOTYPE }
+private enum class Screen { CAMPAIGNS, NEW_CAMPAIGN, CAMPAIGN, DICE_PROTOTYPE, AI_TEST }
 
 /** Sheet saved for a new campaign until guided character creation exists (IRON-PLAN-11): every stat at 0. */
 private val PENDING_SHEET = Character.create(edge = 0, heart = 0, iron = 0, shadow = 0, wits = 0)
@@ -56,6 +58,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (BuildConfig.DEBUG) loadDevelopmentApiKey()
         root = FrameLayout(this)
         val composeView = ComposeView(this).apply {
             setContent {
@@ -95,6 +98,7 @@ class MainActivity : ComponentActivity() {
                     onNew = { screen = Screen.NEW_CAMPAIGN },
                     onDelete = { id -> scope.launch { store.deleteCampaign(id) } },
                     onOpenDicePrototype = { screen = Screen.DICE_PROTOTYPE },
+                    onOpenAiTest = if (BuildConfig.DEBUG) ({ screen = Screen.AI_TEST }) else null,
                 )
             }
             Screen.NEW_CAMPAIGN -> {
@@ -135,6 +139,11 @@ class MainActivity : ComponentActivity() {
                 }
                 CampaignScreen(details, onBack = leaveCampaign)
             }
+            Screen.AI_TEST -> {
+                BackHandler { screen = Screen.CAMPAIGNS }
+                val provider = remember { app.aiProvider() }
+                AiTestScreen(provider, onBack = { screen = Screen.CAMPAIGNS })
+            }
             Screen.DICE_PROTOTYPE -> {
                 BackHandler { screen = Screen.CAMPAIGNS; hideDiceOverlay() }
                 DicePrototypeScreen(
@@ -149,6 +158,18 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(Unit) { showDiceOverlay() }
             }
         }
+    }
+
+    /**
+     * Development builds only: saves an API key passed with
+     * `adb shell am start -n com.irondroid/.MainActivity --es dev_deepseek_api_key <key>`, so the AI can
+     * be tried before the settings screen exists (IRON-49). The key never goes into the project.
+     */
+    private fun loadDevelopmentApiKey() {
+        val key = intent.getStringExtra(EXTRA_DEV_API_KEY)?.takeIf { it.isNotBlank() } ?: return
+        (application as IrondroidApp).apiKeys.save(DeepSeek.ID, key)
+        intent.removeExtra(EXTRA_DEV_API_KEY)
+        Log.i("AiTest", "Development API key saved for ${DeepSeek.ID}")
     }
 
     override fun onStop() {
@@ -193,5 +214,9 @@ class MainActivity : ComponentActivity() {
             diceState.error = message
             diceState.rolling = false
         }
+    }
+
+    private companion object {
+        const val EXTRA_DEV_API_KEY = "dev_deepseek_api_key"
     }
 }
