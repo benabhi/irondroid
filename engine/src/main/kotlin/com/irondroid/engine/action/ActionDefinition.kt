@@ -54,6 +54,8 @@ data class ActionReturn(val description: String, val schema: JsonSchema? = null)
  * [name] is the identifier callers use, in snake_case. [description] says what it does and
  * [whenToUse] when it fits, both written for the AI. [parameters] is the JSON Schema of the
  * arguments; [returns] what comes back; [effects] what it changes; [permission] how freely it runs.
+ * [answersChoice] marks the actions that work on the open pending choice (`suggest_option`,
+ * `choose_option`): the only play actions allowed while the player has a choice to make.
  */
 data class ActionDefinition(
     val name: String,
@@ -64,6 +66,7 @@ data class ActionDefinition(
     val returns: ActionReturn,
     val parameters: JsonSchema.ObjectOf = JsonSchema.ObjectOf(),
     val effects: Set<ActionEffect> = emptySet(),
+    val answersChoice: Boolean = false,
 ) {
     /** Whether running it changes saved state, so the game must be saved afterwards. */
     val changesState: Boolean get() = effects.any { it.changesState }
@@ -82,6 +85,7 @@ data class ActionDefinition(
             } else {
                 append(" Effects: ").append(effects.sorted().joinToString(", ") { it.summary }).append('.')
             }
+            if (answersChoice) append(" It works on the choice the player has open.")
             if (permission.requiresConfirmation) append(" The player must confirm it before it runs.")
             append(" Returns: ").append(returns.description.trim().replaceFirstChar { it.lowercase() }.withPeriod())
         }
@@ -96,7 +100,9 @@ data class ActionDefinition(
         when {
             permission == ActionPermission.READ && effects.isNotEmpty() ->
                 add("$where: a read action cannot have effects")
-            permission != ActionPermission.READ && effects.isEmpty() ->
+            permission == ActionPermission.READ && answersChoice ->
+                add("$where: a read action cannot answer a choice")
+            permission != ActionPermission.READ && effects.isEmpty() && !answersChoice ->
                 add("$where: a ${permission.name.lowercase()} action needs its effects")
         }
         if (permission != ActionPermission.SENSITIVE) {
@@ -115,6 +121,7 @@ data class ActionDefinition(
         put("permission", permission.name.lowercase())
         put("requires_confirmation", permission.requiresConfirmation)
         put("undoable", permission.undoable)
+        put("answers_choice", answersChoice)
         put("effects", JsonArray(effects.sorted().map { JsonPrimitive(it.name.lowercase()) }))
         put("parameters", parameters.toJson())
         put(

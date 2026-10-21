@@ -21,18 +21,18 @@ data class ActionCall(
 /**
  * Runs one action. It gets arguments that already fit the action's parameters; it checks the rules
  * and the game state itself and refuses with [ActionRejectedException] before changing anything.
- * It returns the result data.
+ * It returns what happened; a result with a pending choice stops until the player decides it.
  */
 fun interface ActionHandler {
-    fun run(arguments: ActionArguments, call: ActionCall): JsonObject
+    fun run(arguments: ActionArguments, call: ActionCall): ActionResult
 }
 
 /** What came of a call. */
 sealed interface DispatchResult {
     val call: ActionCall
 
-    /** The action ran and returned [data]. */
-    data class Success(override val call: ActionCall, val action: ActionDefinition, val data: JsonObject) : DispatchResult
+    /** The action ran. If [result] brings a pending choice, it is now open in [ActionDispatcher.choices]. */
+    data class Success(override val call: ActionCall, val action: ActionDefinition, val result: ActionResult) : DispatchResult
 
     /** The action did not run, because of [error]. */
     data class Failure(override val call: ActionCall, val error: ActionError) : DispatchResult
@@ -50,13 +50,18 @@ fun interface ActionListener {
  * The single door of the actions interface (RF-API-04): the screens and the AI make every call
  * through it, so both get the same checks (RF-API-05). Calls run one at a time.
  *
- * Each call goes: known action, valid arguments, player confirmation if sensitive, handler, listeners.
- * Listeners run after every success; a listener that fails does not undo the action.
+ * Each call goes: known action, valid arguments, no open choice in the way, player confirmation if
+ * sensitive, handler, listeners. While the player has a choice open (RF-API-07) only read actions and
+ * those that answer the choice run. Listeners run after every success; a listener that fails does not
+ * undo the action.
  */
 class ActionDispatcher(val catalog: ActionCatalog, handlers: Map<String, ActionHandler>) {
     private val handlers = handlers.toMap()
     private val listeners = mutableListOf<ActionListener>()
     private val lock = Any()
+
+    /** The choice the player has to make, opened by the results of the actions. */
+    val choices = PendingChoices()
 
     init {
         val names = catalog.actions.map { it.name }.toSet()
@@ -80,16 +85,31 @@ class ActionDispatcher(val catalog: ActionCatalog, handlers: Map<String, ActionH
         if (problems.isNotEmpty()) {
             return fail(call, ActionErrorCode.INVALID_ARGUMENTS, "The arguments of ${action.name} are not valid", problems)
         }
+        val open = choices.current
+        if (open != null && action.permission != ActionPermission.READ && !action.answersChoice) {
+            return fail(
+                call,
+                ActionErrorCode.INVALID_STATE,
+                "The player has choice ${open.id} open and must decide it first",
+                suggestion = "Wait for the player; you can mark your suggestion with suggest_option",
+            )
+        }
         if (action.permission.requiresConfirmation && !call.confirmed) return DispatchResult.NeedsConfirmation(call, action)
 
-        val data = try {
+        val result = try {
             handlers.getValue(action.name).run(ActionArguments(call.arguments), call)
         } catch (e: ActionRejectedException) {
             return DispatchResult.Failure(call, e.error)
         } catch (e: Exception) {
             return fail(call, ActionErrorCode.INTERNAL, "${action.name} failed inside the app: ${e.message ?: e::class.simpleName}")
         }
-        val success = DispatchResult.Success(call, action, data)
+        result.pendingChoice?.let { next ->
+            choices.current?.let { still ->
+                return fail(call, ActionErrorCode.INTERNAL, "${action.name} opened a choice while ${still.id} is still open")
+            }
+            choices.open(next)
+        }
+        val success = DispatchResult.Success(call, action, result)
         for (listener in listeners.toList()) runCatching { listener.afterAction(success) }
         success
     }

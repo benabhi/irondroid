@@ -11,6 +11,7 @@ import com.irondroid.engine.action.ActionDefinition
 import com.irondroid.engine.action.ActionDispatcher
 import com.irondroid.engine.action.ActionEffect
 import com.irondroid.engine.action.ActionHandler
+import com.irondroid.engine.action.ActionResult
 import com.irondroid.engine.action.ActionPermission
 import com.irondroid.engine.action.ActionRejectedException
 import com.irondroid.engine.action.ActionReturn
@@ -20,7 +21,6 @@ import com.irondroid.engine.action.DispatchResult
 import com.irondroid.engine.character.Character
 import com.irondroid.engine.meters.MeterType
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.JsonObject
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -63,9 +63,9 @@ class AutosaveTest {
         mapOf(
             "lose_health" to ActionHandler { _, _ ->
                 session.update { it.copy(meters = it.meters.lose(MeterType.HEALTH, 1).first) }
-                JsonObject(emptyMap())
+                ActionResult("Done")
             },
-            "read_sheet" to ActionHandler { _, _ -> JsonObject(emptyMap()) },
+            "read_sheet" to ActionHandler { _, _ -> ActionResult("Read") },
             "refused" to ActionHandler { _, _ ->
                 session.update { it.copy(experience = 9) }
                 throw ActionRejectedException.rule("Never allowed")
