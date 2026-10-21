@@ -17,6 +17,7 @@ import com.irondroid.engine.game.GameActions
 import com.irondroid.engine.move.MoveLoader
 import com.irondroid.engine.oracle.OracleTableLoader
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.jsonPrimitive
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -131,6 +132,7 @@ class NarratorTest {
         val step = outcome.steps.single()
         assertEquals("roll_move", step.action)
         assertTrue(step.succeeded, step.summary)
+        assertEquals("face_danger", step.data!!["move"]!!.jsonPrimitive.content)
         assertEquals("Saltas el arroyo helado. ¿Qué haces?", outcome.narration)
         assertEquals(TokenUsage(220, 30, 150), outcome.usage)
         val second = ai.requests[1].messages

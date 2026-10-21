@@ -28,6 +28,8 @@ data class NarratorStep(
     /** The engine's one-line summary, or the error message. */
     val summary: String,
     val succeeded: Boolean,
+    /** The result's data when it succeeded, such as a move's roll and outcome, for screens that show it their own way. */
+    val data: JsonObject? = null,
 )
 
 /** What the player sees while a turn is being played. */
@@ -150,6 +152,7 @@ class Narrator(
                             is DispatchResult.NeedsConfirmation -> "needs confirmation"
                         },
                         succeeded = run.result is DispatchResult.Success,
+                        data = (run.result as? DispatchResult.Success)?.result?.data,
                     )
                     steps += step
                     onEvent(TurnEvent.Step(step))

@@ -151,4 +151,16 @@
     <string name="choice_proposal">The narrator\'s proposal: %1$s</string>
     <string name="choice_write_own">Write my own</string>
     <string name="choice_write_own_hint">What does it cost you?</string>
+    <string name="step_move">%1$s: %2$s</string>
+    <string name="step_move_stat">%1$s +%2$s: %3$s</string>
+    <string name="step_match">%1$s · a match!</string>
+    <string name="outcome_strong_hit">strong hit</string>
+    <string name="outcome_weak_hit">weak hit</string>
+    <string name="outcome_miss">miss</string>
+    <string name="step_oracle">%1$s %2$s</string>
+    <string name="oracle_yes">Yes</string>
+    <string name="oracle_no">No</string>
+    <string name="oracle_extreme">%1$s, extreme</string>
+    <string name="oracle_tables_force_match">Force a match on the next roll</string>
+    <string name="oracle_tables_force_match_armed">The next roll of the challenge dice will be a match.</string>
 </resources>

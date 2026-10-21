@@ -149,4 +149,16 @@
     <string name="choice_proposal">La propuesta del narrador: %1$s</string>
     <string name="choice_write_own">Escribir la mía</string>
     <string name="choice_write_own_hint">¿Qué te cuesta?</string>
+    <string name="step_move">%1$s: %2$s</string>
+    <string name="step_move_stat">%1$s +%2$s: %3$s</string>
+    <string name="step_match">%1$s · ¡doble!</string>
+    <string name="outcome_strong_hit">éxito total</string>
+    <string name="outcome_weak_hit">éxito parcial</string>
+    <string name="outcome_miss">fallo</string>
+    <string name="step_oracle">%1$s %2$s</string>
+    <string name="oracle_yes">Sí</string>
+    <string name="oracle_no">No</string>
+    <string name="oracle_extreme">%1$s, extremo</string>
+    <string name="oracle_tables_force_match">Forzar un doble en la próxima tirada</string>
+    <string name="oracle_tables_force_match_armed">La próxima tirada de los dados de desafío va a salir doble.</string>
 </resources>

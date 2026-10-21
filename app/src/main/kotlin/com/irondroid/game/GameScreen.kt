@@ -42,6 +42,10 @@ import com.irondroid.engine.action.ChoiceOption
 import com.irondroid.engine.action.PendingChoice
 import com.irondroid.settings.aiErrorText
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * The play screen by text (IRON-52): the story so far as a conversation with the narrator, the
@@ -93,8 +97,8 @@ fun GameScreen(
             if (player.loaded && player.turns.isEmpty() && live == null) {
                 item { Text(stringResource(R.string.game_empty), style = MaterialTheme.typography.bodyMedium) }
             }
-            items(player.turns) { TurnView(it, playing = false) }
-            if (live != null) item { TurnView(live, playing = true) }
+            items(player.turns) { TurnView(it, playing = false, player::moveName) }
+            if (live != null) item { TurnView(live, playing = true, player::moveName) }
         }
 
         val choice = player.choice
@@ -125,7 +129,7 @@ fun GameScreen(
 }
 
 @Composable
-private fun TurnView(turn: PlayedTurn, playing: Boolean) {
+private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> String) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         turn.playerInput?.let { said ->
             Card(
@@ -135,7 +139,7 @@ private fun TurnView(turn: PlayedTurn, playing: Boolean) {
                 Text(said, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(12.dp))
             }
         }
-        turn.steps.forEach { Text(stringResource(R.string.game_step, it), style = MaterialTheme.typography.bodySmall) }
+        turn.steps.forEach { Text(stringResource(R.string.game_step, stepLine(it, moveName)), style = MaterialTheme.typography.bodySmall) }
         when {
             turn.narration.isNotBlank() -> Text(turn.narration, style = MaterialTheme.typography.bodyLarge)
             playing -> Text(stringResource(R.string.game_thinking), style = MaterialTheme.typography.bodyMedium)
@@ -306,4 +310,40 @@ private fun sourceName(source: String): Int = when (source) {
     "health" -> R.string.meter_health
     "spirit" -> R.string.meter_spirit
     else -> R.string.meter_supply
+}
+
+/**
+ * The line a history card shows, in the player's language: a move with its stat, outcome and a
+ * match when the challenge dice matched (RF-ENV-06), or an oracle's answer. Other cards keep the
+ * engine's summary.
+ */
+@Composable
+private fun stepLine(card: StepCard, moveName: (String) -> String): String {
+    val data = card.data ?: return card.summary
+    return when (card.action) {
+        "roll_move", "roll_progress" -> {
+            val move = data["move"]?.jsonPrimitive?.contentOrNull ?: return card.summary
+            val outcome = when (data["outcome"]?.jsonPrimitive?.contentOrNull) {
+                "strong_hit" -> R.string.outcome_strong_hit
+                "weak_hit" -> R.string.outcome_weak_hit
+                "miss" -> R.string.outcome_miss
+                else -> return moveName(move) // A move without dice, such as Pay the Price.
+            }
+            val source = (data["roll"] as? JsonObject)?.get("source")?.jsonPrimitive?.contentOrNull
+            val line = if (source != null) {
+                stringResource(R.string.step_move_stat, moveName(move), stringResource(sourceName(source)), stringResource(outcome))
+            } else {
+                stringResource(R.string.step_move, moveName(move), stringResource(outcome))
+            }
+            if (data["match"]?.jsonPrimitive?.booleanOrNull == true) stringResource(R.string.step_match, line) else line
+        }
+        "ask_oracle" -> {
+            val question = data["question"]?.jsonPrimitive?.contentOrNull ?: return card.summary
+            val yes = data["answer"]?.jsonPrimitive?.contentOrNull == "yes"
+            val answer = stringResource(if (yes) R.string.oracle_yes else R.string.oracle_no)
+            val shown = if (data["extreme"]?.jsonPrimitive?.booleanOrNull == true) stringResource(R.string.oracle_extreme, answer) else answer
+            stringResource(R.string.step_oracle, question, shown)
+        }
+        else -> card.summary
+    }
 }

@@ -15,6 +15,7 @@ import com.irondroid.ai.openai.DeepSeek
 import com.irondroid.data.CampaignStore
 import com.irondroid.data.IrondroidDatabase
 import com.irondroid.data.secret.ApiKeyStore
+import com.irondroid.dice.MatchableDice
 import com.irondroid.engine.action.ActionDispatcher
 import com.irondroid.engine.dice.SeededDice
 import com.irondroid.engine.game.GameActions
@@ -52,9 +53,12 @@ class IrondroidApp : Application() {
     /** How the player wants to play, such as confirming moves (IRON-53). */
     val playSettings: PlaySettings by lazy { PlaySettings(getSharedPreferences(PlaySettings.FILE_NAME, Context.MODE_PRIVATE)) }
 
+    /** The dice of every game, with the development switch that forces a match (IRON-55). */
+    val dice: MatchableDice by lazy { MatchableDice(SeededDice.fromSeed(System.nanoTime())) }
+
     /** The actions of the MVP catalog (IRON-43), played on the open campaign, with texts in [rulesLanguage]. */
     val actions: GameActions by lazy {
-        GameActions(games, moves, oracles, SeededDice.fromSeed(System.nanoTime()), rulesLanguage)
+        GameActions(games, moves, oracles, dice, rulesLanguage)
     }
 
     /** The single door for every action (RF-API-04), for the screens and the AI alike. */
