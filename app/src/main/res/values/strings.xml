@@ -39,7 +39,6 @@
     <string name="campaign_sheet_pending">Character sheet pending: it will be filled in during guided creation.</string>
     <string name="campaign_stats">Edge %1$d · Heart %2$d · Iron %3$d · Shadow %4$d · Wits %5$d</string>
     <string name="campaign_meters">Health %1$d · Spirit %2$d · Supply %3$d · Momentum %4$+d</string>
-    <string name="campaign_game_soon">The game screen arrives in a later version.</string>
 
     <!-- 3D dice prototype (IRON-12). Temporary screen. -->
     <string name="dice_proto_open">3D dice prototype</string>
@@ -115,4 +114,14 @@
     <string name="oracle_tables_repeated">Both rolls landed on the same result: make it stronger.</string>
     <string name="ai_test_style_performed">Performed</string>
     <string name="ai_test_style_sober">Sober</string>
+    <string name="game_header">%1$s · %2$s</string>
+    <string name="game_sheet">Sheet</string>
+    <string name="game_empty">Your story begins here. Tell the narrator what your character does.</string>
+    <string name="game_input">What do you do?</string>
+    <string name="game_send">Send</string>
+    <string name="game_thinking">The narrator is thinking…</string>
+    <string name="game_step">⚄ %1$s</string>
+    <string name="game_error">The narrator did not answer: %1$s</string>
+    <string name="game_no_key">To play, add your AI API key in Settings.</string>
+    <string name="game_choose">Choose</string>
 </resources>

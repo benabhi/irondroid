@@ -68,6 +68,16 @@ class GameController(
         current = null
     }
 
+    /** The campaign being played, or null. */
+    val session: GameSession? get() = current?.session
+
+    /** Waits until every call and sheet change so far is written, before saving the turn they belong to. */
+    suspend fun flushNow() {
+        val open = current ?: return
+        open.turns.flush()
+        open.autosave.flush()
+    }
+
     /** Writes pending saves now, as when the app goes to the background. */
     fun flush() {
         val open = current ?: return

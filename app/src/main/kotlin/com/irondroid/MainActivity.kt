@@ -33,7 +33,12 @@ import com.irondroid.dice.DiceOverlayView
 import com.irondroid.dice.DiceReadyInfo
 import com.irondroid.dice.DiceRollReport
 import com.irondroid.engine.character.Character
+import com.irondroid.ai.narrator.Narrator
+import com.irondroid.ai.narrator.NarratorPrompt
+import com.irondroid.ai.narrator.NarratorStyle
 import com.irondroid.ai.tools.ActionTools
+import com.irondroid.game.GameScreen
+import com.irondroid.game.TurnPlayer
 import com.irondroid.prototype.ActionRoll
 import com.irondroid.prototype.AiTestScreen
 import com.irondroid.prototype.DicePrototypeScreen
@@ -141,7 +146,29 @@ class MainActivity : ComponentActivity() {
                     app.lastCampaignId = campaign.id
                     value = CampaignDetails(campaign, store.world(campaign.worldId), store.loadCharacter(campaign.id))
                 }
-                CampaignScreen(details, onBack = leaveCampaign)
+                val loaded = details
+                val session = app.games.session
+                if (loaded != null && session != null && session.campaignId == openCampaignId) {
+                    var showSheet by rememberSaveable(openCampaignId) { mutableStateOf(false) }
+                    val sheet by session.sheet.collectAsState()
+                    val player = remember(openCampaignId) {
+                        val narrator = app.aiProvider()?.let { provider ->
+                            Narrator(provider, app.aiSettings.model(), ActionTools.forNarrator(app.dispatcher), {
+                                NarratorPrompt.build(session.characterName, app.rulesLanguage, NarratorStyle.PERFORMED)
+                            })
+                        }
+                        TurnPlayer(openCampaignId, store, app.dispatcher, narrator, flush = app.games::flushNow)
+                    }
+                    LaunchedEffect(player) { player.load() }
+                    if (showSheet) {
+                        BackHandler { showSheet = false }
+                        CampaignScreen(loaded.copy(character = loaded.character?.copy(sheet = sheet)), onBack = { showSheet = false })
+                    } else {
+                        GameScreen(loaded.campaign.title, session.characterName, sheet, player, onOpenSheet = { showSheet = true }, onBack = leaveCampaign)
+                    }
+                } else {
+                    CampaignScreen(null, onBack = leaveCampaign)
+                }
             }
             Screen.AI_TEST -> {
                 val leaveTest = {
