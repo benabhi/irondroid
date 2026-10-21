@@ -39,6 +39,7 @@ fun CampaignListScreen(
     onNew: () -> Unit,
     onDelete: (Long) -> Unit,
     onOpenDicePrototype: () -> Unit,
+    onOpenAiTest: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     var pendingDelete by remember { mutableStateOf<CampaignSummary?>(null) }
@@ -76,6 +77,11 @@ fun CampaignListScreen(
         }
         OutlinedButton(onClick = onOpenDicePrototype, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.dice_proto_open))
+        }
+        onOpenAiTest?.let {
+            OutlinedButton(onClick = it, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.ai_test_open))
+            }
         }
     }
 

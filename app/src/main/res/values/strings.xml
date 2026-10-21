@@ -63,4 +63,25 @@
     <string name="dice_proto_reason_stacked">die on top of another</string>
     <string name="dice_proto_reason_tilted">die leaning</string>
     <string name="dice_proto_reason_slow">slow to settle</string>
+    <!-- AI provider errors (IRON-47), shown wherever the app talks to an AI. -->
+    <string name="ai_error_authentication">The API key was rejected. Check it in the settings.</string>
+    <string name="ai_error_balance">The AI account has no balance left.</string>
+    <string name="ai_error_rate_limited">Too many requests to the AI. Try again in a moment.</string>
+    <string name="ai_error_model">The AI provider does not offer that model.</string>
+    <string name="ai_error_invalid_request">The AI provider rejected the request.</string>
+    <string name="ai_error_network">Could not reach the AI. Check your internet connection.</string>
+    <string name="ai_error_server">The AI provider is failing right now. Try again later.</string>
+    <string name="ai_error_malformed">The AI sent an answer the app could not read.</string>
+
+    <!-- AI test screen (IRON-47). Development builds only. -->
+    <string name="ai_test_open">AI test (development)</string>
+    <string name="ai_test_title">AI test</string>
+    <string name="ai_test_back">Back</string>
+    <string name="ai_test_no_key">No API key is loaded for the AI provider. In development it is loaded over adb (see IRON-47).</string>
+    <string name="ai_test_provider">Provider: %1$s</string>
+    <string name="ai_test_input">What do you do?</string>
+    <string name="ai_test_send">Send</string>
+    <string name="ai_test_stop">Stop</string>
+    <string name="ai_test_waiting">Waiting for the answer…</string>
+    <string name="ai_test_metrics">First text after %1$d ms · total %2$d ms · tokens: %3$d in (%4$d cached), %5$d out</string>
 </resources>

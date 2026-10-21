@@ -24,8 +24,16 @@ sealed interface ChatMessage {
         }
     }
 
-    /** What the model answered: text, tool calls or both. */
-    data class Assistant(val text: String? = null, val toolCalls: List<ToolCall> = emptyList()) : ChatMessage {
+    /**
+     * What the model answered: text, tool calls or both. [reasoning] is the model's thinking before
+     * answering, for models that show it: some (like DeepSeek's) need it back while a round of tool
+     * calls is in progress.
+     */
+    data class Assistant(
+        val text: String? = null,
+        val toolCalls: List<ToolCall> = emptyList(),
+        val reasoning: String? = null,
+    ) : ChatMessage {
         init {
             require(!text.isNullOrBlank() || toolCalls.isNotEmpty()) { "An assistant message needs text or tool calls" }
             require(toolCalls.map { it.id }.toSet().size == toolCalls.size) { "Tool call ids must be unique" }
@@ -86,9 +94,12 @@ enum class ToolChoice {
     NONE,
 }
 
+/** How much a reasoning model thinks before answering: more is slower and costs more tokens. */
+enum class ReasoningEffort { LOW, HIGH, MAX }
+
 /**
  * One request to a model: the [model] id, the [messages] so far and the [tools] it may call.
- * [temperature] and [maxTokens] are left to the provider's defaults when null.
+ * [temperature], [maxTokens] and [reasoningEffort] are left to the provider's defaults when null.
  */
 data class ChatRequest(
     val model: String,
@@ -97,6 +108,7 @@ data class ChatRequest(
     val toolChoice: ToolChoice = ToolChoice.AUTO,
     val temperature: Double? = null,
     val maxTokens: Int? = null,
+    val reasoningEffort: ReasoningEffort? = null,
 ) {
     init {
         require(model.isNotBlank()) { "A request needs a model" }

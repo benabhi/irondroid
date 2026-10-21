@@ -28,6 +28,8 @@ android {
 
     buildFeatures {
         compose = true
+        // BuildConfig.DEBUG gates the development-only tools, such as the AI test screen (IRON-47).
+        buildConfig = true
     }
 
     // Lists the bundled languages so Android 13+ offers them in the per-app language settings.
