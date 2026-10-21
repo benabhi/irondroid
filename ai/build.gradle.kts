@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-// AI providers layer (IRON-46): pure Kotlin/JVM, with no Android, engine or UI dependencies, so a
-// new provider is added here without touching the rules engine or the screens (RNF-MAN-04).
+// AI providers layer (IRON-46): pure Kotlin/JVM, with no Android or UI dependencies, so a new
+// provider is added here without touching the rules engine or the screens (RNF-MAN-04).
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.serialization)
@@ -25,6 +25,8 @@ dependencies {
     api(libs.kotlinx.serialization.json)
     // HTTP for the cloud providers (IRON-47): the same client on the JVM and on Android.
     api(libs.okhttp)
+    // The action catalog becomes the AI's tools (IRON-48); the engine knows nothing of the AI.
+    api(project(":engine"))
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)

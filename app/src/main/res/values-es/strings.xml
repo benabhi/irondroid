@@ -80,6 +80,9 @@
     <string name="ai_test_input">¿Qué haces?</string>
     <string name="ai_test_send">Enviar</string>
     <string name="ai_test_stop">Detener</string>
+    <string name="ai_test_with_actions">Con acciones</string>
+    <string name="ai_test_campaign">Las acciones se juegan en: %1$s</string>
+    <string name="ai_test_no_campaign">No hay campaña donde jugar las acciones: crea una primero.</string>
     <string name="ai_test_waiting">Esperando la respuesta…</string>
     <string name="ai_test_metrics">Primer texto a los %1$d ms · total %2$d ms · tokens: %3$d de entrada (%4$d en caché), %5$d de salida</string>
 </resources>

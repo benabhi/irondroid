@@ -39,6 +39,8 @@ import com.irondroid.ai.ChatRequest
 import com.irondroid.ai.ReasoningEffort
 import com.irondroid.ai.TokenUsage
 import com.irondroid.ai.collectReply
+import com.irondroid.ai.tools.ActionTools
+import com.irondroid.engine.action.DispatchResult
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -48,22 +50,26 @@ private data class AiTestResult(
     val firstTextMs: Long? = null,
     val totalMs: Long? = null,
     val usage: TokenUsage? = null,
+    /** The actions the AI ran, one line each, when it played with the tools (IRON-48). */
+    val steps: List<String> = emptyList(),
     @StringRes val error: Int? = null,
     val errorDetail: String? = null,
 )
 
 /**
  * Development-only screen (IRON-47) to talk to the real AI provider and watch the answer stream in.
- * [provider] is null when no API key was loaded. The system prompt is a short stand-in until the
- * narrator prompt exists (IRON-51), so it is not player-facing text.
+ * [provider] is null when no API key was loaded. With [tools] (IRON-48) the AI can run the game's
+ * actions on [campaignTitle], the last campaign played. The system prompt is a short stand-in until
+ * the narrator prompt exists (IRON-51), so it is not player-facing text.
  */
 @Composable
-fun AiTestScreen(provider: AiProvider?, onBack: () -> Unit) {
+fun AiTestScreen(provider: AiProvider?, tools: ActionTools?, campaignTitle: String?, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     var input by remember { mutableStateOf("") }
     var model by remember { mutableStateOf(provider?.info?.defaultModel?.id.orEmpty()) }
     var result by remember { mutableStateOf<AiTestResult?>(null) }
     var job by remember { mutableStateOf<Job?>(null) }
+    var withActions by remember { mutableStateOf(false) }
     val running = job?.isActive == true
 
     Column(
@@ -89,6 +95,18 @@ fun AiTestScreen(provider: AiProvider?, onBack: () -> Unit) {
                 FilterChip(selected = model == option.id, onClick = { model = option.id }, label = { Text(option.id) })
             }
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(
+                selected = withActions,
+                enabled = tools != null,
+                onClick = { withActions = !withActions },
+                label = { Text(stringResource(R.string.ai_test_with_actions)) },
+            )
+        }
+        Text(
+            if (campaignTitle != null) stringResource(R.string.ai_test_campaign, campaignTitle) else stringResource(R.string.ai_test_no_campaign),
+            style = MaterialTheme.typography.bodySmall,
+        )
         OutlinedTextField(
             value = input,
             onValueChange = { input = it },
@@ -102,7 +120,7 @@ fun AiTestScreen(provider: AiProvider?, onBack: () -> Unit) {
                 onClick = {
                     job = scope.launch {
                         result = AiTestResult()
-                        result = ask(provider, model, input.trim()) { result = it }
+                        result = ask(provider, model, input.trim(), tools.takeIf { withActions }) { result = it }
                     }
                 },
             ) { Text(stringResource(R.string.ai_test_send)) }
@@ -111,6 +129,7 @@ fun AiTestScreen(provider: AiProvider?, onBack: () -> Unit) {
         result?.let { shown ->
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    shown.steps.forEach { Text(it, style = MaterialTheme.typography.bodySmall) }
                     if (shown.text.isNotEmpty()) Text(shown.text, style = MaterialTheme.typography.bodyLarge)
                     else if (shown.error == null) Text(stringResource(R.string.ai_test_waiting), style = MaterialTheme.typography.bodyMedium)
                     shown.error?.let { Text(stringResource(it), color = MaterialTheme.colorScheme.error) }
@@ -134,21 +153,55 @@ fun AiTestScreen(provider: AiProvider?, onBack: () -> Unit) {
     }
 }
 
-/** Sends one request and reports the answer as it streams in; returns the final state. */
-private suspend fun ask(provider: AiProvider, model: String, input: String, onUpdate: (AiTestResult) -> Unit): AiTestResult {
+/**
+ * Sends the player's input and reports the answer as it streams in; returns the final state. With
+ * [tools], the AI's tool calls run on the open campaign and their results go back to it, for up to
+ * [MAX_STEPS] rounds (the real turn loop is IRON-52).
+ */
+private suspend fun ask(
+    provider: AiProvider,
+    model: String,
+    input: String,
+    tools: ActionTools?,
+    onUpdate: (AiTestResult) -> Unit,
+): AiTestResult {
     val started = SystemClock.elapsedRealtime()
     var current = AiTestResult()
+    val conversation = mutableListOf<ChatMessage>(ChatMessage.System(if (tools == null) TEST_PROMPT else TOOLS_PROMPT), ChatMessage.User(input))
+    var usage: TokenUsage? = null
     return try {
-        val reply = provider.chat(
-            ChatRequest(model, listOf(ChatMessage.System(TEST_PROMPT), ChatMessage.User(input)), reasoningEffort = ReasoningEffort.LOW),
-        ).collectReply { piece ->
-            val first = current.firstTextMs ?: (SystemClock.elapsedRealtime() - started)
-            current = current.copy(text = current.text + piece, firstTextMs = first)
-            onUpdate(current)
+        for (step in 1..MAX_STEPS) {
+            // Text from a new round of the tool loop starts a new paragraph.
+            var separator = if (current.text.isEmpty()) "" else "
+
+"
+            val reply = provider.chat(
+                ChatRequest(model, conversation, tools?.specs.orEmpty(), reasoningEffort = ReasoningEffort.LOW),
+            ).collectReply { piece ->
+                val first = current.firstTextMs ?: (SystemClock.elapsedRealtime() - started)
+                current = current.copy(text = current.text + separator + piece, firstTextMs = first)
+                separator = ""
+                onUpdate(current)
+            }
+            usage = reply.usage?.let { usage?.plus(it) ?: it } ?: usage
+            conversation += reply.toMessage() ?: break
+            if (tools == null || reply.toolCalls.isEmpty()) break
+            reply.toolCalls.forEach { call ->
+                val run = tools.run(call)
+                conversation += run.message
+                val line = "${call.name} ${call.arguments} → " + when (val result = run.result) {
+                    is DispatchResult.Success -> result.result.summary
+                    is DispatchResult.Failure -> "error: ${result.error.message}"
+                    is DispatchResult.NeedsConfirmation -> "needs confirmation"
+                }
+                Log.i(TAG, line)
+                current = current.copy(steps = current.steps + line)
+                onUpdate(current)
+            }
         }
         val total = SystemClock.elapsedRealtime() - started
-        Log.i(TAG, "model=$model firstText=${current.firstTextMs}ms total=${total}ms usage=${reply.usage}")
-        current.copy(totalMs = total, usage = reply.usage)
+        Log.i(TAG, "model=$model tools=${tools != null} firstText=${current.firstTextMs}ms total=${total}ms usage=$usage")
+        current.copy(totalMs = total, usage = usage)
     } catch (e: AiException) {
         Log.w(TAG, "model=$model failed: ${e.kind} ${e.message}")
         current.copy(error = errorText(e.kind), errorDetail = e.message, totalMs = SystemClock.elapsedRealtime() - started)
@@ -169,7 +222,15 @@ private fun errorText(kind: AiErrorKind) = when (kind) {
 
 private const val TAG = "AiTest"
 
+/** Most tool rounds in one test answer. */
+private const val MAX_STEPS = 6
+
 /** Stand-in instructions for the test; the real narrator prompt is IRON-51. */
 private const val TEST_PROMPT =
     "You narrate a dark fantasy solo game set in the Ironlands, in neutral Latin American Spanish, " +
         "in second person, in 2 to 4 sentences, ending by giving control back to the player."
+
+/** Stand-in instructions to play with the actions; the real narrator prompt is IRON-51. */
+private const val TOOLS_PROMPT = TEST_PROMPT + " When the player's action is risky, roll the move that fits with the tools; " +
+    "never invent a roll. After the roll, narrate the outcome without numbers. If the player has to choose, " +
+    "mark your suggestion with suggest_option and do not narrate the choice."

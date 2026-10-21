@@ -34,10 +34,12 @@ import com.irondroid.dice.DiceReadyInfo
 import com.irondroid.dice.DiceRollReport
 import com.irondroid.engine.character.Character
 import com.irondroid.ai.openai.DeepSeek
+import com.irondroid.ai.tools.ActionTools
 import com.irondroid.prototype.ActionRoll
 import com.irondroid.prototype.AiTestScreen
 import com.irondroid.prototype.DicePrototypeScreen
 import com.irondroid.prototype.DicePrototypeState
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 private enum class Screen { CAMPAIGNS, NEW_CAMPAIGN, CAMPAIGN, DICE_PROTOTYPE, AI_TEST }
@@ -140,9 +142,18 @@ class MainActivity : ComponentActivity() {
                 CampaignScreen(details, onBack = leaveCampaign)
             }
             Screen.AI_TEST -> {
-                BackHandler { screen = Screen.CAMPAIGNS }
+                val leaveTest = {
+                    app.games.close()
+                    screen = Screen.CAMPAIGNS
+                }
+                BackHandler(onBack = leaveTest)
                 val provider = remember { app.aiProvider() }
-                AiTestScreen(provider, onBack = { screen = Screen.CAMPAIGNS })
+                // The AI plays its actions on the last campaign played (IRON-48).
+                val campaign by produceState<Pair<String, ActionTools>?>(null) {
+                    val last = store.observeCampaigns().first().firstOrNull() ?: return@produceState
+                    if (app.games.open(last.id) != null) value = last.title to ActionTools(app.dispatcher)
+                }
+                AiTestScreen(provider, campaign?.second, campaign?.first, onBack = leaveTest)
             }
             Screen.DICE_PROTOTYPE -> {
                 BackHandler { screen = Screen.CAMPAIGNS; hideDiceOverlay() }
