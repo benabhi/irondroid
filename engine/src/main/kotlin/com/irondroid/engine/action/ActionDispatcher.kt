@@ -44,6 +44,12 @@ sealed interface DispatchResult {
 /** Hears about every action that ran, such as the autosave (IRON-34) or the turn history (IRON-41). */
 fun interface ActionListener {
     fun afterAction(result: DispatchResult.Success)
+
+    /** Just before [action]'s handler runs for [call], once every check passed. */
+    fun beforeAction(call: ActionCall, action: ActionDefinition) {}
+
+    /** After every call, whatever came of it; after [afterAction] for a success. */
+    fun onResult(result: DispatchResult) {}
 }
 
 /**
@@ -74,7 +80,14 @@ class ActionDispatcher(val catalog: ActionCatalog, handlers: Map<String, ActionH
 
     fun removeListener(listener: ActionListener) = synchronized(lock) { listeners -= listener }
 
-    fun dispatch(call: ActionCall): DispatchResult = synchronized(lock) {
+    fun dispatch(call: ActionCall): DispatchResult = synchronized(lock) { report(run(call)) }
+
+    private fun report(result: DispatchResult): DispatchResult {
+        for (listener in listeners.toList()) runCatching { listener.onResult(result) }
+        return result
+    }
+
+    private fun run(call: ActionCall): DispatchResult {
         val action = catalog[call.name] ?: return fail(
             call,
             ActionErrorCode.UNKNOWN_ACTION,
@@ -96,6 +109,7 @@ class ActionDispatcher(val catalog: ActionCatalog, handlers: Map<String, ActionH
         }
         if (action.permission.requiresConfirmation && !call.confirmed) return DispatchResult.NeedsConfirmation(call, action)
 
+        for (listener in listeners.toList()) runCatching { listener.beforeAction(call, action) }
         val result = try {
             handlers.getValue(action.name).run(ActionArguments(call.arguments), call)
         } catch (e: ActionRejectedException) {
@@ -111,7 +125,7 @@ class ActionDispatcher(val catalog: ActionCatalog, handlers: Map<String, ActionH
         }
         val success = DispatchResult.Success(call, action, result)
         for (listener in listeners.toList()) runCatching { listener.afterAction(success) }
-        success
+        return success
     }
 
     /**
@@ -129,10 +143,9 @@ class ActionDispatcher(val catalog: ActionCatalog, handlers: Map<String, ActionH
             }
         }
         val call = ActionCall(name, parsed ?: JsonObject(emptyMap()), caller, confirmed)
-        return if (parsed == null) {
-            fail(call, ActionErrorCode.INVALID_ARGUMENTS, "The arguments of $name must be a JSON object", listOf("received: $arguments"))
-        } else {
-            dispatch(call)
+        if (parsed != null) return dispatch(call)
+        return synchronized(lock) {
+            report(fail(call, ActionErrorCode.INVALID_ARGUMENTS, "The arguments of $name must be a JSON object", listOf("received: $arguments")))
         }
     }
 

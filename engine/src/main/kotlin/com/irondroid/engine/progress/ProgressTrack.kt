@@ -25,6 +25,7 @@ enum class ProgressTrackType(val isRanked: Boolean) {
  * A progress track (RF-MOT-07): ten boxes of four ticks each. Immutable: marking progress
  * returns a new track.
  */
+@Serializable
 data class ProgressTrack(
     val name: String,
     val type: ProgressTrackType,

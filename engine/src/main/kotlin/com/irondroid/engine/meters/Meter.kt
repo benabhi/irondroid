@@ -12,6 +12,7 @@ enum class MeterType {
 }
 
 /** One condition meter, from [MIN] to [MAX]. Immutable: every change returns a new value. */
+@Serializable
 data class Meter(val type: MeterType, val value: Int = MAX) {
     init {
         require(value in MIN..MAX) { "$type must be $MIN..$MAX, was $value" }
@@ -47,6 +48,7 @@ data class MeterLoss(val meter: Meter, val amount: Int, val overflow: Int) {
 }
 
 /** Health, spirit and supply together, adjusted by type. */
+@Serializable
 data class Meters(
     val health: Meter = Meter(MeterType.HEALTH),
     val spirit: Meter = Meter(MeterType.SPIRIT),

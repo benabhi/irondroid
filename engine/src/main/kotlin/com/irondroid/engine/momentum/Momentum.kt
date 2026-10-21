@@ -1,11 +1,14 @@
 package com.irondroid.engine.momentum
 
+import kotlinx.serialization.Serializable
+
 /**
  * The character's momentum (RF-MOT-03 to RF-MOT-05). Immutable: every change returns a new value.
  *
  * Ranges from [MIN] to [max]; each marked debility lowers the maximum by one and the reset value
  * (+2, +1 with one debility, 0 with two or more).
  */
+@Serializable
 data class Momentum(val value: Int = START, val debilities: Int = 0) {
     init {
         require(debilities in 0..MAX_DEBILITIES) { "Debilities must be 0..$MAX_DEBILITIES, was $debilities" }

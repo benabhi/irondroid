@@ -7,14 +7,17 @@ import com.irondroid.engine.move.RollSource
 import com.irondroid.engine.progress.ChallengeRank
 import com.irondroid.engine.progress.ProgressTrack
 import com.irondroid.engine.progress.ProgressTrackType
+import kotlinx.serialization.Serializable
 
 /** A bonus waiting for the next action roll, or only for the next time [move] is made. */
+@Serializable
 data class PendingBonus(val amount: Int, val move: String? = null)
 
 /**
  * The minimal character sheet the engine plays moves on. Immutable: every change returns a new one.
  * Momentum always matches the number of marked debilities.
  */
+@Serializable
 data class Character(
     val stats: Map<Stat, Int>,
     val meters: Meters = Meters(),

@@ -4,6 +4,9 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.irondroid.engine.action.CallOutcome
+import com.irondroid.engine.action.Caller
+import com.irondroid.engine.action.UndoRole
 import com.irondroid.engine.debility.Debility
 import com.irondroid.engine.progress.ChallengeRank
 import com.irondroid.engine.progress.ProgressTrackType
@@ -164,5 +167,33 @@ data class HistoryEntryEntity(
     val sequence: Int,
     val kind: HistoryEntryKind,
     val payload: String,
+    val createdAt: Long,
+)
+
+/**
+ * One call to the actions interface, in [sequence] order (RF-API-09): who made it, what it asked and
+ * what came of it, during turn [turnNumber] (the turn being played, one more than the last saved).
+ * [details] is the result or error as JSON. [before] is the character sheet as JSON just before a
+ * call that starts an undo unit; [undone] marks calls taken back with undo (RF-API-10).
+ */
+@Entity(
+    tableName = "action_calls",
+    foreignKeys = [ForeignKey(CampaignEntity::class, ["id"], ["campaignId"], onDelete = ForeignKey.CASCADE)],
+    indices = [Index("campaignId", "sequence", unique = true)],
+)
+data class ActionCallEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val campaignId: Long,
+    val sequence: Int,
+    val turnNumber: Int,
+    val actionName: String,
+    val caller: Caller,
+    val arguments: String,
+    val outcome: CallOutcome,
+    val details: String,
+    val undoRole: UndoRole,
+    val before: String?,
+    val choiceOpenAfter: Boolean,
+    val undone: Boolean,
     val createdAt: Long,
 )

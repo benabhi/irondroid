@@ -51,6 +51,11 @@ class PendingChoices {
         }
     }
 
+    /** Drops the open choice without going on, as when its action is undone. */
+    fun cancel() {
+        current = null
+    }
+
     private fun find(choiceId: String): PendingChoice {
         val choice = current ?: throw ActionRejectedException.state("There is no choice to make")
         if (choice.id != choiceId) {

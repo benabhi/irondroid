@@ -2,6 +2,7 @@ package com.irondroid.data
 
 import androidx.room.withTransaction
 import com.irondroid.data.dao.CampaignSummary
+import com.irondroid.data.entity.ActionCallEntity
 import com.irondroid.data.entity.CampaignEntity
 import com.irondroid.data.entity.CampaignStatus
 import com.irondroid.data.entity.HistoryEntryEntity
@@ -9,6 +10,9 @@ import com.irondroid.data.entity.HistoryEntryKind
 import com.irondroid.data.entity.TurnEntity
 import com.irondroid.data.entity.WorldEntity
 import com.irondroid.data.entity.WorldTruthEntity
+import com.irondroid.engine.action.CallOutcome
+import com.irondroid.engine.action.Caller
+import com.irondroid.engine.action.UndoRole
 import com.irondroid.engine.character.Character
 import kotlinx.coroutines.flow.Flow
 
@@ -23,6 +27,20 @@ data class SavedCharacter(val id: Long, val campaignId: Long, val name: String, 
 
 /** A history card to save; [payload] is JSON made by whoever creates the card. */
 data class NewHistoryEntry(val kind: HistoryEntryKind, val payload: String)
+
+/** A call to the actions interface to save in the campaign's log; JSON fields as in [ActionCallEntity]. */
+data class NewActionCall(
+    val sequence: Int,
+    val actionName: String,
+    val caller: Caller,
+    val arguments: String,
+    val outcome: CallOutcome,
+    val details: String,
+    val undoRole: UndoRole,
+    val before: String?,
+    val choiceOpenAfter: Boolean,
+    val undone: Boolean = false,
+)
 
 /** A campaign's whole history: its turns and every card, each list in play order. */
 data class CampaignHistory(val turns: List<TurnEntity>, val entries: List<HistoryEntryEntity>)
@@ -143,6 +161,33 @@ class CampaignStore(
     suspend fun history(campaignId: Long): CampaignHistory = database.withTransaction {
         CampaignHistory(history.turns(campaignId), history.entries(campaignId))
     }
+
+    /** Saves a call to the actions interface in the turn being played (RF-API-09). */
+    suspend fun appendActionCall(campaignId: Long, call: NewActionCall) = database.withTransaction {
+        history.insertCall(
+            ActionCallEntity(
+                campaignId = campaignId,
+                sequence = call.sequence,
+                turnNumber = history.lastTurnNumber(campaignId) + 1,
+                actionName = call.actionName,
+                caller = call.caller,
+                arguments = call.arguments,
+                outcome = call.outcome,
+                details = call.details,
+                undoRole = call.undoRole,
+                before = call.before,
+                choiceOpenAfter = call.choiceOpenAfter,
+                undone = call.undone,
+                createdAt = clock(),
+            ),
+        )
+    }
+
+    /** Marks the calls with [sequences] as taken back by undo (RF-API-10). */
+    suspend fun markActionCallsUndone(campaignId: Long, sequences: List<Int>) = history.markCallsUndone(campaignId, sequences)
+
+    /** Every call to the actions interface in the campaign, oldest first. */
+    suspend fun actionCalls(campaignId: Long): List<ActionCallEntity> = history.calls(campaignId)
 
     private suspend fun insertEntries(campaignId: Long, turnId: Long?, entries: List<NewHistoryEntry>, now: Long) {
         val first = history.lastSequence(campaignId) + 1

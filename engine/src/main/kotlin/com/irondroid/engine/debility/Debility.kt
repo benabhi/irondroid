@@ -30,6 +30,7 @@ enum class Debility(val kind: DebilityKind) {
 }
 
 /** The debilities a character has marked. Immutable: marking or clearing returns a new set. */
+@Serializable
 data class Debilities(val marked: Set<Debility> = emptySet()) {
     val count: Int get() = marked.size
 
