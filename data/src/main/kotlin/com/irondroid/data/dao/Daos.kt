@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
+import com.irondroid.data.entity.ActionCallEntity
 import com.irondroid.data.entity.CampaignEntity
 import com.irondroid.data.entity.CampaignStatus
 import com.irondroid.data.entity.CharacterEntity
@@ -137,4 +138,13 @@ interface HistoryDao {
 
     @Query("SELECT * FROM history_entries WHERE campaignId = :campaignId ORDER BY sequence")
     suspend fun entries(campaignId: Long): List<HistoryEntryEntity>
+
+    @Insert
+    suspend fun insertCall(call: ActionCallEntity): Long
+
+    @Query("UPDATE action_calls SET undone = 1 WHERE campaignId = :campaignId AND sequence IN (:sequences)")
+    suspend fun markCallsUndone(campaignId: Long, sequences: List<Int>)
+
+    @Query("SELECT * FROM action_calls WHERE campaignId = :campaignId ORDER BY sequence")
+    suspend fun calls(campaignId: Long): List<ActionCallEntity>
 }

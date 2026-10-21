@@ -19,6 +19,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    // The exported schemas, so MigrationTestHelper can build old versions in the tests.
+    sourceSets {
+        getByName("test") {
+            assets.directories.add("$projectDir/schemas")
+        }
+    }
+
     testOptions {
         // Robolectric needs the Android resources to build a Context for Room.
         unitTests.isIncludeAndroidResources = true
@@ -44,12 +51,15 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
     implementation(libs.kotlinx.coroutines.core)
+    // The turn history keeps character sheets as JSON to undo to them (IRON-41).
+    implementation(libs.kotlinx.serialization.json)
 
     // Room needs an Android Context, so the database tests run on the JVM with Robolectric (JUnit 4).
     testImplementation(libs.junit4)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.room.testing)
     testImplementation(libs.kotlinx.serialization.json)
     testImplementation(kotlin("test"))
 
