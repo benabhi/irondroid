@@ -71,11 +71,31 @@
     <string name="ai_error_server">El proveedor de IA está fallando. Prueba más tarde.</string>
     <string name="ai_error_malformed">La IA mandó una respuesta que la app no pudo leer.</string>
 
+    <!-- Ajustes de la IA (IRON-49). -->
+    <string name="settings_open">Ajustes</string>
+    <string name="settings_back">Volver</string>
+    <string name="settings_ai_title">Narrador IA</string>
+    <string name="settings_ai_provider">Proveedor</string>
+    <string name="settings_ai_model">Modelo</string>
+    <string name="settings_ai_key">Clave de la API</string>
+    <string name="settings_ai_key_saved">Clave guardada: %1$s</string>
+    <string name="settings_ai_key_missing">Todavía no hay una clave guardada.</string>
+    <string name="settings_ai_key_paste">Pega tu clave de la API</string>
+    <string name="settings_ai_key_replace">Pega una clave nueva para reemplazarla</string>
+    <string name="settings_ai_key_save">Guardar clave</string>
+    <string name="settings_ai_key_delete">Borrar clave</string>
+    <string name="settings_ai_key_note">La clave se guarda cifrada en este celular y solo se envía al proveedor.</string>
+    <string name="settings_ai_check">Probar conexión</string>
+    <string name="settings_ai_checking">Probando…</string>
+    <string name="settings_ai_check_ready">Todo funciona: la clave es válida y el modelo puede jugar con las acciones del juego.</string>
+    <string name="settings_ai_check_no_tools">La clave funciona, pero este modelo no usó las acciones del juego. Prueba con otro modelo.</string>
+    <string name="settings_ai_check_time">Respondió en %1$d ms</string>
+
     <!-- Pantalla de prueba de la IA (IRON-47). Solo en la versión de desarrollo. -->
     <string name="ai_test_open">Prueba de IA (desarrollo)</string>
     <string name="ai_test_title">Prueba de IA</string>
     <string name="ai_test_back">Volver</string>
-    <string name="ai_test_no_key">No hay una clave de API cargada para el proveedor de IA. En desarrollo se carga por adb (ver IRON-47).</string>
+    <string name="ai_test_no_key">No hay una clave de API guardada para el proveedor de IA. Agrégala en Ajustes.</string>
     <string name="ai_test_provider">Proveedor: %1$s</string>
     <string name="ai_test_input">¿Qué haces?</string>
     <string name="ai_test_send">Enviar</string>

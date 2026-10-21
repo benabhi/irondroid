@@ -1,6 +1,9 @@
 package com.irondroid.ai.openai
 
+import com.irondroid.ai.AiErrorKind
 import com.irondroid.ai.ChatMessage
+import com.irondroid.ai.ConnectionCheck
+import com.irondroid.ai.ConnectionResult
 import com.irondroid.ai.ChatRequest
 import com.irondroid.ai.FinishReason
 import com.irondroid.ai.ProviderRegistry
@@ -27,6 +30,7 @@ import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -43,6 +47,23 @@ class DeepSeekLiveTest {
     private val narrator = ChatMessage.System(
         "You narrate a dark fantasy solo game in neutral Latin American Spanish, in second person, in 2 to 4 sentences.",
     )
+
+    @Test
+    fun `the connection check passes with both models`() = runBlocking {
+        DeepSeek.INFO.models.forEach { model ->
+            val result = ConnectionCheck.run(deepseek, model.id)
+            println("Connection check ${model.id}: $result")
+            assertIs<ConnectionResult.Ready>(result)
+        }
+    }
+
+    @Test
+    fun `a wrong key is reported as such`() = runBlocking {
+        val wrong = ProviderRegistry(listOf(DeepSeek.registration())).create(DeepSeek.ID, ProviderSettings(apiKey = "sk-wrong"))
+        val result = assertIs<ConnectionResult.Failed>(ConnectionCheck.run(wrong, "deepseek-flash"))
+        println("Wrong key: ${result.error.message}")
+        assertEquals(AiErrorKind.AUTHENTICATION, result.error.kind)
+    }
 
     @Test
     fun `narrates in streaming`() = runBlocking {

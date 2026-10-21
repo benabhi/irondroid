@@ -3,7 +3,12 @@ package com.irondroid
 import android.app.Application
 import android.content.Context
 import androidx.core.content.edit
+import com.irondroid.ai.AiErrorKind
+import com.irondroid.ai.AiException
 import com.irondroid.ai.AiProvider
+import com.irondroid.ai.ConnectionCheck
+import com.irondroid.ai.ConnectionResult
+import com.irondroid.ai.ProviderInfo
 import com.irondroid.ai.ProviderRegistry
 import com.irondroid.ai.ProviderSettings
 import com.irondroid.ai.openai.DeepSeek
@@ -15,6 +20,8 @@ import com.irondroid.engine.dice.SeededDice
 import com.irondroid.engine.game.GameActions
 import com.irondroid.engine.move.MoveLoader
 import com.irondroid.engine.oracle.OracleTableLoader
+import com.irondroid.settings.AiSettings
+import com.irondroid.settings.AiSettingsActions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -48,9 +55,39 @@ class IrondroidApp : Application() {
     /** The players' API keys, one per provider, encrypted (IRON-36). */
     val apiKeys: ApiKeyStore by lazy { ApiKeyStore.open(this) }
 
-    /** The provider [id] ready to use with its saved key, or null when it has no key yet. */
-    fun aiProvider(id: String = DeepSeek.ID): AiProvider? =
-        apiKeys.load(id)?.let { aiProviders.create(id, ProviderSettings(apiKey = it)) }
+    /** The player's provider and model choices (IRON-49). */
+    val aiSettings: AiSettings by lazy { AiSettings(getSharedPreferences(AiSettings.FILE_NAME, Context.MODE_PRIVATE), aiProviders) }
+
+    /** The chosen provider ready to use with its saved key, or null when it has no key yet. */
+    fun aiProvider(provider: ProviderInfo = aiSettings.provider): AiProvider? =
+        if (!provider.needsApiKey) {
+            aiProviders.create(provider.id, ProviderSettings())
+        } else {
+            apiKeys.load(provider.id)?.let { aiProviders.create(provider.id, ProviderSettings(apiKey = it)) }
+        }
+
+    /** What the AI settings screen reads and changes (RF-IA-03, RF-IA-05). */
+    val aiSettingsActions: AiSettingsActions by lazy {
+        object : AiSettingsActions {
+            override val providers get() = aiProviders.providers
+            override var provider: ProviderInfo
+                get() = aiSettings.provider
+                set(value) {
+                    aiSettings.provider = value
+                }
+
+            override fun model(provider: ProviderInfo) = aiSettings.model(provider)
+            override fun setModel(provider: ProviderInfo, model: String) = aiSettings.setModel(provider, model)
+            override fun maskedKey(provider: ProviderInfo) = apiKeys.load(provider.id)?.let { "••••" + it.takeLast(4) }
+            override fun saveKey(provider: ProviderInfo, key: String) = apiKeys.save(provider.id, key)
+            override fun deleteKey(provider: ProviderInfo) = apiKeys.delete(provider.id)
+            override suspend fun checkConnection(provider: ProviderInfo): ConnectionResult {
+                val ai = aiProvider(provider)
+                    ?: return ConnectionResult.Failed(AiException(AiErrorKind.AUTHENTICATION, "No API key saved"), 0)
+                return ConnectionCheck.run(ai, aiSettings.model(provider))
+            }
+        }
+    }
 
     private val sessionPreferences by lazy { getSharedPreferences("session", Context.MODE_PRIVATE) }
 

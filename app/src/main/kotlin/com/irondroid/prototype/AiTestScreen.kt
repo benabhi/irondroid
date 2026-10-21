@@ -31,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.irondroid.R
-import com.irondroid.ai.AiErrorKind
 import com.irondroid.ai.AiException
 import com.irondroid.ai.AiProvider
 import com.irondroid.ai.ChatMessage
@@ -41,6 +40,7 @@ import com.irondroid.ai.TokenUsage
 import com.irondroid.ai.collectReply
 import com.irondroid.ai.tools.ActionTools
 import com.irondroid.engine.action.DispatchResult
+import com.irondroid.settings.aiErrorText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -58,15 +58,15 @@ private data class AiTestResult(
 
 /**
  * Development-only screen (IRON-47) to talk to the real AI provider and watch the answer stream in.
- * [provider] is null when no API key was loaded. With [tools] (IRON-48) the AI can run the game's
+ * [provider] is null when no API key is saved; [defaultModel] is the one chosen in the settings. With [tools] (IRON-48) the AI can run the game's
  * actions on [campaignTitle], the last campaign played. The system prompt is a short stand-in until
  * the narrator prompt exists (IRON-51), so it is not player-facing text.
  */
 @Composable
-fun AiTestScreen(provider: AiProvider?, tools: ActionTools?, campaignTitle: String?, onBack: () -> Unit) {
+fun AiTestScreen(provider: AiProvider?, defaultModel: String, tools: ActionTools?, campaignTitle: String?, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     var input by remember { mutableStateOf("") }
-    var model by remember { mutableStateOf(provider?.info?.defaultModel?.id.orEmpty()) }
+    var model by remember { mutableStateOf(defaultModel) }
     var result by remember { mutableStateOf<AiTestResult?>(null) }
     var job by remember { mutableStateOf<Job?>(null) }
     var withActions by remember { mutableStateOf(false) }
@@ -172,9 +172,7 @@ private suspend fun ask(
     return try {
         for (step in 1..MAX_STEPS) {
             // Text from a new round of the tool loop starts a new paragraph.
-            var separator = if (current.text.isEmpty()) "" else "
-
-"
+            var separator = if (current.text.isEmpty()) "" else "\n\n"
             val reply = provider.chat(
                 ChatRequest(model, conversation, tools?.specs.orEmpty(), reasoningEffort = ReasoningEffort.LOW),
             ).collectReply { piece ->
@@ -204,20 +202,8 @@ private suspend fun ask(
         current.copy(totalMs = total, usage = usage)
     } catch (e: AiException) {
         Log.w(TAG, "model=$model failed: ${e.kind} ${e.message}")
-        current.copy(error = errorText(e.kind), errorDetail = e.message, totalMs = SystemClock.elapsedRealtime() - started)
+        current.copy(error = aiErrorText(e.kind), errorDetail = e.message, totalMs = SystemClock.elapsedRealtime() - started)
     }
-}
-
-@StringRes
-private fun errorText(kind: AiErrorKind) = when (kind) {
-    AiErrorKind.AUTHENTICATION -> R.string.ai_error_authentication
-    AiErrorKind.INSUFFICIENT_BALANCE -> R.string.ai_error_balance
-    AiErrorKind.RATE_LIMITED -> R.string.ai_error_rate_limited
-    AiErrorKind.MODEL_NOT_FOUND -> R.string.ai_error_model
-    AiErrorKind.INVALID_REQUEST -> R.string.ai_error_invalid_request
-    AiErrorKind.NETWORK -> R.string.ai_error_network
-    AiErrorKind.SERVER -> R.string.ai_error_server
-    AiErrorKind.MALFORMED_RESPONSE -> R.string.ai_error_malformed
 }
 
 private const val TAG = "AiTest"
