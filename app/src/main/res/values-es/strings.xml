@@ -122,4 +122,21 @@
     <string name="game_error">El narrador no respondió: %1$s</string>
     <string name="game_no_key">Para jugar, agrega tu clave de la IA en Ajustes.</string>
     <string name="game_choose">Elegir</string>
+    <string name="settings_play_title">Juego</string>
+    <string name="settings_confirm_moves">Confirmar el movimiento antes de tirar</string>
+    <string name="settings_confirm_moves_note">El narrador muestra el movimiento y el atributo que propone, y tú tiras, los cambias o no tiras. Si lo apagas, tira enseguida.</string>
+    <string name="move_confirm_title">El narrador propone: %1$s</string>
+    <string name="move_confirm_title_stat">El narrador propone: %1$s +%2$s</string>
+    <string name="move_confirm_stat">Atributo</string>
+    <string name="move_confirm_other">Otro movimiento</string>
+    <string name="move_confirm_roll">Tirar</string>
+    <string name="move_confirm_skip">No tirar</string>
+    <string name="stat_edge">Filo</string>
+    <string name="stat_heart">Corazón</string>
+    <string name="stat_iron">Hierro</string>
+    <string name="stat_shadow">Sombra</string>
+    <string name="stat_wits">Ingenio</string>
+    <string name="meter_health">Salud</string>
+    <string name="meter_spirit">Espíritu</string>
+    <string name="meter_supply">Suministros</string>
 </resources>

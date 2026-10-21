@@ -18,11 +18,13 @@ import com.irondroid.data.secret.ApiKeyStore
 import com.irondroid.engine.action.ActionDispatcher
 import com.irondroid.engine.dice.SeededDice
 import com.irondroid.engine.game.GameActions
+import com.irondroid.engine.move.MoveCatalog
 import com.irondroid.engine.move.MoveLoader
 import com.irondroid.engine.oracle.OracleTableCatalog
 import com.irondroid.engine.oracle.OracleTableLoader
 import com.irondroid.settings.AiSettings
 import com.irondroid.settings.AiSettingsActions
+import com.irondroid.settings.PlaySettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -44,9 +46,15 @@ class IrondroidApp : Application() {
     /** The oracle tables (RF-ORA-02), with the inspiration tables of IRON-103. */
     val oracles: OracleTableCatalog by lazy { OracleTableLoader.fromResources() }
 
+    /** The moves (RF-MOT), with their texts in every language. */
+    val moves: MoveCatalog by lazy { MoveLoader.fromResources() }
+
+    /** How the player wants to play, such as confirming moves (IRON-53). */
+    val playSettings: PlaySettings by lazy { PlaySettings(getSharedPreferences(PlaySettings.FILE_NAME, Context.MODE_PRIVATE)) }
+
     /** The actions of the MVP catalog (IRON-43), played on the open campaign, with texts in [rulesLanguage]. */
     val actions: GameActions by lazy {
-        GameActions(games, MoveLoader.fromResources(), oracles, SeededDice.fromSeed(System.nanoTime()), rulesLanguage)
+        GameActions(games, moves, oracles, SeededDice.fromSeed(System.nanoTime()), rulesLanguage)
     }
 
     /** The single door for every action (RF-API-04), for the screens and the AI alike. */
@@ -84,6 +92,12 @@ class IrondroidApp : Application() {
             override fun maskedKey(provider: ProviderInfo) = apiKeys.load(provider.id)?.let { "••••" + it.takeLast(4) }
             override fun saveKey(provider: ProviderInfo, key: String) = apiKeys.save(provider.id, key)
             override fun deleteKey(provider: ProviderInfo) = apiKeys.delete(provider.id)
+            override var confirmMoves: Boolean
+                get() = playSettings.confirmMoves
+                set(value) {
+                    playSettings.confirmMoves = value
+                }
+
             override suspend fun checkConnection(provider: ProviderInfo): ConnectionResult {
                 val ai = aiProvider(provider)
                     ?: return ConnectionResult.Failed(AiException(AiErrorKind.AUTHENTICATION, "No API key saved"), 0)

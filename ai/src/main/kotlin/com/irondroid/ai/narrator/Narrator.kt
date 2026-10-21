@@ -6,10 +6,17 @@ import com.irondroid.ai.ChatMessage
 import com.irondroid.ai.ChatRequest
 import com.irondroid.ai.ReasoningEffort
 import com.irondroid.ai.TokenUsage
+import com.irondroid.ai.ToolCall
 import com.irondroid.ai.ToolChoice
 import com.irondroid.ai.collectReply
 import com.irondroid.ai.tools.ActionTools
 import com.irondroid.engine.action.DispatchResult
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.put
 
 /** A turn already played, as the narrator remembers it: what the player said and the narration. */
 data class PastTurn(val playerInput: String?, val narration: String?)
@@ -62,6 +69,8 @@ class Narrator(
     /** Past turns sent with each request, newest last. */
     private val memory: Int = MEMORY_TURNS,
     private val clock: () -> Long = System::currentTimeMillis,
+    /** Asks the player before each roll of a move (RF-ENV-04); null rolls without asking. */
+    private val confirmer: MoveConfirmer? = null,
 ) {
     init {
         require(maxRounds >= 1) { "The narrator needs at least one round" }
@@ -116,9 +125,16 @@ class Narrator(
                 usage = reply.usage?.let { usage?.plus(it) ?: it } ?: usage
                 conversation += reply.toMessage() ?: break
                 if (reply.toolCalls.isEmpty() || last) break
-                for (call in reply.toolCalls) {
+                for (asked in reply.toolCalls) {
+                    val decision = confirm(asked)
+                    if (decision == MoveDecision.Skip) {
+                        conversation += ChatMessage.ToolResult(asked.id, DECLINED)
+                        steps += NarratorStep(asked.name, asked.arguments, "declined by the player", succeeded = false)
+                        continue
+                    }
+                    val call = (decision as? MoveDecision.Roll)?.let { withRoll(asked, it) } ?: asked
                     val run = tools.run(call)
-                    conversation += run.message
+                    conversation += if (call === asked) run.message else run.message.copy(content = changedNote(call, run.message.content))
                     val step = NarratorStep(
                         action = call.name,
                         arguments = call.arguments,
@@ -139,7 +155,46 @@ class Narrator(
         return outcome()
     }
 
+    /** The player's answer when [call] rolls a move that needs it; null when nothing is asked. */
+    private suspend fun confirm(call: ToolCall): MoveDecision? {
+        val confirmer = confirmer ?: return null
+        if (call.name != ROLL_MOVE) return null
+        val arguments = call.parsedArguments() ?: return null
+        val move = (arguments["move"] as? JsonPrimitive)?.contentOrNull ?: return null
+        if (!confirmer.needsConfirmation(move)) return null
+        val source = (arguments["source"] as? JsonPrimitive)?.contentOrNull
+        val decision = confirmer.confirm(MoveProposal(move, source))
+        return decision.takeUnless { it == MoveDecision.Roll(move, source) }
+    }
+
+    /** [call] with the move and source the player picked; the other arguments stay. */
+    private fun withRoll(call: ToolCall, roll: MoveDecision.Roll): ToolCall {
+        val arguments = call.parsedArguments().orEmpty().toMutableMap()
+        arguments["move"] = JsonPrimitive(roll.move)
+        if (roll.source == null) arguments.remove("source") else arguments["source"] = JsonPrimitive(roll.source)
+        return call.copy(arguments = JsonObject(arguments).toString())
+    }
+
+    /** The tool result of a roll the player changed, telling the model so. */
+    private fun changedNote(call: ToolCall, content: String): String {
+        val output = (Json.parseToJsonElement(content) as? JsonObject).orEmpty().toMutableMap()
+        output["player_changed"] = JsonPrimitive("The player changed your proposal and rolled these arguments instead: ${call.arguments}")
+        return JsonObject(output).toString()
+    }
+
     companion object {
+        private const val ROLL_MOVE = "roll_move"
+
+        /** What the model reads when the player chooses not to roll. */
+        private val DECLINED = buildJsonObject {
+            put("status", "declined")
+            put(
+                "message",
+                "The player chose not to roll this move. Do not roll it again this turn: narrate the action without dice, " +
+                    "or let the player say what they do instead.",
+            )
+        }.toString()
+
         /** Most rounds of tool calls in one turn: reading, rolling and narrating fit in a few. */
         const val MAX_ROUNDS = 6
 

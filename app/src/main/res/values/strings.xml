@@ -124,4 +124,21 @@
     <string name="game_error">The narrator did not answer: %1$s</string>
     <string name="game_no_key">To play, add your AI API key in Settings.</string>
     <string name="game_choose">Choose</string>
+    <string name="settings_play_title">Play</string>
+    <string name="settings_confirm_moves">Confirm moves before rolling</string>
+    <string name="settings_confirm_moves_note">The narrator shows the move and stat it proposes, and you roll, change them or skip the roll. Off, it rolls at once.</string>
+    <string name="move_confirm_title">The narrator proposes: %1$s</string>
+    <string name="move_confirm_title_stat">The narrator proposes: %1$s +%2$s</string>
+    <string name="move_confirm_stat">Stat</string>
+    <string name="move_confirm_other">Other move</string>
+    <string name="move_confirm_roll">Roll</string>
+    <string name="move_confirm_skip">Don\'t roll</string>
+    <string name="stat_edge">Edge</string>
+    <string name="stat_heart">Heart</string>
+    <string name="stat_iron">Iron</string>
+    <string name="stat_shadow">Shadow</string>
+    <string name="stat_wits">Wits</string>
+    <string name="meter_health">Health</string>
+    <string name="meter_spirit">Spirit</string>
+    <string name="meter_supply">Supply</string>
 </resources>

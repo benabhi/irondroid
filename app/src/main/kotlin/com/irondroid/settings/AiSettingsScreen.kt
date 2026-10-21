@@ -18,6 +18,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -26,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
@@ -51,6 +53,9 @@ interface AiSettingsActions {
 
     /** Checks [provider] with its saved key and chosen model (RF-IA-05). */
     suspend fun checkConnection(provider: ProviderInfo): ConnectionResult
+
+    /** Whether the narrator's moves wait for the player before the dice (RF-ENV-04). */
+    var confirmMoves: Boolean
 }
 
 /** AI settings (RF-IA-03, RF-IA-05): provider, model, API key and a connection check. */
@@ -160,6 +165,19 @@ fun AiSettingsScreen(actions: AiSettingsActions, onBack: () -> Unit) {
                 style = MaterialTheme.typography.bodyLarge,
             )
             Text(stringResource(R.string.settings_ai_check_time, result.millis), style = MaterialTheme.typography.bodySmall)
+        }
+
+        Text(stringResource(R.string.settings_play_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+        var confirmMoves by remember { mutableStateOf(actions.confirmMoves) }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_confirm_moves), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.settings_confirm_moves_note), style = MaterialTheme.typography.bodySmall)
+            }
+            Switch(checked = confirmMoves, onCheckedChange = {
+                actions.confirmMoves = it
+                confirmMoves = it
+            })
         }
     }
 }
