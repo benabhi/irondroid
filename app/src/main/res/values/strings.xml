@@ -82,6 +82,9 @@
     <string name="ai_test_input">What do you do?</string>
     <string name="ai_test_send">Send</string>
     <string name="ai_test_stop">Stop</string>
+    <string name="ai_test_with_actions">With actions</string>
+    <string name="ai_test_campaign">Actions play on: %1$s</string>
+    <string name="ai_test_no_campaign">No campaign to play the actions on: create one first.</string>
     <string name="ai_test_waiting">Waiting for the answer…</string>
     <string name="ai_test_metrics">First text after %1$d ms · total %2$d ms · tokens: %3$d in (%4$d cached), %5$d out</string>
 </resources>
