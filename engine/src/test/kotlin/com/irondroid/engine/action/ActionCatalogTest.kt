@@ -122,7 +122,7 @@ class ActionCatalogTest {
             { "name": "ask_oracle", "area": "oracles",
               "description": "Asks the yes/no oracle.",
               "when_to_use": "A question about the world has no clear answer in the fiction.",
-              "permission": "play", "requires_confirmation": false, "undoable": true,
+              "permission": "play", "requires_confirmation": false, "undoable": true, "answers_choice": false,
               "effects": ["rolls_dice"],
               "parameters": { "type": "object",
                 "properties": {

@@ -11,6 +11,7 @@ import com.irondroid.engine.action.ActionDefinition
 import com.irondroid.engine.action.ActionDispatcher
 import com.irondroid.engine.action.ActionEffect
 import com.irondroid.engine.action.ActionHandler
+import com.irondroid.engine.action.ActionResult
 import com.irondroid.engine.action.ActionPermission
 import com.irondroid.engine.action.ActionReturn
 import com.irondroid.engine.action.Caller
@@ -22,7 +23,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.JsonObject
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlin.test.assertEquals
@@ -55,7 +55,7 @@ class DeviceAutosaveTest {
             mapOf(
                 "lose_supply" to ActionHandler { _, _ ->
                     session.update { it.copy(meters = it.meters.lose(MeterType.SUPPLY, 2).first) }
-                    JsonObject(emptyMap())
+                    ActionResult("Done")
                 },
             ),
         )

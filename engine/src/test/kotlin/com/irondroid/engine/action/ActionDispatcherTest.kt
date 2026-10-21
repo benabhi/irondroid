@@ -55,17 +55,17 @@ class ActionDispatcherTest {
     private val catalog = ActionCatalog.of(CatalogVersion(1, 0), listOf(getProgress, markProgress, deleteTrack))
 
     private val handlers = mapOf(
-        "get_progress" to ActionHandler { _, _ -> buildJsonObject { put("progress", progress) } },
+        "get_progress" to ActionHandler { _, _ -> ActionResult("Progress is $progress", buildJsonObject { put("progress", progress) }) },
         "mark_progress" to ActionHandler { args, _ ->
             val track = args.string("track")
             if (track !in tracks) throw ActionRejectedException.state("There is no track called $track", "Start it with swear_an_iron_vow")
             if (progress >= 10) throw ActionRejectedException.rule("The track is full")
             progress = minOf(10, progress + (args.intOrNull("times") ?: 1))
-            buildJsonObject { put("progress", progress) }
+            ActionResult("Marked progress", buildJsonObject { put("progress", progress) })
         },
         "delete_track" to ActionHandler { args, _ ->
             if (!tracks.remove(args.string("track"))) error("track vanished")
-            JsonObject(emptyMap())
+            ActionResult("Deleted")
         },
     )
 
@@ -84,7 +84,7 @@ class ActionDispatcherTest {
     fun `a valid call runs its handler and returns its data`() {
         val result = assertIs<DispatchResult.Success>(dispatcher.dispatch(ActionCall("mark_progress", args("track" to "vow", "times" to 3), Caller.AI)))
         assertEquals(markProgress, result.action)
-        assertEquals(buildJsonObject { put("progress", 3) }, result.data)
+        assertEquals(ActionResult("Marked progress", buildJsonObject { put("progress", 3) }), result.result)
         assertEquals(3, progress)
     }
 
@@ -181,7 +181,7 @@ class ActionDispatcherTest {
     @Test
     fun `every action needs exactly one handler`() {
         val errors = assertFailsWith<ActionCatalogException> {
-            ActionDispatcher(catalog, handlers - "get_progress" + ("roll_dice" to ActionHandler { _, _ -> JsonObject(emptyMap()) }))
+            ActionDispatcher(catalog, handlers - "get_progress" + ("roll_dice" to ActionHandler { _, _ -> ActionResult("Rolled") }))
         }.errors
         assertEquals(listOf("Action get_progress has no handler", "Handler roll_dice has no action in the catalog"), errors)
     }
