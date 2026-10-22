@@ -71,11 +71,11 @@ data class ChatReply(
 }
 
 /**
- * Collects a stream into one [ChatReply], calling [onText] with each piece of text as it arrives.
- * Fails with [AiErrorKind.MALFORMED_RESPONSE] if the stream ends without [ChatEvent.Finished] or
- * sends events after it.
+ * Collects a stream into one [ChatReply], calling [onText] with each piece of text as it arrives and
+ * [onReasoning] with each piece of reasoning. Fails with [AiErrorKind.MALFORMED_RESPONSE] if the
+ * stream ends without [ChatEvent.Finished] or sends events after it.
  */
-suspend fun Flow<ChatEvent>.collectReply(onText: (String) -> Unit = {}): ChatReply {
+suspend fun Flow<ChatEvent>.collectReply(onReasoning: (String) -> Unit = {}, onText: (String) -> Unit = {}): ChatReply {
     val text = StringBuilder()
     val reasoning = StringBuilder()
     val calls = mutableListOf<ToolCall>()
@@ -87,7 +87,10 @@ suspend fun Flow<ChatEvent>.collectReply(onText: (String) -> Unit = {}): ChatRep
                 text.append(event.text)
                 onText(event.text)
             }
-            is ChatEvent.ReasoningDelta -> reasoning.append(event.text)
+            is ChatEvent.ReasoningDelta -> {
+                reasoning.append(event.text)
+                onReasoning(event.text)
+            }
             is ChatEvent.ToolCallRequested -> calls += event.call
             is ChatEvent.Finished -> finished = event
         }

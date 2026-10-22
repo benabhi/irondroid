@@ -39,7 +39,19 @@ sealed interface TurnEvent {
 
     /** An action the narrator ran. */
     data class Step(val step: NarratorStep) : TurnEvent
+
+    /** The narrator asked the model and waits: it is thinking before it writes or calls an action. */
+    data object Thinking : TurnEvent
+
+    /** The narrator is running [action] through the engine, such as `roll_move`. */
+    data class Acting(val action: String) : TurnEvent
 }
+
+/**
+ * The times of one request of a turn, in milliseconds from the start of the turn (IRON-62):
+ * when it was sent, when the model sent anything (reasoning, text or a call), its first text, and the end.
+ */
+data class RoundTiming(val startMs: Long, val firstOutputMs: Long?, val firstTextMs: Long?, val endMs: Long, val toolCalls: Int)
 
 /**
  * How a turn ended. [narration] is the whole text the narrator wrote; [error] is set when the AI
@@ -54,6 +66,8 @@ data class TurnOutcome(
     val error: AiException? = null,
     /** How hard the model was asked to think on this turn (IRON-109). */
     val effort: ReasoningEffort? = null,
+    /** Each request of the turn, in order (IRON-62). */
+    val rounds: List<RoundTiming> = emptyList(),
 )
 
 /**
@@ -146,9 +160,10 @@ class Narrator(
         val steps = mutableListOf<NarratorStep>()
         var usage: TokenUsage? = null
         var firstText: Long? = null
+        val rounds = mutableListOf<RoundTiming>()
         val turnEffort = effort()
         fun outcome(error: AiException? = null) =
-            TurnOutcome(text.toString().trim(), steps.toList(), usage, firstText, clock() - started, error, turnEffort)
+            TurnOutcome(text.toString().trim(), steps.toList(), usage, firstText, clock() - started, error, turnEffort, rounds.toList())
 
         try {
             for (round in 1..maxRounds + 1) {
@@ -157,15 +172,27 @@ class Narrator(
                 // Text from a later round starts a new paragraph of the same narration.
                 var separator = if (text.isEmpty()) "" else "\n\n"
                 val choice = if (last) ToolChoice.NONE else ToolChoice.AUTO
+                var roundOutput: Long? = null
+                var roundText: Long? = null
+                val roundStart = clock() - started
+                onEvent(TurnEvent.Thinking)
                 val reply = provider.chat(
                     ChatRequest(model, conversation.toList(), tools.specs, choice, reasoningEffort = turnEffort),
-                ).collectReply { piece ->
-                    if (firstText == null) firstText = clock() - started
+                ).collectReply(
+                    onReasoning = { if (roundOutput == null) roundOutput = clock() - started },
+                ) { piece ->
+                    val now = clock() - started
+                    if (roundOutput == null) roundOutput = now
+                    if (roundText == null) roundText = now
+                    if (firstText == null) firstText = now
                     val shown = separator + piece
                     separator = ""
                     text.append(shown)
                     onEvent(TurnEvent.Text(shown))
                 }
+                val end = clock() - started
+                // A reply with only calls sent no text: its calls are its first output.
+                rounds += RoundTiming(roundStart, roundOutput ?: end.takeIf { reply.toolCalls.isNotEmpty() }, roundText, end, reply.toolCalls.size)
                 usage = reply.usage?.let { usage?.plus(it) ?: it } ?: usage
                 conversation += reply.toMessage() ?: break
                 if (reply.toolCalls.isEmpty() || last) break
@@ -177,6 +204,7 @@ class Narrator(
                         continue
                     }
                     val call = (decision as? MoveDecision.Roll)?.let { withRoll(asked, it) } ?: asked
+                    onEvent(TurnEvent.Acting(call.name))
                     val run = tools.run(call)
                     conversation += if (call === asked) run.message else run.message.copy(content = changedNote(call, run.message.content))
                     val step = NarratorStep(

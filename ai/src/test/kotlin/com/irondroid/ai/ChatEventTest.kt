@@ -63,4 +63,19 @@ class ChatEventTest {
         val retryable = AiErrorKind.entries.filter { it.retryable }.toSet()
         assertEquals(setOf(AiErrorKind.RATE_LIMITED, AiErrorKind.NETWORK, AiErrorKind.SERVER, AiErrorKind.MALFORMED_RESPONSE), retryable)
     }
+
+    @Test
+    fun `reasoning is passed along apart from the text`() = runTest {
+        val thoughts = mutableListOf<String>()
+        val reply = flowOf(
+            ChatEvent.ReasoningDelta("Hmm, "),
+            ChatEvent.ReasoningDelta("a door."),
+            ChatEvent.TextDelta("It opens."),
+            ChatEvent.Finished(FinishReason.STOP),
+        ).collectReply(onReasoning = { thoughts += it })
+
+        assertEquals(listOf("Hmm, ", "a door."), thoughts)
+        assertEquals("Hmm, a door.", reply.reasoning)
+        assertEquals("It opens.", reply.text)
+    }
 }

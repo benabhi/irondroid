@@ -55,7 +55,18 @@ data class PlayedTurn(
     val error: AiException? = null,
     /** Tokens, time and cost of the turn (IRON-111), when known. */
     val metrics: TurnMetrics? = null,
+    /** While the turn plays, what the narrator is doing when it is not writing (IRON-62). */
+    val activity: NarratorActivity? = null,
 )
+
+/** What the narrator is doing between pieces of text (IRON-62). */
+sealed interface NarratorActivity {
+    /** Waiting for the model, which thinks before it writes or calls an action. */
+    data object Thinking : NarratorActivity
+
+    /** Running [action] through the engine, such as `roll_move`. */
+    data class Acting(val action: String) : NarratorActivity
+}
 
 /**
  * Plays the turns of the open campaign (IRON-52) and keeps what the play screen shows. Every turn is
@@ -232,15 +243,21 @@ class TurnPlayer(
     }
 
     private suspend fun run(input: String, play: suspend ((TurnEvent) -> Unit) -> TurnOutcome) {
-        live = PlayedTurn(input, emptyList(), "")
+        live = PlayedTurn(input, emptyList(), "", activity = NarratorActivity.Thinking)
         val outcome = play { event ->
             val current = live ?: return@play
             live = when (event) {
-                is TurnEvent.Text -> current.copy(narration = current.narration + event.text)
+                is TurnEvent.Text -> current.copy(narration = current.narration + event.text, activity = null)
                 is TurnEvent.Step -> current.copy(steps = current.steps + listOfNotNull(cardSummary(event.step)))
+                TurnEvent.Thinking -> current.copy(activity = NarratorActivity.Thinking)
+                is TurnEvent.Acting -> current.copy(activity = NarratorActivity.Acting(event.action))
             }
         }
         Log.i(TAG, "turn effort=${outcome.effort} steps=${outcome.steps.size} firstText=${outcome.firstTextMs}ms total=${outcome.totalMs}ms usage=${outcome.usage} error=${outcome.error?.kind}")
+        // Where the time went (IRON-62): per request, the first output, the first text and the end, from the turn start.
+        outcome.rounds.forEachIndexed { i, round ->
+            Log.i(TAG, "round ${i + 1}: start=${round.startMs}ms output=${round.firstOutputMs}ms text=${round.firstTextMs}ms end=${round.endMs}ms calls=${round.toolCalls}")
+        }
         outcome.steps.forEach { Log.i(TAG, "${it.action} ${it.arguments} → ${it.summary}") }
         flush()
         val metrics = TurnMetrics.of(outcome, pricing(), Instant.now())
