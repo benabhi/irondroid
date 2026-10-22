@@ -24,6 +24,7 @@ import com.irondroid.engine.action.ActionHistory
 import com.irondroid.engine.action.Caller
 import com.irondroid.engine.action.DispatchResult
 import com.irondroid.engine.action.PendingChoice
+import com.irondroid.engine.action.StateChange
 import com.irondroid.engine.action.UndoRole
 import com.irondroid.engine.character.Character
 import com.irondroid.engine.game.GameActions
@@ -34,6 +35,7 @@ import kotlinx.coroutines.CompletableDeferred
 import java.time.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -43,9 +45,10 @@ import kotlinx.serialization.json.put
 /** One turn on the play screen: what the player said, the actions run and the narration. */
 /**
  * A roll or oracle answer of a turn, as its history card keeps it: the engine's [summary] (for the
- * AI) and the result's [data], from which the screen writes its own line in the player's language.
+ * AI), the result's [data] and the [changes] to the game, from which the screen draws its card in the
+ * player's language (IRON-63).
  */
-data class StepCard(val action: String, val summary: String, val data: JsonObject?)
+data class StepCard(val action: String, val summary: String, val data: JsonObject?, val changes: List<StateChange> = emptyList())
 
 data class PlayedTurn(
     val playerInput: String?,
@@ -190,7 +193,9 @@ class TurnPlayer(
             return
         }
         choice = dispatcher.choices.current
-        run(chosen) { onEvent -> narrator.afterChoice(chosen, result.result.toJson().toString(), past(), ownConsequence, onEvent) }
+        // What the picked options changed goes on a card of the turn, before the narrator's own (IRON-63).
+        val picked = NarratorStep(CHOOSE_OPTION, arguments.toString(), result.result.summary, true, result.result.data, result.result.changes)
+        run(chosen, listOf(picked)) { onEvent -> narrator.afterChoice(chosen, result.result.toJson().toString(), past(), ownConsequence, onEvent) }
     }
 
     /** Whether there is a turn to undo or correct now. */
@@ -242,8 +247,9 @@ class TurnPlayer(
         run(shown) { onEvent -> narrator.correct(input, previous, correction.trim(), past(), onEvent) }
     }
 
-    private suspend fun run(input: String, play: suspend ((TurnEvent) -> Unit) -> TurnOutcome) {
-        live = PlayedTurn(input, emptyList(), "", activity = NarratorActivity.Thinking)
+    /** Plays a turn; [before] are steps the player already ran for it, such as picking options. */
+    private suspend fun run(input: String, before: List<NarratorStep> = emptyList(), play: suspend ((TurnEvent) -> Unit) -> TurnOutcome) {
+        live = PlayedTurn(input, before.mapNotNull(::cardSummary), "", activity = NarratorActivity.Thinking)
         val outcome = play { event ->
             val current = live ?: return@play
             live = when (event) {
@@ -261,8 +267,9 @@ class TurnPlayer(
         outcome.steps.forEach { Log.i(TAG, "${it.action} ${it.arguments} → ${it.summary}") }
         flush()
         val metrics = TurnMetrics.of(outcome, pricing(), Instant.now())
-        store.appendTurn(campaignId, input, outcome.narration.ifBlank { null }, outcome.steps.mapNotNull(::card), metrics?.toJson())
-        turns += PlayedTurn(input, outcome.steps.mapNotNull(::cardSummary), outcome.narration, outcome.error, metrics)
+        val steps = before + outcome.steps
+        store.appendTurn(campaignId, input, outcome.narration.ifBlank { null }, steps.mapNotNull(::card), metrics?.toJson())
+        turns += PlayedTurn(input, steps.mapNotNull(::cardSummary), outcome.narration, outcome.error, metrics)
         live = null
         choice = dispatcher.choices.current
     }
@@ -321,10 +328,12 @@ class TurnPlayer(
             step.action == "roll_move" || step.action == "roll_progress" -> HistoryEntryKind.MOVE
             step.action == "ask_oracle" || step.action == "roll_oracle_table" -> HistoryEntryKind.ORACLE
             step.action == "mark_progress" || step.action == "create_progress_track" -> HistoryEntryKind.SHEET_CHANGE
+            step.action == CHOOSE_OPTION && step.changes.isNotEmpty() -> HistoryEntryKind.SHEET_CHANGE
             else -> null
         }
 
-        private fun cardSummary(step: NarratorStep): StepCard? = StepCard(step.action, step.summary, step.data).takeIf { kind(step) != null }
+        private fun cardSummary(step: NarratorStep): StepCard? =
+            StepCard(step.action, step.summary, step.data, step.changes).takeIf { kind(step) != null }
 
         private fun card(step: NarratorStep): NewHistoryEntry? = kind(step)?.let { kind ->
             NewHistoryEntry(
@@ -334,6 +343,7 @@ class TurnPlayer(
                     put("arguments", step.arguments)
                     put("summary", step.summary)
                     step.data?.let { put("data", it) }
+                    if (step.changes.isNotEmpty()) put("changes", JsonArray(step.changes.map { it.toJson() }))
                 }.toString(),
             )
         }
@@ -344,6 +354,14 @@ class TurnPlayer(
                     card["action"]?.jsonPrimitive?.content.orEmpty(),
                     card["summary"]?.jsonPrimitive?.content ?: return@let null,
                     card["data"] as? JsonObject,
+                    (card["changes"] as? JsonArray).orEmpty().mapNotNull { change ->
+                        val fields = change as? JsonObject ?: return@mapNotNull null
+                        StateChange(
+                            fields["field"]?.jsonPrimitive?.content ?: return@mapNotNull null,
+                            fields["before"] ?: JsonNull,
+                            fields["after"] ?: JsonNull,
+                        )
+                    },
                 )
             }
         } catch (_: IllegalArgumentException) {

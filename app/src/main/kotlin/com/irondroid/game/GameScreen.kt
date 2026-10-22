@@ -89,6 +89,8 @@ fun GameScreen(
     characterName: String,
     sheet: Character,
     player: TurnPlayer,
+    /** The name of an oracle table in the player's language, for the history cards (IRON-63). */
+    tableName: (String) -> String,
     /** Show what each turn cost under its narration (IRON-111). */
     showMetrics: Boolean,
     onOpenSheet: () -> Unit,
@@ -144,9 +146,9 @@ fun GameScreen(
             if (player.loaded && player.turns.isEmpty() && live == null) {
                 item { Text(stringResource(R.string.game_empty), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
-            items(player.turns) { TurnView(it, playing = false, player::moveName, showMetrics) }
+            items(player.turns) { TurnView(it, playing = false, player::moveName, tableName, showMetrics) }
             // While the player confirms a roll, the narrator waits for them, not the other way round.
-            if (live != null) item { TurnView(live.copy(activity = live.activity.takeIf { pendingMove == null }), playing = true, player::moveName, showMetrics) }
+            if (live != null) item { TurnView(live.copy(activity = live.activity.takeIf { pendingMove == null }), playing = true, player::moveName, tableName, showMetrics) }
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -264,7 +266,7 @@ private fun GameMenu(onOpenSheet: () -> Unit, onUndo: (() -> Unit)?, onCorrect: 
 }
 
 /** The name of a debility, as the status bar shows it. */
-private fun debilityName(debility: Debility): Int = when (debility) {
+internal fun debilityName(debility: Debility): Int = when (debility) {
     Debility.WOUNDED -> R.string.debility_wounded
     Debility.SHAKEN -> R.string.debility_shaken
     Debility.UNPREPARED -> R.string.debility_unprepared
@@ -351,7 +353,7 @@ private fun BottomPanel(
 }
 
 @Composable
-private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> String, showMetrics: Boolean) {
+private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> String, tableName: (String) -> String, showMetrics: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         turn.playerInput?.let { said ->
             Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth().padding(start = 48.dp)) {
@@ -365,7 +367,7 @@ private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> S
             }
         }
         turn.steps.forEach {
-            Text(stringResource(R.string.game_step, stepLine(it, moveName)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            StepCardView(it, moveName, tableName)
         }
         if (turn.narration.isNotBlank()) {
             Text(
@@ -571,7 +573,7 @@ private fun MovePanel(proposal: MoveProposal, player: TurnPlayer) {
 }
 
 /** The name of a roll source, such as `edge`. */
-private fun sourceName(source: String): Int = when (source) {
+internal fun sourceName(source: String): Int = when (source) {
     "edge" -> R.string.stat_edge
     "heart" -> R.string.stat_heart
     "iron" -> R.string.stat_iron
@@ -580,42 +582,6 @@ private fun sourceName(source: String): Int = when (source) {
     "health" -> R.string.meter_health
     "spirit" -> R.string.meter_spirit
     else -> R.string.meter_supply
-}
-
-/**
- * The line a history card shows, in the player's language: a move with its stat, outcome and a
- * match when the challenge dice matched (RF-ENV-06), or an oracle's answer. Other cards keep the
- * engine's summary.
- */
-@Composable
-private fun stepLine(card: StepCard, moveName: (String) -> String): String {
-    val data = card.data ?: return card.summary
-    return when (card.action) {
-        "roll_move", "roll_progress" -> {
-            val move = data["move"]?.jsonPrimitive?.contentOrNull ?: return card.summary
-            val outcome = when (data["outcome"]?.jsonPrimitive?.contentOrNull) {
-                "strong_hit" -> R.string.outcome_strong_hit
-                "weak_hit" -> R.string.outcome_weak_hit
-                "miss" -> R.string.outcome_miss
-                else -> return moveName(move) // A move without dice, such as Pay the Price.
-            }
-            val source = (data["roll"] as? JsonObject)?.get("source")?.jsonPrimitive?.contentOrNull
-            val line = if (source != null) {
-                stringResource(R.string.step_move_stat, moveName(move), stringResource(sourceName(source)), stringResource(outcome))
-            } else {
-                stringResource(R.string.step_move, moveName(move), stringResource(outcome))
-            }
-            if (data["match"]?.jsonPrimitive?.booleanOrNull == true) stringResource(R.string.step_match, line) else line
-        }
-        "ask_oracle" -> {
-            val question = data["question"]?.jsonPrimitive?.contentOrNull ?: return card.summary
-            val yes = data["answer"]?.jsonPrimitive?.contentOrNull == "yes"
-            val answer = stringResource(if (yes) R.string.oracle_yes else R.string.oracle_no)
-            val shown = if (data["extreme"]?.jsonPrimitive?.booleanOrNull == true) stringResource(R.string.oracle_extreme, answer) else answer
-            stringResource(R.string.step_oracle, question, shown)
-        }
-        else -> card.summary
-    }
 }
 
 /** The move the player asks for themselves (RF-ENV-05): a move with dice and, when it lets them pick, its stat. */

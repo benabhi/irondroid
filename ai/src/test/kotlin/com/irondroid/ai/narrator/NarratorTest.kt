@@ -294,4 +294,14 @@ class NarratorTest {
         val first = outcome.rounds.first()
         assertEquals(first.endMs, first.firstOutputMs)
     }
+
+    @Test
+    fun `each step keeps what its action changed in the game`() = runTest {
+        val vow = ToolCall("c1", "create_progress_track", """{"type":"vow","name":"Vengar a Kael","rank":"dangerous"}""")
+        val (_, narrator) = narrator(ScriptedTurn.toolCalls(vow), ScriptedTurn.text("Juras."))
+        val step = narrator.play("Juro vengar a Kael", emptyList()).steps.single()
+
+        assertTrue(step.succeeded, step.summary)
+        assertTrue(step.changes.any { it.field.startsWith("tracks.") }, step.changes.toString())
+    }
 }
