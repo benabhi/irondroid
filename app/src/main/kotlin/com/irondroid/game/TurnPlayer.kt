@@ -121,6 +121,28 @@ class TurnPlayer(
         loaded = true
     }
 
+    /** A move the player asked for with the buttons: it rolls without asking again (RF-ENV-05). */
+    private var requested: MoveProposal? = null
+
+    /** Plays [move] with [source], asked for with the buttons and shown as [said] (RF-ENV-05). */
+    suspend fun requestMove(move: String, source: String?, said: String) {
+        val narrator = narrator ?: return
+        if (busy) return
+        requested = MoveProposal(move, source)
+        try {
+            run(said) { onEvent -> narrator.requestMove(said, move, source, past(), onEvent) }
+        } finally {
+            requested = null
+        }
+    }
+
+    /** Asks the oracle [question] with [odds], from the buttons, shown as [said] (RF-ENV-05). */
+    suspend fun requestOracle(question: String, odds: String, said: String) {
+        val narrator = narrator ?: return
+        if (busy) return
+        run(said) { onEvent -> narrator.requestOracle(said, question, odds, past(), onEvent) }
+    }
+
     /** Plays the player's [input]. */
     suspend fun play(input: String) {
         val narrator = narrator ?: return
@@ -219,6 +241,11 @@ class TurnPlayer(
     override fun needsConfirmation(move: String): Boolean = confirmMoves() && moves[move]?.let { it.roll !is MoveRoll.None } == true
 
     override suspend fun confirm(proposal: MoveProposal): MoveDecision {
+        // The player already chose this move with the buttons: no need to ask again.
+        requested?.takeIf { it.move == proposal.move }?.let { asked ->
+            requested = null
+            return MoveDecision.Roll(asked.move, asked.source ?: proposal.source)
+        }
         val pending = PendingMove(proposal, CompletableDeferred())
         pendingMove = pending
         return try {

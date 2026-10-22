@@ -232,6 +232,17 @@ class NarratorTest {
     }
 
     @Test
+    fun `requests from the buttons reach the model with exact instructions`() = runTest {
+        val (ai, narrator) = narrator(ScriptedTurn.text("Ves huellas."), ScriptedTurn.text("No hay nadie."))
+        narrator.requestMove("Tiro Reunir información +Ingenio", "gather_information", "wits", emptyList())
+        narrator.requestOracle("¿Hay alguien en la cabaña? (improbable)", "¿Hay alguien en la cabaña?", "unlikely", emptyList())
+        val move = assertIs<ChatMessage.User>(ai.requests[0].messages.last()).text
+        assertTrue(move.startsWith("Tiro Reunir información +Ingenio") && "gather_information with wits" in move, move)
+        val oracle = assertIs<ChatMessage.User>(ai.requests[1].messages.last()).text
+        assertTrue("with odds unlikely" in oracle && "\"¿Hay alguien en la cabaña?\"" in oracle, oracle)
+    }
+
+    @Test
     fun `after a choice the model gets what the player picked and the result`() = runTest {
         val (ai, narrator) = narrator(ScriptedTurn.text("Eliges seguir."))
         narrator.afterChoice("Seguir adelante", """{"summary":"ok"}""", listOf(PastTurn("Salto", "Caes.")))
