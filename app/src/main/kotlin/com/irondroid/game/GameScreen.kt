@@ -93,10 +93,26 @@ fun GameScreen(
     tableName: (String) -> String,
     /** Show what each turn cost under its narration (IRON-111). */
     showMetrics: Boolean,
-    onOpenSheet: () -> Unit,
     onBack: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    // The sheet opens as a panel over the scene (IRON-66, RF-UI-08).
+    var sheetOpen by rememberSaveable { mutableStateOf(false) }
+    val onOpenSheet = { sheetOpen = true }
+    if (sheetOpen) {
+        SheetPanel(
+            characterName,
+            sheet,
+            player.gender,
+            onGender = { scope.launch { player.changeGender(it) } },
+            canEdit = !player.busy,
+            onApply = { edit ->
+                sheetOpen = false
+                scope.launch { player.applySheetEdit(edit) }
+            },
+            onDismiss = { sheetOpen = false },
+        )
+    }
     var input by rememberSaveable { mutableStateOf("") }
     var correcting by rememberSaveable { mutableStateOf(false) }
     var requesting by rememberSaveable { mutableStateOf<String?>(null) }
@@ -146,7 +162,11 @@ fun GameScreen(
             if (player.loaded && player.turns.isEmpty() && live == null) {
                 item { Text(stringResource(R.string.game_empty), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
-            items(player.turns) { TurnView(it, playing = false, player::moveName, tableName, showMetrics) }
+            items(player.turns) { turn ->
+                // A price the player wrote can be applied to the sheet by hand, from its own turn (IRON-66).
+                val applyPrice = onOpenSheet.takeIf { turn.ownPrice && turn === player.turns.lastOrNull() }
+                TurnView(turn, playing = false, player::moveName, tableName, showMetrics, applyPrice)
+            }
             // While the player confirms a roll, the narrator waits for them, not the other way round.
             if (live != null) item { TurnView(live.copy(activity = live.activity.takeIf { pendingMove == null }), playing = true, player::moveName, tableName, showMetrics) }
         }
@@ -363,7 +383,14 @@ private fun BottomPanel(
 }
 
 @Composable
-private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> String, tableName: (String) -> String, showMetrics: Boolean) {
+private fun TurnView(
+    turn: PlayedTurn,
+    playing: Boolean,
+    moveName: (String) -> String,
+    tableName: (String) -> String,
+    showMetrics: Boolean,
+    onApplyPrice: (() -> Unit)? = null,
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         turn.playerInput?.let { said ->
             Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth().padding(start = 48.dp)) {
@@ -388,6 +415,7 @@ private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> S
         if (playing) turn.activity?.let { ActivityLine(it) }
         turn.error?.let { Text(stringResource(R.string.game_error, stringResource(aiErrorText(it.kind))), color = MaterialTheme.colorScheme.error) }
         if (showMetrics) turn.metrics?.let { MetricsLine(it) }
+        onApplyPrice?.let { OutlinedButton(onClick = it) { Text(stringResource(R.string.apply_to_sheet)) } }
     }
 }
 

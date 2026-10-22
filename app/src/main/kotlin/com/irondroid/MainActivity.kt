@@ -165,7 +165,6 @@ class MainActivity : ComponentActivity() {
                 val loaded = details
                 val session = app.games.session
                 if (loaded != null && session != null && session.campaignId == openCampaignId) {
-                    var showSheet by rememberSaveable(openCampaignId) { mutableStateOf(false) }
                     val sheet by session.sheet.collectAsState()
                     val player = remember(openCampaignId) {
                         val narrator = app.aiProvider()?.let { provider ->
@@ -203,6 +202,7 @@ class MainActivity : ComponentActivity() {
                             flush = app.games::flushNow,
                             history = { app.games.history },
                             pricing = { app.aiSettings.provider.model(app.aiSettings.model())?.pricing },
+                            sheet = { session.sheet.value },
                             // The model reads the triggers in English, like the rest of its instructions.
                             suggester = app.aiProvider()?.let { provider ->
                                 MoveSuggester(provider, app.aiSettings.model(), app.moves.moves.map { MoveOption(it.id, app.moves.text(it.id, "en")?.trigger ?: it.id) })
@@ -210,26 +210,15 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     LaunchedEffect(player) { player.load() }
-                    if (showSheet) {
-                        BackHandler { showSheet = false }
-                        CampaignScreen(
-                            loaded.copy(character = loaded.character?.copy(sheet = sheet)),
-                            onBack = { showSheet = false },
-                            gender = player.gender,
-                            onGender = { scope.launch { player.changeGender(it) } },
-                        )
-                    } else {
-                        GameScreen(
-                            loaded.campaign.title,
-                            session.characterName,
-                            sheet,
-                            player,
-                            tableName = { app.oracles.text(it, app.rulesLanguage)?.name ?: it },
-                            showMetrics = app.playSettings.showMetrics,
-                            onOpenSheet = { showSheet = true },
-                            onBack = leaveCampaign,
-                        )
-                    }
+                    GameScreen(
+                        loaded.campaign.title,
+                        session.characterName,
+                        sheet,
+                        player,
+                        tableName = { app.oracles.text(it, app.rulesLanguage)?.name ?: it },
+                        showMetrics = app.playSettings.showMetrics,
+                        onBack = leaveCampaign,
+                    )
                 } else {
                     CampaignScreen(null, onBack = leaveCampaign)
                 }

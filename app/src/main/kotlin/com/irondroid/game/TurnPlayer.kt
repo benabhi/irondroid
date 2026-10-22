@@ -28,6 +28,9 @@ import com.irondroid.engine.action.PendingChoice
 import com.irondroid.engine.action.StateChange
 import com.irondroid.engine.action.UndoRole
 import com.irondroid.engine.character.Character
+import com.irondroid.engine.character.Stat
+import com.irondroid.engine.meters.MeterType
+import com.irondroid.engine.debility.Debility
 import com.irondroid.engine.game.GameActions
 import com.irondroid.engine.move.MoveCatalog
 import com.irondroid.engine.move.MoveCategory
@@ -55,6 +58,17 @@ data class StepCard(val action: String, val summary: String, val data: JsonObjec
 /** A move of the picker (IRON-64): [trigger] is the first sentence of when it is made, in the player's language. */
 data class PickerMove(val id: String, val name: String, val category: MoveCategory, val trigger: String)
 
+/**
+ * The hand edits of the sheet panel (IRON-66): debilities to [mark] and [clear], the new value of each
+ * meter by name (`health`, `spirit`, `supply`, `momentum`), and the new [stats] when they changed.
+ */
+data class SheetEdit(
+    val meters: Map<String, Int> = emptyMap(),
+    val mark: Set<Debility> = emptySet(),
+    val clear: Set<Debility> = emptySet(),
+    val stats: Map<Stat, Int>? = null,
+)
+
 data class PlayedTurn(
     val playerInput: String?,
     val steps: List<StepCard>,
@@ -63,6 +77,8 @@ data class PlayedTurn(
     val error: AiException? = null,
     /** Tokens, time and cost of the turn (IRON-111), when known. */
     val metrics: TurnMetrics? = null,
+    /** Whether the player wrote this turn's Pay the Price, so the screen offers to apply it to the sheet (IRON-66). */
+    val ownPrice: Boolean = false,
     /** While the turn plays, what the narrator is doing when it is not writing (IRON-62). */
     val activity: NarratorActivity? = null,
 )
@@ -100,6 +116,8 @@ class TurnPlayer(
     private val pricing: () -> ModelPricing? = { null },
     /** Asks the AI which moves fit the scene when the move picker opens (IRON-64); null without an API key. */
     private val suggester: MoveSuggester? = null,
+    /** The sheet of the open game, to apply hand edits as targets (IRON-66). */
+    private val sheet: () -> Character? = { null },
 ) : MoveConfirmer {
     /** A move waiting for the player, with the answer the narrator waits on. */
     class PendingMove(val proposal: MoveProposal, internal val answer: CompletableDeferred<MoveDecision>)
@@ -196,6 +214,48 @@ class TurnPlayer(
         turns += PlayedTurn(said, listOfNotNull(cardSummary(step)), "")
     }
 
+    /**
+     * Applies the player's hand edits to the sheet (IRON-66, RF-PJ-04) through the engine, as the
+     * player: debilities first, since they move momentum's maximum, then each meter's difference,
+     * then the stats. They stay as one turn with a card of every change. Returns whether any applied.
+     */
+    suspend fun applySheetEdit(edit: SheetEdit): Boolean {
+        if (busy) return false
+        val steps = mutableListOf<NarratorStep>()
+        fun call(name: String, arguments: JsonObject, confirmed: Boolean = false) {
+            val result = dispatcher.dispatch(name, arguments.toString(), Caller.PLAYER, confirmed)
+            if (result is DispatchResult.Success) {
+                steps += NarratorStep(name, arguments.toString(), result.result.summary, true, result.result.data, result.result.changes)
+            } else {
+                Log.w(TAG, "$name failed: $result")
+            }
+        }
+        edit.clear.forEach { call("clear_debility", buildJsonObject { put("debility", it.name.lowercase()) }) }
+        edit.mark.forEach { call("mark_debility", buildJsonObject { put("debility", it.name.lowercase()) }) }
+        // Targets, not differences: marking a debility may already have lowered momentum.
+        val now = sheet()
+        edit.meters.forEach { (meter, target) ->
+            val current = when (meter) {
+                "momentum" -> now?.momentum?.value
+                else -> now?.meters?.get(MeterType.valueOf(meter.uppercase()))?.value
+            } ?: return@forEach
+            if (target != current) {
+                call("adjust_meter", buildJsonObject {
+                    put("meter", meter)
+                    put("amount", target - current)
+                })
+            }
+        }
+        // Stats by hand are a sensitive edit: the player's own tap is the confirmation (RF-API-08).
+        edit.stats?.let { stats -> call("set_stats", buildJsonObject { stats.forEach { (stat, value) -> put(stat.name.lowercase(), value) } }, confirmed = true) }
+        if (steps.isEmpty()) return false
+        flush()
+        val edited = NarratorStep(MANUAL_EDIT, "", "Edited by hand", true, JsonObject(emptyMap()), steps.flatMap { it.changes })
+        store.appendTurn(campaignId, null, null, listOfNotNull(card(edited)), null)
+        turns += PlayedTurn(null, listOfNotNull(cardSummary(edited)), "")
+        return true
+    }
+
     /** Plays the player's [input]. */
     suspend fun play(input: String) {
         val narrator = narrator ?: return
@@ -224,10 +284,16 @@ class TurnPlayer(
         // What the picked options changed goes on a card of the turn, before the narrator's own (IRON-63).
         val picked = NarratorStep(CHOOSE_OPTION, arguments.toString(), result.result.summary, true, result.result.data, result.result.changes)
         run(chosen, listOf(picked)) { onEvent -> narrator.afterChoice(chosen, result.result.toJson().toString(), past(), ownConsequence, onEvent) }
+        // A price the player wrote does not change the sheet by itself: the turn offers to apply it by hand (IRON-66).
+        if (ownConsequence) turns.lastOrNull()?.let { turns[turns.lastIndex] = it.copy(ownPrice = true) }
     }
 
     /** Whether there is a turn to undo or correct now. */
-    val canTakeBack: Boolean get() = !busy && turns.isNotEmpty() && pendingMove == null
+    val canTakeBack: Boolean get() = !busy && turns.isNotEmpty() && pendingMove == null && !endsWithHandStats
+
+    /** Stats changed by hand cannot be undone by the engine (RF-API-08), so neither can their turn (IRON-66). */
+    private val endsWithHandStats: Boolean
+        get() = turns.lastOrNull()?.steps.orEmpty().any { step -> step.action == MANUAL_EDIT && step.changes.any { it.field.startsWith("stats.") } }
 
     /**
      * Undoes the last turn (RF-ENV-09): its rolls and sheet changes through the engine's undo, and
@@ -242,6 +308,8 @@ class TurnPlayer(
         val calls = store.actionCalls(campaignId).filter { !it.undone && it.undoRole != UndoRole.NONE }
         fun firstCall(number: Int) = calls.filter { it.turnNumber == number }.minByOrNull { it.sequence }
         // A turn that only answered a choice goes back with the turn of the move that opened it.
+        // A sensitive edit in these turns cannot be undone: leave the story as it is rather than drop its card.
+        if (calls.any { it.turnNumber == last && it.undoRole == UndoRole.BARRIER }) return emptyList()
         var from = last
         while (from > 1 && firstCall(from)?.actionName == CHOOSE_OPTION) from--
         val first = (from..last).firstNotNullOfOrNull { firstCall(it) }?.sequence
@@ -377,6 +445,7 @@ class TurnPlayer(
         private const val TAG = "Turn"
         private const val CHOOSE_OPTION = "choose_option"
         private const val ASK_ORACLE = "ask_oracle"
+        private const val MANUAL_EDIT = "manual_edit"
 
         /** Model-facing note on a question the player asked the oracle without narration. */
         private const val ANSWERED_NOTE = "(The player asked the yes/no oracle without narration and the engine answered: %s. This answer is final: use it and do not ask again.)"
@@ -398,7 +467,7 @@ class TurnPlayer(
             step.action == "roll_move" || step.action == "roll_progress" -> HistoryEntryKind.MOVE
             step.action == "ask_oracle" || step.action == "roll_oracle_table" -> HistoryEntryKind.ORACLE
             step.action == "mark_progress" || step.action == "create_progress_track" -> HistoryEntryKind.SHEET_CHANGE
-            step.action == CHOOSE_OPTION && step.changes.isNotEmpty() -> HistoryEntryKind.SHEET_CHANGE
+            (step.action == CHOOSE_OPTION || step.action == MANUAL_EDIT) && step.changes.isNotEmpty() -> HistoryEntryKind.SHEET_CHANGE
             else -> null
         }
 
