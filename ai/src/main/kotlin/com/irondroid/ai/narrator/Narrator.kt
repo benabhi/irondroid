@@ -87,6 +87,18 @@ class Narrator(
         return run(listOf(ChatMessage.User(input)), past, onEvent)
     }
 
+    /** Plays a move the player asked for with the app's buttons (RF-ENV-05): [move] with [source], said as [input]. */
+    suspend fun requestMove(input: String, move: String, source: String?, past: List<PastTurn>, onEvent: (TurnEvent) -> Unit = {}): TurnOutcome {
+        val note = MOVE_NOTE.format(move, source?.let { " with $it" }.orEmpty())
+        return run(listOf(ChatMessage.User("$input\n\n$note")), past, onEvent)
+    }
+
+    /** Asks the yes/no oracle the player's [question] with [odds] (RF-ENV-05), said as [input]. */
+    suspend fun requestOracle(input: String, question: String, odds: String, past: List<PastTurn>, onEvent: (TurnEvent) -> Unit = {}): TurnOutcome {
+        val note = ORACLE_NOTE.format(question, odds)
+        return run(listOf(ChatMessage.User("$input\n\n$note")), past, onEvent)
+    }
+
     /**
      * Narrates what follows a choice the player just made with `choose_option` (RF-ENV-11): the
      * model gets [chosen], the text of the options picked, and the action's [result] as JSON. With
@@ -233,6 +245,11 @@ class Narrator(
         private const val CHOICE_NOTE =
             "(The player chose: %s. Result of choose_option, already applied by the engine: %s) " +
                 "Narrate what follows from this choice."
+
+        /** Model-facing notes of the requests made with the app's buttons. */
+        private const val MOVE_NOTE = "(The player asks to make the move %s%s: roll exactly that with roll_move, then narrate the outcome.)"
+        private const val ORACLE_NOTE =
+            "(The player asks the oracle \"%s\" with odds %s: call ask_oracle with exactly that question and those odds, then narrate the answer.)"
 
         /** Model-facing note to play a turn again after the player corrected it. */
         private const val CORRECTION_NOTE =

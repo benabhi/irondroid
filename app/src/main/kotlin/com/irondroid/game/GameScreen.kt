@@ -63,6 +63,7 @@ fun GameScreen(
     val scope = rememberCoroutineScope()
     var input by rememberSaveable { mutableStateOf("") }
     var correcting by rememberSaveable { mutableStateOf(false) }
+    var requesting by rememberSaveable { mutableStateOf<String?>(null) }
     var correction by rememberSaveable { mutableStateOf("") }
     val list = rememberLazyListState()
     val live = player.live
@@ -106,15 +107,38 @@ fun GameScreen(
         val choice = player.choice
         val pendingMove = player.pendingMove
         // Take back the last turn, or have it narrated again with a correction (RF-ENV-09).
-        if (player.canTakeBack && !correcting) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = { scope.launch { player.undoLastTurn() } }) { Text(stringResource(R.string.game_undo)) }
-                if (player.hasNarrator) TextButton(onClick = { correcting = true }) { Text(stringResource(R.string.game_correct)) }
+        val idle = player.hasNarrator && !player.busy && pendingMove == null && choice == null && !correcting && requesting == null
+        if ((player.canTakeBack && !correcting && requesting == null) || idle) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                if (player.canTakeBack && !correcting && requesting == null) {
+                    TextButton(onClick = { scope.launch { player.undoLastTurn() } }) { Text(stringResource(R.string.game_undo)) }
+                    if (player.hasNarrator) TextButton(onClick = { correcting = true }) { Text(stringResource(R.string.game_correct)) }
+                }
+                // Ask for a move or the oracle directly, without waiting for the narrator to decide (RF-ENV-05).
+                if (idle) {
+                    TextButton(onClick = { requesting = REQUEST_MOVE }) { Text(stringResource(R.string.request_move)) }
+                    TextButton(onClick = { requesting = REQUEST_ORACLE }) { Text(stringResource(R.string.request_oracle)) }
+                }
             }
         }
         when {
             !player.hasNarrator -> Text(stringResource(R.string.game_no_key), color = MaterialTheme.colorScheme.error)
             pendingMove != null -> MovePanel(pendingMove.proposal, player)
+            requesting == REQUEST_MOVE -> MoveRequestPanel(
+                player,
+                onRoll = { move, source, said ->
+                    requesting = null
+                    scope.launch { player.requestMove(move, source, said) }
+                },
+                onCancel = { requesting = null },
+            )
+            requesting == REQUEST_ORACLE -> OracleRequestPanel(
+                onAsk = { question, odds, said ->
+                    requesting = null
+                    scope.launch { player.requestOracle(question, odds, said) }
+                },
+                onCancel = { requesting = null },
+            )
             correcting -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = correction,
@@ -377,3 +401,97 @@ private fun stepLine(card: StepCard, moveName: (String) -> String): String {
         else -> card.summary
     }
 }
+
+/** The move the player asks for themselves (RF-ENV-05): a move with dice and, when it lets them pick, its stat. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MoveRequestPanel(player: TurnPlayer, onRoll: (move: String, source: String?, said: String) -> Unit, onCancel: () -> Unit) {
+    var move by remember { mutableStateOf<String?>(null) }
+    var source by remember { mutableStateOf<String?>(null) }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.request_move_title), style = MaterialTheme.typography.titleSmall)
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                player.rollableMoves.forEach { (id, label) ->
+                    FilterChip(
+                        selected = id == move,
+                        onClick = {
+                            move = id
+                            source = player.sources(id).firstOrNull()
+                        },
+                        label = { Text(label) },
+                    )
+                }
+            }
+            val chosen = move
+            val sources = chosen?.let(player::sources).orEmpty()
+            if (sources.size > 1) {
+                Text(stringResource(R.string.move_confirm_stat), style = MaterialTheme.typography.bodySmall)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    sources.forEach { option ->
+                        FilterChip(selected = option == source, onClick = { source = option }, label = { Text(stringResource(sourceName(option))) })
+                    }
+                }
+            }
+            val said = chosen?.let {
+                val stat = source?.takeIf { it in sources }
+                if (stat != null) {
+                    stringResource(R.string.request_move_said_stat, player.moveName(it), stringResource(sourceName(stat)))
+                } else {
+                    stringResource(R.string.request_move_said, player.moveName(it))
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(enabled = chosen != null, onClick = { onRoll(chosen!!, source?.takeIf { it in sources }, said!!) }) {
+                    Text(stringResource(R.string.move_confirm_roll))
+                }
+                TextButton(onClick = onCancel) { Text(stringResource(R.string.game_correct_cancel)) }
+            }
+        }
+    }
+}
+
+/** A yes/no question the player asks the oracle themselves, with its odds (RF-ENV-05, RF-ORA-01). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun OracleRequestPanel(onAsk: (question: String, odds: String, said: String) -> Unit, onCancel: () -> Unit) {
+    var question by rememberSaveable { mutableStateOf("") }
+    var odds by rememberSaveable { mutableStateOf(FIFTY_FIFTY) }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedTextField(
+                value = question,
+                onValueChange = { question = it },
+                label = { Text(stringResource(R.string.request_oracle_question)) },
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 3,
+            )
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                ODDS.forEach { (id, label) ->
+                    FilterChip(selected = id == odds, onClick = { odds = id }, label = { Text(stringResource(label)) })
+                }
+            }
+            val said = stringResource(R.string.request_oracle_said, question.trim(), stringResource(ODDS.getValue(odds)))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(enabled = question.isNotBlank(), onClick = { onAsk(question.trim(), odds, said) }) {
+                    Text(stringResource(R.string.request_oracle_ask))
+                }
+                TextButton(onClick = onCancel) { Text(stringResource(R.string.game_correct_cancel)) }
+            }
+        }
+    }
+}
+
+private const val FIFTY_FIFTY = "fifty_fifty"
+
+/** The odds of the yes/no oracle, as the engine names them, with their labels. */
+private val ODDS = linkedMapOf(
+    "almost_certain" to R.string.odds_almost_certain,
+    "likely" to R.string.odds_likely,
+    FIFTY_FIFTY to R.string.odds_fifty_fifty,
+    "unlikely" to R.string.odds_unlikely,
+    "small_chance" to R.string.odds_small_chance,
+)
+
+private const val REQUEST_MOVE = "move"
+private const val REQUEST_ORACLE = "oracle"

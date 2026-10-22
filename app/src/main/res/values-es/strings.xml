@@ -170,4 +170,17 @@
     <string name="game_correct_input">¿Qué hay que cambiar?</string>
     <string name="game_correct_send">Narrar de nuevo</string>
     <string name="game_correct_cancel">Cancelar</string>
+    <string name="request_move">Movimiento</string>
+    <string name="request_oracle">Oráculo</string>
+    <string name="request_move_title">¿Qué movimiento haces?</string>
+    <string name="request_move_said">Hago %1$s</string>
+    <string name="request_move_said_stat">Hago %1$s +%2$s</string>
+    <string name="request_oracle_question">Tu pregunta al oráculo</string>
+    <string name="request_oracle_ask">Preguntar</string>
+    <string name="request_oracle_said">%1$s (%2$s)</string>
+    <string name="odds_almost_certain">Casi seguro</string>
+    <string name="odds_likely">Probable</string>
+    <string name="odds_fifty_fifty">Mitad y mitad</string>
+    <string name="odds_unlikely">Improbable</string>
+    <string name="odds_small_chance">Casi imposible</string>
 </resources>

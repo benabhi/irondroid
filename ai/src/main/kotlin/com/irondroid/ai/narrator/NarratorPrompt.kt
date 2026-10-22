@@ -20,7 +20,7 @@ enum class CharacterGender { FEMININE, MASCULINE, NEUTRAL }
  */
 object NarratorPrompt {
     /** Raised whenever any of the prompt files changes, so a narration can be traced to its prompt. */
-    const val VERSION = 4
+    const val VERSION = 5
 
     /** Narration languages with instructions (RF-ENV-10). */
     val LANGUAGES = setOf("es", "en")

@@ -172,4 +172,17 @@
     <string name="game_correct_input">What should change?</string>
     <string name="game_correct_send">Narrate again</string>
     <string name="game_correct_cancel">Cancel</string>
+    <string name="request_move">Move</string>
+    <string name="request_oracle">Oracle</string>
+    <string name="request_move_title">Which move do you make?</string>
+    <string name="request_move_said">I make %1$s</string>
+    <string name="request_move_said_stat">I make %1$s +%2$s</string>
+    <string name="request_oracle_question">Your question for the oracle</string>
+    <string name="request_oracle_ask">Ask</string>
+    <string name="request_oracle_said">%1$s (%2$s)</string>
+    <string name="odds_almost_certain">Almost certain</string>
+    <string name="odds_likely">Likely</string>
+    <string name="odds_fifty_fifty">50/50</string>
+    <string name="odds_unlikely">Unlikely</string>
+    <string name="odds_small_chance">Small chance</string>
 </resources>
