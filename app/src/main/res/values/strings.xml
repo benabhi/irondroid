@@ -153,6 +153,15 @@
     <string name="settings_play_title">Play</string>
     <string name="settings_confirm_moves">Confirm moves before rolling</string>
     <string name="settings_confirm_moves_note">The narrator shows the move and stat it proposes, and you roll, change them or skip the roll. Off, it rolls at once.</string>
+    <string name="settings_dice_title">Dice</string>
+    <string name="settings_dice_style">How rolls show</string>
+    <string name="settings_dice_3d">3D dice</string>
+    <string name="settings_dice_text">In text</string>
+    <string name="settings_dice_style_note">3D dice roll over the screen before each roll\'s card. In text, only the card shows, at once. The engine decides the roll either way.</string>
+    <string name="settings_dice_short">Short dice animation</string>
+    <string name="settings_dice_short_note">The dice roll faster and stay a shorter while. Reduced motion turns it on as well.</string>
+    <string name="settings_dice_shake">Shake to roll</string>
+    <string name="settings_dice_shake_note">When the narrator proposes a move, shaking the phone rolls it, like the Roll button.</string>
     <string name="move_confirm_title">The narrator proposes: %1$s</string>
     <string name="move_confirm_title_stat">The narrator proposes: %1$s +%2$s</string>
     <string name="move_confirm_stat">Stat</string>

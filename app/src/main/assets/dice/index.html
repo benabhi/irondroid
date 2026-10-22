@@ -42,6 +42,10 @@
     // How long the dice stay on the table once they land, before fading away.
     const HOLD_MS = 1600;
     const FADE_MS = 300;
+    // A short roll (RF-DAD-05) plays the same throw at this many physics steps per step, and the
+    // dice stay a shorter while.
+    const FAST_SPEED = 2;
+    const FAST_HOLD_MS = 900;
 
     const SLOW_FRAME_MS = 20;
     // Walls sit at this fraction of the visible area (the library uses 0.93), so dice tops seen
@@ -73,6 +77,7 @@
     let dark = new URLSearchParams(location.search).get("theme") === "dark";
     let warmup = null;
     let holdTimer = null;
+    let speed = 1;
     let fadeTimer = null;
 
     function report(method, payload) {
@@ -116,6 +121,17 @@
         spawnDice(vector, existing);
         const die = existing || box.diceList[box.diceList.length - 1];
         if (die && die.body) die.body.sleepTimeLimit = SLEEP_TIME_LIMIT_S;
+      };
+    }
+
+    // Plays the throw faster by running several identical physics steps per animation step. The
+    // steps are the same as in the hidden simulation, so the dice still land on the same faces.
+    function installSpeed() {
+      const world = box.world;
+      const step = world.step.bind(world);
+      world.step = function () {
+        const times = box.animstate === "throw" ? speed : 1;
+        for (let i = 0; i < times; i++) step.apply(null, arguments);
       };
     }
 
@@ -209,7 +225,7 @@
       holdTimer = setTimeout(function () {
         container.className = "fading";
         fadeTimer = setTimeout(function () { box.clearDice(); }, FADE_MS);
-      }, HOLD_MS);
+      }, speed > 1 ? FAST_HOLD_MS : HOLD_MS);
     }
 
     // The library's notation for dice in order, with the values they must land on, such as
@@ -233,10 +249,12 @@
       return { notation: notation, shown: result.sets.flatMap(set => set.rolls.map(r => r.value)) };
     }
 
-    // Throws dice that land on the values the host decided: [{ sides: 6 or 10, value, ink }].
-    async function roll(dice) {
+    // Throws dice that land on the values the host decided: [{ sides: 6 or 10, value, ink }];
+    // fast plays a short roll (RF-DAD-05).
+    async function roll(dice, fast) {
       if (!box) return;
       if (warmup) await warmup;
+      speed = fast ? FAST_SPEED : 1;
       show();
       frameTimes = [];
       throwLog = [];
@@ -305,6 +323,7 @@
         installPerDieColors();
         installCleanThrows();
         shortenSettleWait();
+        installSpeed();
         instrumentRenderer();
         warmup = warmUp();
         const warmupMs = await warmup;

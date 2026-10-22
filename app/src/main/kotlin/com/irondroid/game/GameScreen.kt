@@ -98,6 +98,8 @@ fun GameScreen(
     reduceMotion: Boolean = false,
     /** Opens Settings, coming back to the game (IRON-69); null hides it. */
     onOpenSettings: (() -> Unit)? = null,
+    /** Whether shaking the phone rolls the move waiting (RF-DAD-06, IRON-73). */
+    shakeToRoll: Boolean = false,
 ) {
     val scope = rememberCoroutineScope()
     // The sheet opens as a panel over the scene (IRON-66, RF-UI-08).
@@ -185,7 +187,7 @@ fun GameScreen(
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
             BottomPanel(
-                player, sheet, choice, pendingMove, live, correcting, requesting, idle,
+                player, sheet, choice, pendingMove, live, correcting, requesting, idle, shakeToRoll,
                 onOpenProgress = onOpenProgress,
                 input = input,
                 onInput = { input = it },
@@ -333,6 +335,7 @@ private fun BottomPanel(
     correcting: Boolean,
     requesting: String?,
     idle: Boolean,
+    shakeToRoll: Boolean,
     input: String,
     onInput: (String) -> Unit,
     correction: String,
@@ -349,7 +352,7 @@ private fun BottomPanel(
 ) {
         when {
             !player.hasNarrator -> Text(stringResource(R.string.game_no_key), color = MaterialTheme.colorScheme.error)
-            pendingMove != null -> MovePanel(pendingMove.proposal, player)
+            pendingMove != null -> MovePanel(pendingMove.proposal, player, shakeToRoll)
             requesting == REQUEST_MOVE -> MovePicker(player, onRoll = onRequestMove, onDismiss = { onRequest(NO_REQUEST) })
             requesting == REQUEST_ORACLE -> OracleSheet(
                 canNarrate = player.hasNarrator,
@@ -579,7 +582,7 @@ private const val OBVIOUS_OUTCOME = "obvious_outcome"
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun MovePanel(proposal: MoveProposal, player: TurnPlayer) {
+private fun MovePanel(proposal: MoveProposal, player: TurnPlayer, shakeToRoll: Boolean) {
     var move by remember(proposal) { mutableStateOf(proposal.move) }
     var source by remember(proposal) { mutableStateOf(proposal.source) }
     var picking by remember(proposal) { mutableStateOf(false) }
@@ -623,6 +626,8 @@ private fun MovePanel(proposal: MoveProposal, player: TurnPlayer) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 // A move that picks its own source keeps whatever the narrator sent.
                 val rolled = if (sources.isEmpty()) proposal.source.takeIf { move == proposal.move } else source
+                // Shaking the phone is the same as the Roll button (RF-DAD-06).
+                ShakeEffect(shakeToRoll) { player.answer(MoveDecision.Roll(move, rolled)) }
                 Button(onClick = { player.answer(MoveDecision.Roll(move, rolled)) }) { Text(stringResource(R.string.move_confirm_roll)) }
                 OutlinedButton(onClick = { picking = !picking }) { Text(stringResource(R.string.move_confirm_other)) }
                 TextButton(onClick = { player.answer(MoveDecision.Skip) }) { Text(stringResource(R.string.move_confirm_skip)) }

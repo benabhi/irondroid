@@ -149,6 +149,24 @@ class IrondroidApp : Application() {
                     playSettings.narratorEffort = value
                 }
 
+            override var diceStyle
+                get() = playSettings.diceStyle
+                set(value) {
+                    playSettings.diceStyle = value
+                }
+
+            override var shortDiceAnimation: Boolean
+                get() = playSettings.shortDiceAnimation
+                set(value) {
+                    playSettings.shortDiceAnimation = value
+                }
+
+            override var shakeToRoll: Boolean
+                get() = playSettings.shakeToRoll
+                set(value) {
+                    playSettings.shakeToRoll = value
+                }
+
             override var confirmMoves: Boolean
                 get() = playSettings.confirmMoves
                 set(value) {
