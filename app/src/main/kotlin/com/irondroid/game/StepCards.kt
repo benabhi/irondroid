@@ -52,6 +52,7 @@ fun StepCardView(card: StepCard, moveName: (String) -> String, tableName: (Strin
             card.action == "roll_move" || card.action == "roll_progress" -> MoveCard(data, moveName)
             card.action == "ask_oracle" -> OracleCard(data)
             card.action == "roll_oracle_table" -> TableCard(data, tableName)
+            card.action == "manual_edit" -> CardTitle(stringResource(R.string.card_manual))
             card.action == "choose_option" -> CardTitle(
                 data["move"]?.jsonPrimitive?.contentOrNull?.let { stringResource(R.string.card_choice, moveName(it)) } ?: stringResource(R.string.card_choice_plain),
             )
@@ -196,6 +197,7 @@ private fun changeText(change: StateChange): String? {
         field.startsWith("tracks.") && field.endsWith(".ticks") && delta != null -> stringResource(R.string.change_progress, signed(delta))
         field.startsWith("tracks.") && field.count { it == '.' } == 1 -> (change.after as? JsonObject)?.get("name")?.jsonPrimitive?.contentOrNull
             ?.let { stringResource(R.string.change_track_new, it) }
+        field.startsWith("stats.") && int(change.after) != null -> stringResource(R.string.change_stat, stringResource(sourceName(field.removePrefix("stats."))), int(change.after)!!)
         field == "is_ended" -> stringResource(R.string.change_ended)
         else -> null // Stats and pending bonuses change through other screens.
     }
