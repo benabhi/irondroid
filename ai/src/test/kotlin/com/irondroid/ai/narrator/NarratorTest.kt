@@ -141,6 +141,17 @@ class NarratorTest {
     }
 
     @Test
+    fun `the context of the turn goes right after the prompt`() = runTest {
+        val ai = ScriptedAiProvider(listOf(ScriptedTurn.text("Sigue.")))
+        val context = TurnContext("Kira", mapOf("edge" to 2), health = 5, spirit = 4, supply = 3, momentum = 2)
+        Narrator(ai, "scripted", tools, { "PROMPT" }, context = { context }).play("Miro", listOf(PastTurn("Antes", "Narró")))
+        val messages = ai.requests.single().messages
+        assertEquals(ChatMessage.System("PROMPT"), messages[0])
+        assertEquals(ChatMessage.System(context.render()), messages[1])
+        assertEquals(ChatMessage.User("Antes"), messages[2])
+    }
+
+    @Test
     fun `failed and player-only calls go back to the model as errors`() = runTest {
         val (_, narrator) = narrator(
             ScriptedTurn.toolCalls(ToolCall("c1", "adjust_meter", """{"meter":"health","amount":-1}""")),

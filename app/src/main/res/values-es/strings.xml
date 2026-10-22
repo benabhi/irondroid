@@ -161,4 +161,8 @@
     <string name="oracle_extreme">%1$s, extremo</string>
     <string name="oracle_tables_force_match">Forzar un doble en la próxima tirada</string>
     <string name="oracle_tables_force_match_armed">La próxima tirada de los dados de desafío va a salir doble.</string>
+    <string name="campaign_gender">Cómo nombra el narrador a tu personaje</string>
+    <string name="gender_feminine">Femenino</string>
+    <string name="gender_masculine">Masculino</string>
+    <string name="gender_neutral">Neutro</string>
 </resources>

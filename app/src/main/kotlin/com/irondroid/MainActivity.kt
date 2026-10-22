@@ -33,13 +33,14 @@ import com.irondroid.dice.DiceOverlayView
 import com.irondroid.dice.DiceReadyInfo
 import com.irondroid.dice.DiceRollReport
 import com.irondroid.engine.character.Character
-import com.irondroid.ai.narrator.MoveConfirmer
+import com.irondroid.ai.narrator.CharacterGender as NarratorGender
 import com.irondroid.ai.narrator.Narrator
 import com.irondroid.ai.narrator.NarratorPrompt
 import com.irondroid.ai.narrator.NarratorStyle
 import com.irondroid.ai.tools.ActionTools
 import com.irondroid.game.GameScreen
 import com.irondroid.game.TurnPlayer
+import com.irondroid.game.turnContext
 import com.irondroid.prototype.ActionRoll
 import com.irondroid.prototype.AiTestScreen
 import com.irondroid.prototype.DicePrototypeScreen
@@ -50,6 +51,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 private enum class Screen { CAMPAIGNS, NEW_CAMPAIGN, CAMPAIGN, DICE_PROTOTYPE, AI_TEST, AI_SETTINGS, ORACLE_TABLES }
+
+/** Log tag of the turns played, as in [TurnPlayer]. */
+private const val TURN_TAG = "Turn"
 
 /** Sheet saved for a new campaign until guided character creation exists (IRON-PLAN-11): every stat at 0. */
 private val PENDING_SHEET = Character.create(edge = 0, heart = 0, iron = 0, shadow = 0, wits = 0)
@@ -154,13 +158,25 @@ class MainActivity : ComponentActivity() {
                     val sheet by session.sheet.collectAsState()
                     val player = remember(openCampaignId) {
                         val narrator = app.aiProvider()?.let { provider ->
-                            { confirmer: MoveConfirmer ->
+                            { player: TurnPlayer ->
                                 Narrator(
                                     provider,
                                     app.aiSettings.model(),
                                     ActionTools.forNarrator(app.dispatcher),
-                                    { NarratorPrompt.build(session.characterName, app.rulesLanguage, NarratorStyle.PERFORMED) },
-                                    confirmer = confirmer,
+                                    {
+                                        val gender = player.gender?.let { NarratorGender.valueOf(it.name) }
+                                        NarratorPrompt.build(session.characterName, app.rulesLanguage, NarratorStyle.PERFORMED, gender)
+                                    },
+                                    confirmer = player,
+                                    context = {
+                                        turnContext(
+                                            session.characterName,
+                                            session.sheet.value,
+                                            store.truths(loaded.campaign.worldId),
+                                            app.games.history?.calls.orEmpty(),
+                                            app.oracles,
+                                        ).also { Log.d(TURN_TAG, it.render()) }
+                                    },
                                 )
                             }
                         }
@@ -178,7 +194,12 @@ class MainActivity : ComponentActivity() {
                     LaunchedEffect(player) { player.load() }
                     if (showSheet) {
                         BackHandler { showSheet = false }
-                        CampaignScreen(loaded.copy(character = loaded.character?.copy(sheet = sheet)), onBack = { showSheet = false })
+                        CampaignScreen(
+                            loaded.copy(character = loaded.character?.copy(sheet = sheet)),
+                            onBack = { showSheet = false },
+                            gender = player.gender,
+                            onGender = { scope.launch { player.changeGender(it) } },
+                        )
                     } else {
                         GameScreen(loaded.campaign.title, session.characterName, sheet, player, onOpenSheet = { showSheet = true }, onBack = leaveCampaign)
                     }

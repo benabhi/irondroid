@@ -16,6 +16,7 @@ import com.irondroid.ai.narrator.TurnEvent
 import com.irondroid.ai.narrator.TurnOutcome
 import com.irondroid.data.CampaignStore
 import com.irondroid.data.NewHistoryEntry
+import com.irondroid.data.entity.CharacterGender
 import com.irondroid.data.entity.HistoryEntryKind
 import com.irondroid.engine.action.ActionDispatcher
 import com.irondroid.engine.action.Caller
@@ -62,8 +63,8 @@ class TurnPlayer(
     private val language: String,
     /** Whether moves wait for the player before the dice (RF-ENV-04), read at each roll. */
     private val confirmMoves: () -> Boolean,
-    /** Makes the narrator that asks this player before rolling; null when the AI has no API key yet. */
-    narrator: ((MoveConfirmer) -> Narrator)?,
+    /** Makes the narrator that plays with this player (it asks before rolling); null when the AI has no API key yet. */
+    narrator: ((TurnPlayer) -> Narrator)?,
     /** Waits for the pending writes of the open game, so the turn's calls get its number. */
     private val flush: suspend () -> Unit,
 ) : MoveConfirmer {
@@ -89,6 +90,15 @@ class TurnPlayer(
     var loaded by mutableStateOf(false)
         private set
 
+    /** How the narrator refers to the character (IRON-56); null until the player picks. */
+    var gender by mutableStateOf<CharacterGender?>(null)
+        private set
+
+    suspend fun changeGender(value: CharacterGender) {
+        store.setCharacterGender(campaignId, value)
+        gender = value
+    }
+
     val busy: Boolean get() = live != null
 
     val hasNarrator: Boolean get() = narrator != null
@@ -101,6 +111,7 @@ class TurnPlayer(
             turns += PlayedTurn(turn.playerInput, cards[turn.id].orEmpty().mapNotNull { fromPayload(it.payload) }, turn.narration.orEmpty())
         }
         choice = dispatcher.choices.current
+        gender = store.characterGender(campaignId)
         loaded = true
     }
 

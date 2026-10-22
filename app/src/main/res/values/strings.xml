@@ -163,4 +163,8 @@
     <string name="oracle_extreme">%1$s, extreme</string>
     <string name="oracle_tables_force_match">Force a match on the next roll</string>
     <string name="oracle_tables_force_match_armed">The next roll of the challenge dice will be a match.</string>
+    <string name="campaign_gender">How the narrator refers to your character</string>
+    <string name="gender_feminine">Feminine</string>
+    <string name="gender_masculine">Masculine</string>
+    <string name="gender_neutral">Neutral</string>
 </resources>

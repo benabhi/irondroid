@@ -36,10 +36,11 @@ import com.irondroid.data.entity.WorldTruthEntity
         HistoryEntryEntity::class,
         ActionCallEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
     // 1 → 2 (IRON-41): adds action_calls, the log of calls to the actions interface.
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    // 2 → 3 (IRON-56): adds the character's gender for the narrator.
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 @TypeConverters(Converters::class)
 abstract class IrondroidDatabase : RoomDatabase() {

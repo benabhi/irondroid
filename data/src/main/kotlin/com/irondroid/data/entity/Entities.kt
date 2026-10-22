@@ -88,7 +88,12 @@ data class CharacterEntity(
     val debilities: Set<Debility>,
     val experience: Int,
     val isEnded: Boolean,
+    /** How the narrator refers to the character (IRON-56); null until the player says. */
+    val gender: CharacterGender? = null,
 )
+
+/** Grammatical gender the narrator uses for a character. */
+enum class CharacterGender { FEMININE, MASCULINE, NEUTRAL }
 
 /** A progress track of a character, keyed by the id the engine gives it (for example `vow_1`). */
 @Entity(
