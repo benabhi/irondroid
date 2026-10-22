@@ -17,6 +17,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -140,7 +141,8 @@ class MainActivity : ComponentActivity() {
             }
             Screen.NEW_CAMPAIGN -> {
                 BackHandler { screen = Screen.CAMPAIGNS }
-                val worlds by produceState<List<WorldSummary>?>(null) { value = store.worldSummaries() }
+                var worldsVersion by remember { mutableIntStateOf(0) }
+                val worlds by produceState<List<WorldSummary>?>(null, worldsVersion) { value = store.worldSummaries() }
                 // Waits for the worlds so the suggested world name already avoids the taken ones.
                 worlds?.let { loaded ->
                     NewCampaignScreen(
@@ -157,6 +159,12 @@ class MainActivity : ComponentActivity() {
                                     creating = false
                                     screen = Screen.CAMPAIGN
                                 }
+                            }
+                        },
+                        onDeleteWorld = { id ->
+                            scope.launch {
+                                store.deleteWorld(id)
+                                worldsVersion++
                             }
                         },
                         onCancel = { screen = Screen.CAMPAIGNS },

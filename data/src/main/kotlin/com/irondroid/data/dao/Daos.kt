@@ -47,6 +47,13 @@ interface WorldDao {
 
     @Query("SELECT * FROM world_truths WHERE worldId = :worldId ORDER BY truthKey")
     suspend fun truths(worldId: Long): List<WorldTruthEntity>
+
+    @Query("SELECT COUNT(*) FROM campaigns WHERE worldId = :worldId")
+    suspend fun countCampaigns(worldId: Long): Int
+
+    /** Deletes the world; its truths go with it (cascade). */
+    @Query("DELETE FROM worlds WHERE id = :worldId")
+    suspend fun delete(worldId: Long)
 }
 
 /** A world and one character living in it, or null when the world has no campaigns. */

@@ -297,6 +297,31 @@ class CampaignStoreTest {
     }
 
     @Test
+    fun `a world without campaigns is deleted with its truths`() = runTest {
+        val kept = store.createWorld("Ironlands")
+        val empty = store.createWorld("Empty lands", listOf(WorldTruth("iron", null, "Iron sings.")))
+
+        store.deleteWorld(empty)
+
+        assertNull(store.world(empty))
+        assertEquals(emptyList(), store.truths(empty))
+        assertEquals(listOf(kept), store.worlds().map { it.id })
+        store.createWorld("Empty lands")
+    }
+
+    @Test
+    fun `a world with campaigns cannot be deleted`() = runTest {
+        val worldId = store.createWorld("Ironlands", listOf(WorldTruth("iron", null, "Iron sings.")))
+        val campaignId = newCampaign(worldId = worldId)
+
+        assertFailsWith<IllegalStateException> { store.deleteWorld(worldId) }
+
+        assertEquals("Ironlands", store.world(worldId)!!.name)
+        assertEquals(1, store.truths(worldId).size)
+        assertEquals("Kira", store.loadCharacter(campaignId)!!.name)
+    }
+
+    @Test
     fun `the default clock stamps real time`() = runTest {
         val realStore = CampaignStore(database)
         val start = System.currentTimeMillis()

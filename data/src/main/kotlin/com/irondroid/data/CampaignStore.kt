@@ -78,6 +78,12 @@ class CampaignStore(
             WorldSummary(worldId, rows.first().worldName, rows.mapNotNull { it.characterName })
         }
 
+    /** Deletes a world with its truths. Refuses a world that still has campaigns, so no game is lost (IRON-119). */
+    suspend fun deleteWorld(worldId: Long) = database.withTransaction {
+        check(worlds.countCampaigns(worldId) == 0) { "World $worldId still has campaigns" }
+        worlds.delete(worldId)
+    }
+
     suspend fun truths(worldId: Long): List<WorldTruth> =
         worlds.truths(worldId).map { WorldTruth(it.truthKey, it.optionId, it.text) }
 

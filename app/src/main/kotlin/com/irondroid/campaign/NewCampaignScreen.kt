@@ -11,16 +11,19 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -40,11 +43,13 @@ private const val NEW_WORLD = -1L
 /**
  * Starts a campaign with a title, a character name and a world: a new one or one already played
  * (continuous world, RF-PAR-04). Guided creation with truths and stats comes later (IRON-PLAN-11).
+ * A world with no campaigns can be deleted here, after confirming (IRON-119).
  */
 @Composable
 fun NewCampaignScreen(
     worlds: List<WorldSummary>,
     onCreate: (NewCampaign) -> Unit,
+    onDeleteWorld: (Long) -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -54,6 +59,7 @@ fun NewCampaignScreen(
     var characterName by rememberSaveable { mutableStateOf("") }
     var worldName by rememberSaveable { mutableStateOf(defaultWorldName) }
     var selectedWorld by rememberSaveable { mutableLongStateOf(NEW_WORLD) }
+    var pendingDelete by remember { mutableStateOf<WorldSummary?>(null) }
     val isNewWorld = selectedWorld == NEW_WORLD
     val worldNameTaken = isNewWorld && WorldNames.isTaken(worldName, worldNames)
     val canCreate = title.isNotBlank() && characterName.isNotBlank() &&
@@ -111,6 +117,11 @@ fun NewCampaignScreen(
             WorldOption(
                 stringResource(R.string.campaign_new_world_existing, world.name, residents),
                 selected = selectedWorld == world.id,
+                onDelete = if (world.characterNames.isEmpty()) {
+                    { pendingDelete = world }
+                } else {
+                    null
+                },
             ) { selectedWorld = world.id }
         }
         Text(stringResource(R.string.campaign_new_pending_sheet), style = MaterialTheme.typography.bodySmall)
@@ -132,10 +143,28 @@ fun NewCampaignScreen(
             Text(stringResource(R.string.common_cancel))
         }
     }
+
+    pendingDelete?.let { world ->
+        AlertDialog(
+            onDismissRequest = { pendingDelete = null },
+            title = { Text(stringResource(R.string.campaign_new_world_delete_title)) },
+            text = { Text(stringResource(R.string.campaign_new_world_delete_message, world.name)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingDelete = null
+                    if (selectedWorld == world.id) selectedWorld = NEW_WORLD
+                    onDeleteWorld(world.id)
+                }) { Text(stringResource(R.string.campaign_delete_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingDelete = null }) { Text(stringResource(R.string.common_cancel)) }
+            },
+        )
+    }
 }
 
 @Composable
-private fun WorldOption(label: String, selected: Boolean, onSelect: () -> Unit) {
+private fun WorldOption(label: String, selected: Boolean, onDelete: (() -> Unit)? = null, onSelect: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -143,6 +172,9 @@ private fun WorldOption(label: String, selected: Boolean, onSelect: () -> Unit) 
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RadioButton(selected = selected, onClick = null)
-        Text(label, modifier = Modifier.padding(start = 12.dp))
+        Text(label, modifier = Modifier.padding(start = 12.dp).weight(1f))
+        if (onDelete != null) {
+            TextButton(onClick = onDelete) { Text(stringResource(R.string.campaign_new_world_delete)) }
+        }
     }
 }
