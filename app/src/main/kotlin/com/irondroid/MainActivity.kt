@@ -14,6 +14,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -26,6 +27,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import com.irondroid.campaign.CampaignDetails
 import com.irondroid.campaign.CampaignListScreen
 import com.irondroid.campaign.CampaignScreen
@@ -87,8 +90,13 @@ class MainActivity : ComponentActivity() {
                     enableEdgeToEdge(bars, bars)
                 }
                 IrondroidTheme(dark) {
-                    Surface(modifier = Modifier.fillMaxSize()) {
-                        AppContent()
+                    // The player's text size on top of the phone's font scale (IRON-69).
+                    val density = LocalDensity.current
+                    val scale = (application as IrondroidApp).textSize.scale
+                    CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale * scale)) {
+                        Surface(modifier = Modifier.fillMaxSize()) {
+                            AppContent()
+                        }
                     }
                 }
             }
@@ -112,6 +120,7 @@ class MainActivity : ComponentActivity() {
             screen = Screen.CAMPAIGNS
         }
         var creating by remember { mutableStateOf(false) }
+        var settingsFrom by rememberSaveable { mutableStateOf(Screen.CAMPAIGNS) }
 
         when (screen) {
             Screen.CAMPAIGNS -> {
@@ -122,7 +131,10 @@ class MainActivity : ComponentActivity() {
                     onNew = { screen = Screen.NEW_CAMPAIGN },
                     onDelete = { id -> scope.launch { store.deleteCampaign(id) } },
                     onOpenDicePrototype = { screen = Screen.DICE_PROTOTYPE },
-                    onOpenSettings = { screen = Screen.AI_SETTINGS },
+                    onOpenSettings = {
+                        settingsFrom = Screen.CAMPAIGNS
+                        screen = Screen.AI_SETTINGS
+                    },
                     onOpenAiTest = if (BuildConfig.DEBUG) ({ screen = Screen.AI_TEST }) else null,
                     onOpenOracleTables = if (BuildConfig.DEBUG) ({ screen = Screen.ORACLE_TABLES }) else null,
                 )
@@ -222,6 +234,10 @@ class MainActivity : ComponentActivity() {
                         reduceMotion = app.playSettings.reduceMotion ||
                             Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f,
                         onBack = leaveCampaign,
+                        onOpenSettings = {
+                            settingsFrom = Screen.CAMPAIGN
+                            screen = Screen.AI_SETTINGS
+                        },
                     )
                 } else {
                     CampaignScreen(null, onBack = leaveCampaign)
@@ -254,8 +270,9 @@ class MainActivity : ComponentActivity() {
                 OracleTablesScreen(app.oracles, app.rulesLanguage, app.dice, onBack = { screen = Screen.CAMPAIGNS })
             }
             Screen.AI_SETTINGS -> {
-                BackHandler { screen = Screen.CAMPAIGNS }
-                AiSettingsScreen(app.aiSettingsActions, onBack = { screen = Screen.CAMPAIGNS })
+                // Back to where Settings was opened: the campaign list or the game (IRON-69).
+                BackHandler { screen = settingsFrom }
+                AiSettingsScreen(app.aiSettingsActions, onBack = { screen = settingsFrom })
             }
             Screen.DICE_PROTOTYPE -> {
                 BackHandler { screen = Screen.CAMPAIGNS; hideDiceOverlay() }

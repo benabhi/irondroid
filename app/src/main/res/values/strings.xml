@@ -75,7 +75,6 @@
     <!-- AI settings (IRON-49). -->
     <string name="settings_open">Settings</string>
     <string name="settings_back">Back</string>
-    <string name="settings_ai_title">AI narrator</string>
     <string name="settings_ai_provider">Provider</string>
     <string name="settings_ai_model">Model</string>
     <string name="settings_ai_key">API key</string>
@@ -267,6 +266,15 @@
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_theme_system">Like the phone</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_ai_section">Narrator and AI</string>
+    <string name="settings_text_size">Text size</string>
+    <string name="settings_text_small">Small</string>
+    <string name="settings_text_normal">Normal</string>
+    <string name="settings_text_large">Large</string>
+    <string name="settings_text_huge">Very large</string>
+    <string name="settings_text_size_note">On top of the phone\'s own font size.</string>
+    <string name="game_settings">Settings</string>
     <string name="settings_reduce_motion">Reduce animations</string>
     <string name="settings_reduce_motion_note">Changes on the sheet show without movement. The phone\'s own setting to remove animations is followed too.</string>
     <string name="meter_critical">At 0</string>

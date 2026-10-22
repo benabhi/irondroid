@@ -165,3 +165,6 @@ private val IrondroidTypography = Typography().run {
         labelSmall = labelSmall.sans(),
     )
 }
+
+/** How large the text is (IRON-69, RF-CFG-01), on top of the phone's own font size. */
+enum class TextSize(val scale: Float) { SMALL(0.9f), NORMAL(1f), LARGE(1.15f), HUGE(1.3f) }
