@@ -39,27 +39,6 @@
     <string name="campaign_meters">Salud %1$d · Espíritu %2$d · Suministros %3$d · Impulso %4$+d</string>
 
     <!-- Prototipo de dados 3D (IRON-12). Pantalla temporal. -->
-    <string name="dice_proto_open">Prototipo de dados 3D</string>
-    <string name="dice_proto_title">Prototipo de dados 3D</string>
-    <string name="dice_proto_back">Volver</string>
-    <string name="dice_proto_roll">Tirar dados de acción</string>
-    <string name="dice_proto_loading">Cargando dados…</string>
-    <string name="dice_proto_sharp">Imagen nítida (densidad de la pantalla)</string>
-    <string name="dice_proto_fake_heading">Las Tierras de Hierro, al anochecer</string>
-    <string name="dice_proto_fake_narration">El viento aúlla sobre el túmulo mientras alzas la antorcha. Allá abajo, la piedra cruje contra la piedra. Juraste encontrar a los tuyos antes de la primera nevada, y el rastro termina aquí, ante una puerta sellada con hierro viejo.</string>
-    <string name="dice_proto_fake_stats">Filo 2 · Corazón 1 · Hierro 3 · Sombra 2 · Ingenio 1\nSalud 5 · Espíritu 5 · Suministros 4 · Impulso +2</string>
-    <string name="dice_proto_ready">Cargado en %1$s ms · %2$d×%3$d px a ×%4$s · %5$s</string>
-    <string name="dice_proto_error">Error: %1$s</string>
-    <string name="dice_proto_engine">Resultado del motor: acción %1$d · desafío %2$d y %3$d</string>
-    <string name="dice_proto_shown">Los dados muestran: acción %1$d · desafío %2$d y %3$d</string>
-    <string name="dice_proto_match">Los dados coinciden con el motor</string>
-    <string name="dice_proto_mismatch">Los dados NO coinciden con el motor</string>
-    <string name="dice_proto_metrics">%1$s fps de promedio · peor cuadro %2$s ms · %3$d cuadros lentos de %4$d · duró %5$s s · primer cuadro a los %6$s ms</string>
-    <string name="dice_proto_session">En esta sesión: %1$d tiradas, %2$d coincidieron · promedio %3$s fps, mínimo %4$s fps · duración media %5$s s · %6$d relanzamientos ocultos</string>
-    <string name="dice_proto_throws">Relanzamientos ocultos: %1$d (%2$s) · física calculada en %3$s ms</string>
-    <string name="dice_proto_reason_stacked">dado encima de otro</string>
-    <string name="dice_proto_reason_tilted">dado torcido</string>
-    <string name="dice_proto_reason_slow">tardó en acomodarse</string>
     <!-- Errores de los proveedores de IA (IRON-47). -->
     <string name="ai_error_authentication">La clave de la API fue rechazada. Revísala en los ajustes.</string>
     <string name="ai_error_balance">La cuenta de la IA no tiene saldo.</string>
@@ -273,6 +252,7 @@
     <string name="settings_text_huge">Muy grande</string>
     <string name="settings_text_size_note">Se suma al tamaño de letra del celular.</string>
     <string name="game_settings">Ajustes</string>
+    <string name="game_test_dice">Tirada de prueba (dados 3D)</string>
     <string name="settings_reduce_motion">Reducir animaciones</string>
     <string name="settings_reduce_motion_note">Los cambios de la ficha se muestran sin movimiento. También se respeta si el celular tiene las animaciones desactivadas.</string>
     <string name="meter_critical">En 0</string>

@@ -38,7 +38,6 @@ fun CampaignListScreen(
     onOpen: (Long) -> Unit,
     onNew: () -> Unit,
     onDelete: (Long) -> Unit,
-    onOpenDicePrototype: () -> Unit,
     onOpenAiTest: (() -> Unit)?,
     onOpenOracleTables: (() -> Unit)?,
     onOpenSettings: () -> Unit,
@@ -79,9 +78,6 @@ fun CampaignListScreen(
                     CampaignRow(campaign, onOpen = { onOpen(campaign.id) }, onDelete = { pendingDelete = campaign })
                 }
             }
-        }
-        OutlinedButton(onClick = onOpenDicePrototype, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.dice_proto_open))
         }
         onOpenAiTest?.let {
             OutlinedButton(onClick = it, modifier = Modifier.fillMaxWidth()) {

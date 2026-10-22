@@ -26,7 +26,7 @@ import org.json.JSONObject
  * Results are decided by the caller; the page only animates the dice to land on them.
  */
 @SuppressLint("SetJavaScriptEnabled", "ViewConstructor")
-class DiceOverlayView(context: Context, private val listener: Listener) : WebView(context) {
+class DiceOverlayView(context: Context, private val listener: Listener, dark: Boolean) : WebView(context) {
 
     interface Listener {
         fun onReady(info: DiceReadyInfo)
@@ -59,7 +59,8 @@ class DiceOverlayView(context: Context, private val listener: Listener) : WebVie
             insets
         }
         addJavascriptInterface(Bridge(), "DiceBridge")
-        loadUrl(PAGE_URL)
+        // The page starts with the theme colors so its warm-up throw prepares the right ones.
+        loadUrl(if (dark) "$PAGE_URL?theme=dark" else PAGE_URL)
     }
 
     /** Rolls the Ironsworn action roll so the dice land on the given values. */
@@ -67,9 +68,9 @@ class DiceOverlayView(context: Context, private val listener: Listener) : WebVie
         evaluateJavascript("irondroidDice.roll($action, $challenge1, $challenge2)", null)
     }
 
-    /** Renders at the screen's real density instead of one pixel per CSS pixel. */
-    fun setSharp(sharp: Boolean) {
-        evaluateJavascript("irondroidDice.setSharp($sharp)", null)
+    /** Dice colors for the dark theme (light dice on dark paper) or the light one. */
+    fun setDark(dark: Boolean) {
+        evaluateJavascript("irondroidDice.setTheme($dark)", null)
     }
 
     fun clearDice() {
@@ -105,7 +106,7 @@ class DiceOverlayView(context: Context, private val listener: Listener) : WebVie
     }
 
     companion object {
-        const val TAG = "DiceProto"
+        const val TAG = "Dice"
         private const val PAGE_URL = "https://appassets.androidplatform.net/assets/dice/index.html"
     }
 }
@@ -113,6 +114,8 @@ class DiceOverlayView(context: Context, private val listener: Listener) : WebVie
 /** What the dice page reports once it is loaded. */
 data class DiceReadyInfo(
     val initMs: Double,
+    /** The invisible first throw that compiles shaders, so the player's first roll does not stutter. */
+    val warmupMs: Double,
     val width: Int,
     val height: Int,
     val pixelRatio: Double,
@@ -121,6 +124,7 @@ data class DiceReadyInfo(
     companion object {
         fun fromJson(json: JSONObject) = DiceReadyInfo(
             initMs = json.getDouble("initMs"),
+            warmupMs = json.optDouble("warmupMs", 0.0),
             width = json.getInt("width"),
             height = json.getInt("height"),
             pixelRatio = json.getDouble("pixelRatio"),

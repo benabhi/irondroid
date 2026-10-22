@@ -41,27 +41,6 @@
     <string name="campaign_meters">Health %1$d · Spirit %2$d · Supply %3$d · Momentum %4$+d</string>
 
     <!-- 3D dice prototype (IRON-12). Temporary screen. -->
-    <string name="dice_proto_open">3D dice prototype</string>
-    <string name="dice_proto_title">3D dice prototype</string>
-    <string name="dice_proto_back">Back</string>
-    <string name="dice_proto_roll">Roll action dice</string>
-    <string name="dice_proto_loading">Loading dice…</string>
-    <string name="dice_proto_sharp">Sharp rendering (screen density)</string>
-    <string name="dice_proto_fake_heading">The Ironlands, at dusk</string>
-    <string name="dice_proto_fake_narration">The wind howls across the barrow as you raise your torch. Somewhere below, stone grinds against stone. You swore to find your kin before the first snow, and the trail ends here, at a door sealed with old iron.</string>
-    <string name="dice_proto_fake_stats">Edge 2 · Heart 1 · Iron 3 · Shadow 2 · Wits 1\nHealth 5 · Spirit 5 · Supply 4 · Momentum +2</string>
-    <string name="dice_proto_ready">Loaded in %1$s ms · %2$d×%3$d px at ×%4$s · %5$s</string>
-    <string name="dice_proto_error">Error: %1$s</string>
-    <string name="dice_proto_engine">Engine result: action %1$d · challenge %2$d and %3$d</string>
-    <string name="dice_proto_shown">Dice show: action %1$d · challenge %2$d and %3$d</string>
-    <string name="dice_proto_match">The dice match the engine result</string>
-    <string name="dice_proto_mismatch">The dice do NOT match the engine result</string>
-    <string name="dice_proto_metrics">%1$s fps average · worst frame %2$s ms · %3$d slow frames of %4$d · lasted %5$s s · first frame after %6$s ms</string>
-    <string name="dice_proto_session">This session: %1$d rolls, %2$d matched · average %3$s fps, lowest %4$s fps · average duration %5$s s · %6$d hidden re-throws</string>
-    <string name="dice_proto_throws">Hidden re-throws: %1$d (%2$s) · physics precomputed in %3$s ms</string>
-    <string name="dice_proto_reason_stacked">die on top of another</string>
-    <string name="dice_proto_reason_tilted">die leaning</string>
-    <string name="dice_proto_reason_slow">slow to settle</string>
     <!-- AI provider errors (IRON-47), shown wherever the app talks to an AI. -->
     <string name="ai_error_authentication">The API key was rejected. Check it in the settings.</string>
     <string name="ai_error_balance">The AI account has no balance left.</string>
@@ -275,6 +254,7 @@
     <string name="settings_text_huge">Very large</string>
     <string name="settings_text_size_note">On top of the phone\'s own font size.</string>
     <string name="game_settings">Settings</string>
+    <string name="game_test_dice">Test roll (3D dice)</string>
     <string name="settings_reduce_motion">Reduce animations</string>
     <string name="settings_reduce_motion_note">Changes on the sheet show without movement. The phone\'s own setting to remove animations is followed too.</string>
     <string name="meter_critical">At 0</string>
