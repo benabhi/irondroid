@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.irondroid.ai.ReasoningEffort
 import com.irondroid.theme.ThemeMode
+import com.irondroid.theme.TextSize
 
 /** How the player wants to play, apart from the AI choices. */
 class PlaySettings(private val preferences: SharedPreferences) {
@@ -32,10 +33,16 @@ class PlaySettings(private val preferences: SharedPreferences) {
         get() = preferences.getBoolean(KEY_REDUCE_MOTION, false)
         set(value) = preferences.edit { putBoolean(KEY_REDUCE_MOTION, value) }
 
+    /** How large the text is (IRON-69); normal unless the player picks another. */
+    var textSize: TextSize
+        get() = preferences.getString(KEY_TEXT_SIZE, null)?.let { saved -> TextSize.entries.firstOrNull { it.name == saved } } ?: TextSize.NORMAL
+        set(value) = preferences.edit { putString(KEY_TEXT_SIZE, value.name) }
+
     companion object {
         const val FILE_NAME = "play_settings"
         private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_REDUCE_MOTION = "reduce_motion"
+        private const val KEY_TEXT_SIZE = "text_size"
         private const val KEY_SHOW_METRICS = "show_metrics"
         private const val KEY_NARRATOR_EFFORT = "narrator_effort"
         private const val KEY_CONFIRM_MOVES = "confirm_moves"

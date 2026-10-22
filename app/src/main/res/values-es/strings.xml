@@ -73,7 +73,6 @@
     <!-- Ajustes de la IA (IRON-49). -->
     <string name="settings_open">Ajustes</string>
     <string name="settings_back">Volver</string>
-    <string name="settings_ai_title">Narrador IA</string>
     <string name="settings_ai_provider">Proveedor</string>
     <string name="settings_ai_model">Modelo</string>
     <string name="settings_ai_key">Clave de la API</string>
@@ -265,6 +264,15 @@
     <string name="settings_theme_light">Claro</string>
     <string name="settings_theme_dark">Oscuro</string>
     <string name="settings_theme_system">Como el celular</string>
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_ai_section">Narrador e IA</string>
+    <string name="settings_text_size">Tamaño de letra</string>
+    <string name="settings_text_small">Chica</string>
+    <string name="settings_text_normal">Normal</string>
+    <string name="settings_text_large">Grande</string>
+    <string name="settings_text_huge">Muy grande</string>
+    <string name="settings_text_size_note">Se suma al tamaño de letra del celular.</string>
+    <string name="game_settings">Ajustes</string>
     <string name="settings_reduce_motion">Reducir animaciones</string>
     <string name="settings_reduce_motion_note">Los cambios de la ficha se muestran sin movimiento. También se respeta si el celular tiene las animaciones desactivadas.</string>
     <string name="meter_critical">En 0</string>

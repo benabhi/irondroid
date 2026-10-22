@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -39,6 +40,7 @@ import com.irondroid.ai.ConnectionResult
 import com.irondroid.ai.ProviderInfo
 import com.irondroid.ai.ReasoningEffort
 import com.irondroid.theme.ThemeMode
+import com.irondroid.theme.TextSize
 import kotlinx.coroutines.launch
 
 /** What the settings screen needs from the app, so the screen holds no storage or network code. */
@@ -70,6 +72,9 @@ interface AiSettingsActions {
 
     /** Whether changes show without movement (IRON-68). */
     var reduceMotion: Boolean
+
+    /** How large the text is (IRON-69). */
+    var textSize: TextSize
 }
 
 /** AI settings (RF-IA-03, RF-IA-05): provider, model, API key and a connection check. */
@@ -94,8 +99,23 @@ fun AiSettingsScreen(actions: AiSettingsActions, onBack: () -> Unit) {
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(onClick = onBack) { Text(stringResource(R.string.settings_back)) }
-            Text(stringResource(R.string.settings_ai_title), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 8.dp))
+            Text(stringResource(R.string.settings_title), style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(top = 8.dp))
         }
+
+        SectionTitle(R.string.settings_play_title)
+        var confirmMoves by remember { mutableStateOf(actions.confirmMoves) }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_confirm_moves), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.settings_confirm_moves_note), style = MaterialTheme.typography.bodySmall)
+            }
+            Switch(checked = confirmMoves, onCheckedChange = {
+                actions.confirmMoves = it
+                confirmMoves = it
+            })
+        }
+
+        SectionTitle(R.string.settings_ai_section)
 
         Text(stringResource(R.string.settings_ai_provider), style = MaterialTheme.typography.titleMedium)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -181,18 +201,6 @@ fun AiSettingsScreen(actions: AiSettingsActions, onBack: () -> Unit) {
             Text(stringResource(R.string.settings_ai_check_time, result.millis), style = MaterialTheme.typography.bodySmall)
         }
 
-        Text(stringResource(R.string.settings_play_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
-        var confirmMoves by remember { mutableStateOf(actions.confirmMoves) }
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(stringResource(R.string.settings_confirm_moves), style = MaterialTheme.typography.bodyLarge)
-                Text(stringResource(R.string.settings_confirm_moves_note), style = MaterialTheme.typography.bodySmall)
-            }
-            Switch(checked = confirmMoves, onCheckedChange = {
-                actions.confirmMoves = it
-                confirmMoves = it
-            })
-        }
 
         var effort by remember { mutableStateOf(actions.narratorEffort) }
         Text(stringResource(R.string.settings_effort), style = MaterialTheme.typography.bodyLarge)
@@ -222,7 +230,7 @@ fun AiSettingsScreen(actions: AiSettingsActions, onBack: () -> Unit) {
             })
         }
 
-        Text(stringResource(R.string.settings_look_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+        SectionTitle(R.string.settings_look_title)
         var themeMode by remember { mutableStateOf(actions.themeMode) }
         Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.bodyLarge)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -249,7 +257,31 @@ fun AiSettingsScreen(actions: AiSettingsActions, onBack: () -> Unit) {
                 reduceMotion = it
             })
         }
+
+        var textSize by remember { mutableStateOf(actions.textSize) }
+        Text(stringResource(R.string.settings_text_size), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 8.dp))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                TextSize.SMALL to R.string.settings_text_small,
+                TextSize.NORMAL to R.string.settings_text_normal,
+                TextSize.LARGE to R.string.settings_text_large,
+                TextSize.HUGE to R.string.settings_text_huge,
+            ).forEach { (option, label) ->
+                FilterChip(selected = textSize == option, onClick = {
+                    actions.textSize = option
+                    textSize = option
+                }, label = { Text(stringResource(label)) })
+            }
+        }
+        Text(stringResource(R.string.settings_text_size_note), style = MaterialTheme.typography.bodySmall)
     }
+}
+
+/** The title of a group of settings (IRON-69), with a thin line above it. */
+@Composable
+private fun SectionTitle(@StringRes label: Int) {
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, modifier = Modifier.padding(top = 16.dp))
+    Text(stringResource(label), style = MaterialTheme.typography.titleLarge)
 }
 
 /** What to tell the player when the AI fails with [kind]. */

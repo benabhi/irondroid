@@ -28,6 +28,7 @@ import com.irondroid.settings.AiSettings
 import com.irondroid.settings.AiSettingsActions
 import com.irondroid.settings.PlaySettings
 import com.irondroid.theme.ThemeMode
+import com.irondroid.theme.TextSize
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -63,6 +64,16 @@ class IrondroidApp : Application() {
         set(value) {
             playSettings.themeMode = value
             themeModeState.value = value
+        }
+
+    private val textSizeState by lazy { mutableStateOf(playSettings.textSize) }
+
+    /** How large the text is (IRON-69); the screens follow it as soon as it changes. */
+    var textSize: TextSize
+        get() = textSizeState.value
+        set(value) {
+            playSettings.textSize = value
+            textSizeState.value = value
         }
 
     /** The dice of every game, with the development switch that forces a match (IRON-55). */
@@ -108,6 +119,12 @@ class IrondroidApp : Application() {
             override fun maskedKey(provider: ProviderInfo) = apiKeys.load(provider.id)?.let { "••••" + it.takeLast(4) }
             override fun saveKey(provider: ProviderInfo, key: String) = apiKeys.save(provider.id, key)
             override fun deleteKey(provider: ProviderInfo) = apiKeys.delete(provider.id)
+            override var textSize: TextSize
+                get() = this@IrondroidApp.textSize
+                set(value) {
+                    this@IrondroidApp.textSize = value
+                }
+
             override var reduceMotion: Boolean
                 get() = playSettings.reduceMotion
                 set(value) {

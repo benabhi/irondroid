@@ -96,6 +96,8 @@ fun GameScreen(
     onBack: () -> Unit,
     /** Changes show without movement: the player's setting or the phone's (IRON-68, RF-UI-06). */
     reduceMotion: Boolean = false,
+    /** Opens Settings, coming back to the game (IRON-69); null hides it. */
+    onOpenSettings: (() -> Unit)? = null,
 ) {
     val scope = rememberCoroutineScope()
     // The sheet opens as a panel over the scene (IRON-66, RF-UI-08).
@@ -156,6 +158,8 @@ fun GameScreen(
                 onOpenProgress = onOpenProgress,
                 onUndo = if (canTakeBack) ({ scope.launch { player.undoLastTurn() } }) else null,
                 onCorrect = if (canTakeBack && player.hasNarrator) ({ correcting = true }) else null,
+                // Leaving the screen mid-turn would lose the turn: Settings waits for the narrator.
+                onOpenSettings = onOpenSettings.takeIf { !player.busy && player.pendingMove == null },
             )
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -282,7 +286,13 @@ private fun StatusBar(
 
 /** The less frequent actions, out of the way: the sheet, undo and correct (RF-ENV-09). Null hides nothing, it disables. */
 @Composable
-private fun GameMenu(onOpenSheet: () -> Unit, onOpenProgress: () -> Unit, onUndo: (() -> Unit)?, onCorrect: (() -> Unit)?) {
+private fun GameMenu(
+    onOpenSheet: () -> Unit,
+    onOpenProgress: () -> Unit,
+    onUndo: (() -> Unit)?,
+    onCorrect: (() -> Unit)?,
+    onOpenSettings: (() -> Unit)?,
+) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }) { Icon(InkIcons.More, contentDescription = stringResource(R.string.game_menu)) }
@@ -291,6 +301,7 @@ private fun GameMenu(onOpenSheet: () -> Unit, onOpenProgress: () -> Unit, onUndo
             DropdownMenuItem(text = { Text(stringResource(R.string.progress_title)) }, onClick = { open = false; onOpenProgress() })
             DropdownMenuItem(text = { Text(stringResource(R.string.game_undo)) }, enabled = onUndo != null, onClick = { open = false; onUndo?.invoke() })
             DropdownMenuItem(text = { Text(stringResource(R.string.game_correct)) }, enabled = onCorrect != null, onClick = { open = false; onCorrect?.invoke() })
+            DropdownMenuItem(text = { Text(stringResource(R.string.game_settings)) }, enabled = onOpenSettings != null, onClick = { open = false; onOpenSettings?.invoke() })
         }
     }
 }
@@ -363,14 +374,14 @@ private fun BottomPanel(
             else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // Ask for a move or the oracle directly, without waiting for the narrator to decide (RF-ENV-05).
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(enabled = idle, onClick = { onRequest(REQUEST_MOVE) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
-                        Text(stringResource(R.string.request_move))
+                    OutlinedButton(enabled = idle, onClick = { onRequest(REQUEST_MOVE) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = BAR_PADDING) {
+                        Text(stringResource(R.string.request_move), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    OutlinedButton(enabled = idle, onClick = { onRequest(REQUEST_ORACLE) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
-                        Text(stringResource(R.string.request_oracle))
+                    OutlinedButton(enabled = idle, onClick = { onRequest(REQUEST_ORACLE) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = BAR_PADDING) {
+                        Text(stringResource(R.string.request_oracle), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    OutlinedButton(onClick = onOpenProgress, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
-                        Text(stringResource(R.string.progress_button))
+                    OutlinedButton(onClick = onOpenProgress, modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = BAR_PADDING) {
+                        Text(stringResource(R.string.progress_button), maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -633,6 +644,9 @@ internal fun sourceName(source: String): Int = when (source) {
 }
 
 private val NO_REQUEST: String? = null
+/** Narrow side padding for the three bar buttons, so their names fit with large text (IRON-69). */
+private val BAR_PADDING = PaddingValues(horizontal = 6.dp, vertical = 8.dp)
+
 /** How long a tapped debility shows its name, in milliseconds. */
 private const val NAME_MS = 2000L
 private const val REQUEST_MOVE = "move"
