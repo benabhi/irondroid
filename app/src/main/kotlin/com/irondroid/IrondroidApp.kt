@@ -2,6 +2,7 @@ package com.irondroid
 
 import android.app.Application
 import android.content.Context
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.edit
 import com.irondroid.ai.AiErrorKind
 import com.irondroid.ai.AiException
@@ -26,6 +27,7 @@ import com.irondroid.engine.oracle.OracleTableLoader
 import com.irondroid.settings.AiSettings
 import com.irondroid.settings.AiSettingsActions
 import com.irondroid.settings.PlaySettings
+import com.irondroid.theme.ThemeMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -52,6 +54,16 @@ class IrondroidApp : Application() {
 
     /** How the player wants to play, such as confirming moves (IRON-53). */
     val playSettings: PlaySettings by lazy { PlaySettings(getSharedPreferences(PlaySettings.FILE_NAME, Context.MODE_PRIVATE)) }
+
+    private val themeModeState by lazy { mutableStateOf(playSettings.themeMode) }
+
+    /** The theme the player picked (RF-UI-04); the screens follow it as soon as it changes. */
+    var themeMode: ThemeMode
+        get() = themeModeState.value
+        set(value) {
+            playSettings.themeMode = value
+            themeModeState.value = value
+        }
 
     /** The dice of every game, with the development switch that forces a match (IRON-55). */
     val dice: MatchableDice by lazy { MatchableDice(SeededDice.fromSeed(System.nanoTime())) }
@@ -96,6 +108,12 @@ class IrondroidApp : Application() {
             override fun maskedKey(provider: ProviderInfo) = apiKeys.load(provider.id)?.let { "••••" + it.takeLast(4) }
             override fun saveKey(provider: ProviderInfo, key: String) = apiKeys.save(provider.id, key)
             override fun deleteKey(provider: ProviderInfo) = apiKeys.delete(provider.id)
+            override var themeMode: ThemeMode
+                get() = this@IrondroidApp.themeMode
+                set(value) {
+                    this@IrondroidApp.themeMode = value
+                }
+
             override var showMetrics: Boolean
                 get() = playSettings.showMetrics
                 set(value) {

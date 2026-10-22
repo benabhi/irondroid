@@ -38,6 +38,7 @@ import com.irondroid.ai.AiErrorKind
 import com.irondroid.ai.ConnectionResult
 import com.irondroid.ai.ProviderInfo
 import com.irondroid.ai.ReasoningEffort
+import com.irondroid.theme.ThemeMode
 import kotlinx.coroutines.launch
 
 /** What the settings screen needs from the app, so the screen holds no storage or network code. */
@@ -63,6 +64,9 @@ interface AiSettingsActions {
 
     /** Whether each turn shows what it cost (IRON-111). */
     var showMetrics: Boolean
+
+    /** Light, dark or as the phone (RF-UI-04). */
+    var themeMode: ThemeMode
 }
 
 /** AI settings (RF-IA-03, RF-IA-05): provider, model, API key and a connection check. */
@@ -213,6 +217,22 @@ fun AiSettingsScreen(actions: AiSettingsActions, onBack: () -> Unit) {
                 actions.showMetrics = it
                 showMetrics = it
             })
+        }
+
+        Text(stringResource(R.string.settings_look_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+        var themeMode by remember { mutableStateOf(actions.themeMode) }
+        Text(stringResource(R.string.settings_theme), style = MaterialTheme.typography.bodyLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                ThemeMode.LIGHT to R.string.settings_theme_light,
+                ThemeMode.DARK to R.string.settings_theme_dark,
+                ThemeMode.SYSTEM to R.string.settings_theme_system,
+            ).forEach { (option, label) ->
+                FilterChip(selected = themeMode == option, onClick = {
+                    actions.themeMode = option
+                    themeMode = option
+                }, label = { Text(stringResource(label)) })
+            }
         }
     }
 }

@@ -1,15 +1,16 @@
 package com.irondroid
 
+import android.graphics.Color.TRANSPARENT
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +48,8 @@ import com.irondroid.prototype.DicePrototypeScreen
 import com.irondroid.prototype.DicePrototypeState
 import com.irondroid.prototype.OracleTablesScreen
 import com.irondroid.settings.AiSettingsScreen
+import com.irondroid.theme.IrondroidTheme
+import com.irondroid.theme.isDark
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -74,7 +77,13 @@ class MainActivity : ComponentActivity() {
         root = FrameLayout(this)
         val composeView = ComposeView(this).apply {
             setContent {
-                MaterialTheme {
+                val dark = (application as IrondroidApp).themeMode.isDark()
+                // The clock and battery icons follow the theme: dark on paper, light on ink.
+                LaunchedEffect(dark) {
+                    val bars = if (dark) SystemBarStyle.dark(TRANSPARENT) else SystemBarStyle.light(TRANSPARENT, TRANSPARENT)
+                    enableEdgeToEdge(bars, bars)
+                }
+                IrondroidTheme(dark) {
                     Surface(modifier = Modifier.fillMaxSize()) {
                         AppContent()
                     }
