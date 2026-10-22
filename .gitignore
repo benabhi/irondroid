@@ -4,13 +4,14 @@
 .env.*
 !.env.example
 
-# Lific data stays out of git because the repository is public; back it up with `lific dump`
+# Lific lives in the user's global instance (IRON-116); these lines only guard the public repo if a local one appears by mistake
 lific.db
 lific.db-wal
 lific.db-shm
 attachments/
 .lific-attachments.lock
 lific.log
+lific.toml
 backups/
 
 # Gradle and Android build outputs

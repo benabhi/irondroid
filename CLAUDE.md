@@ -14,7 +14,7 @@ Toda la gestión del proyecto se hace en **Lific**, en el proyecto **irondroid**
 **Datos del proyecto**
 
 - Proyecto: `IRON` (irondroid). Issues `IRON-N`, páginas `IRON-DOC-N`, planes `IRON-PLAN-N`.
-- Web: http://127.0.0.1:3456 (servicio local de Lific; la base es `lific.db` en la raíz del repo, con backups automáticos en `backups/`; la base y los adjuntos **no van a git**, ver Configuración de Lific).
+- Web: http://127.0.0.1:3456 (instancia global de Lific del usuario, fuera del repo; ver Configuración de Lific).
 - Una página se enlaza en Markdown como `[título](#/IRON/pages/N)`, donde N es el número de `IRON-DOC-N`. Los issues se nombran por su identificador (`IRON-12`), que la web convierte en link.
 
 ### Herramientas del MCP y cuándo usarlas
@@ -69,7 +69,7 @@ El usuario abre un **hilo nuevo en el proyecto de Claude por cada plan de Lific*
 6. **Pedir la prueba.** Comentario con los resultados (y capturas si ameritan), espera con `link_issues(target='IRON-N', relation_type='blocks', user='benabhi', note='qué probar')`, comentario con qué se pidió probar (fecha y hora), y el aviso al usuario (ver abajo).
 7. **Si el usuario encuentra problemas:** se anotan en un comentario del issue. Si no dijo qué hacer, se le pregunta si se arreglan ahora o quedan anotados para más adelante (con una recomendación). Los arreglos van en **la misma rama** y se vuelve al paso 5.
 8. **Aprobación.** Solo con "aprobar" (si dice "funcionó" o "se ve bien" sin "aprobar", se le pregunta si lo aprueba): merge `--no-ff` a `main` (sin borrar la rama), push a GitHub de `main` y de la rama (ver Git), `unlink_issues(target='IRON-N', user='benabhi')`, y `update_issue(status='done', evidence=...)` con su cita textual, la hora y el commit subido. Cerrar el issue cierra su paso del plan.
-9. **Siguiente.** Se le cuenta brevemente qué trae la tarea que sigue (paso 1) **sin arrancarla**. Si era la última del plan, se cierra el plan (informe, issue principal y respaldo: ver más abajo).
+9. **Siguiente.** Se le cuenta brevemente qué trae la tarea que sigue (paso 1) **sin arrancarla**. Si era la última del plan, se cierra el plan (informe, issue principal y tag de versión: ver más abajo).
 
 ### Aviso al terminar cada tarea
 
@@ -107,17 +107,6 @@ Cuando el usuario pide "anotar" algo (una idea, una preferencia, una decisión),
 - También van ahí los informes de estado que sirvan para mantener al usuario al día (avance general, decisiones importantes, problemas).
 - Al cerrar un módulo o plan, enlazá su informe desde un comentario en el issue principal correspondiente.
 
-### Respaldo de Lific al cerrar cada plan (OBLIGATORIO, NO NEGOCIABLE)
-
-**Cada vez que se cierra un plan de Lific (`IRON-PLAN-N`) se hace un respaldo completo con `lific dump`.** Sin respaldo, el plan no se da por terminado.
-
-- Se hace después de escribir el informe y cerrar el issue principal, para que el respaldo incluya todo.
-- Comando, desde la raíz del repo (funciona con el servicio corriendo):
-  `lific dump --out backups/plans/IRON-PLAN-<N>_<AAAAMMDD-HHMM>.tar.gz`
-- La carpeta `backups/plans/` no va a git (`backups/` está en `.gitignore`). No se borra ni se rota: cada plan deja su archivo.
-- El `.tar.gz` trae la base, todos los adjuntos y un `manifest.json`. Se restaura con `lific restore`.
-- Se verifica que el archivo exista y pese más de 0 bytes, y se deja un comentario en el issue principal del plan con el nombre del archivo, el tamaño y la fecha.
-
 ### Tag de versión al cerrar cada plan (decisión de benabhi, 21/10/2026, IRON-105)
 
 - **Cada plan cerrado lleva un tag anotado de git `v0.<N>.0`**, donde N es el número del plan (`IRON-PLAN-8` → `v0.8.0`). El MVP terminado será `v1.0.0`.
@@ -138,12 +127,13 @@ Cuando el usuario pide "anotar" algo (una idea, una preferencia, una decisión),
 
 ## Configuración de Lific (ya resuelta, no volver a preguntar)
 
-- Lific corre como servicio local en http://127.0.0.1:3456 con la base `lific.db` en la raíz del repo (`lific.toml` es su configuración). Si el servicio no responde: `lific service status` y `lific doctor`.
-- `.mcp.json` define el servidor `lific` (`lific --db <ruta a lific.db> mcp`, por stdio).
+- **Lific es la instancia global del usuario, no vive en el repo** (decisión de benabhi del 22/10/2026, IRON-116). Configuración, base, adjuntos y backups automáticos están en `%APPDATA%\lific\` (`lific.toml`, `lific.db`, `attachments\`, `backups\`). Corre como servicio de Windows por usuario en http://127.0.0.1:3456. Si no responde: `lific service status` y `lific doctor` (el chequeo `mcp` de doctor sale en rojo porque el modo es sin login; es esperable).
+- **En el repo no va ningún archivo de Lific**: ni `lific.toml`, ni `lific.db`, ni `attachments/`, ni `backups/`. Nunca uses `lific init --here` ni `--db` apuntando al repo. Los comandos de `lific` corridos desde el repo encuentran solos la instancia global.
+- `.mcp.json` define el servidor `lific` por stdio con `lific mcp` (sin `--db`: usa la instancia global).
 - Las credenciales las carga el usuario en `.claude/settings.local.json` (ignorado por git). Claude no las escribe ni las commitea.
 - Si algo falla, diagnosticalo y arreglalo vos; pedile algo al usuario solo si hace falta un dato que únicamente él tiene.
-- **Si el MCP `lific` no conecta en la sesión**, no se deja de usar Lific: se le habla al mismo servidor por stdio con un script de Node en el scratchpad (`lific --db G:/irondroid/lific.db mcp`, con `cwd` en la raíz del repo; mensajes `initialize`, `notifications/initialized` y `tools/call`). Los argumentos JSON van en un archivo escrito con Write, porque desde la shell se pierden las barras invertidas. La REST de la web (`http://127.0.0.1:3456/api/...`) también responde, sin token, para leer.
-- **Los datos de Lific no se versionan** (decisión de benabhi del 20/10/2026, IRON-96): el repo de GitHub es público y `lific.db` trae usuarios, sesiones y todo el proyecto. `lific.db` y `attachments/` están en `.gitignore` y se sacaron de toda la historia. El respaldo es solo con `lific dump` (al cerrar cada plan, ver arriba) y los backups automáticos de `backups/`. Nunca agregues esos archivos a git.
+- **Si el MCP `lific` no conecta en la sesión**, no se deja de usar Lific: se le habla al mismo servidor por stdio con un script de Node en el scratchpad (`lific mcp`, con `cwd` en la raíz del repo para que la sesión quede vinculada a IRON; mensajes `initialize`, `notifications/initialized` y `tools/call`). Los argumentos JSON van en un archivo escrito con Write, porque desde la shell se pierden las barras invertidas. La REST de la web (`http://127.0.0.1:3456/api/...`) también responde, sin token, para leer.
+- **Los datos de Lific no se versionan** (decisión de benabhi del 20/10/2026, IRON-96): el repo de GitHub es público y la base trae usuarios, sesiones y todo el proyecto. Desde IRON-116 tampoco están en la carpeta del repo. El respaldo son los backups automáticos de Lific (cada hora, guarda 24) en `%APPDATA%\lific\backups\`; no hay respaldo manual al cerrar los planes (se quitó el 22/10/2026, IRON-116). Para uno a mano: `lific dump --out <carpeta fuera del repo>`.
 
 ## Convenciones de código
 
