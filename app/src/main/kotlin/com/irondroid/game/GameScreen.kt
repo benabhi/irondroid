@@ -180,6 +180,10 @@ fun GameScreen(
                     requesting = null
                     scope.launch { player.requestOracle(question, odds, said) }
                 },
+                onAnswerOnly = { question, odds, said ->
+                    requesting = null
+                    scope.launch { player.askOracleOnly(question, odds, said) }
+                },
                 onChoose = { picked, text, own -> scope.launch { player.choose(picked, text, own) } },
             )
         }
@@ -302,13 +306,19 @@ private fun BottomPanel(
     onRequest: (String?) -> Unit,
     onRequestMove: (move: String, source: String?, said: String) -> Unit,
     onRequestOracle: (question: String, odds: String, said: String) -> Unit,
+    onAnswerOnly: (question: String, odds: String, said: String) -> Unit,
     onChoose: (List<String>, String, Boolean) -> Unit,
 ) {
         when {
             !player.hasNarrator -> Text(stringResource(R.string.game_no_key), color = MaterialTheme.colorScheme.error)
             pendingMove != null -> MovePanel(pendingMove.proposal, player)
             requesting == REQUEST_MOVE -> MovePicker(player, onRoll = onRequestMove, onDismiss = { onRequest(NO_REQUEST) })
-            requesting == REQUEST_ORACLE -> OracleRequestPanel(onAsk = onRequestOracle, onCancel = { onRequest(NO_REQUEST) })
+            requesting == REQUEST_ORACLE -> OracleSheet(
+                canNarrate = player.hasNarrator,
+                onAsk = onRequestOracle,
+                onAnswerOnly = onAnswerOnly,
+                onDismiss = { onRequest(NO_REQUEST) },
+            )
             correcting -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = correction,
@@ -583,48 +593,6 @@ internal fun sourceName(source: String): Int = when (source) {
     "spirit" -> R.string.meter_spirit
     else -> R.string.meter_supply
 }
-
-/** A yes/no question the player asks the oracle themselves, with its odds (RF-ENV-05, RF-ORA-01). */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun OracleRequestPanel(onAsk: (question: String, odds: String, said: String) -> Unit, onCancel: () -> Unit) {
-    var question by rememberSaveable { mutableStateOf("") }
-    var odds by rememberSaveable { mutableStateOf(FIFTY_FIFTY) }
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedTextField(
-                value = question,
-                onValueChange = { question = it },
-                label = { Text(stringResource(R.string.request_oracle_question)) },
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 3,
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ODDS.forEach { (id, label) ->
-                    FilterChip(selected = id == odds, onClick = { odds = id }, label = { Text(stringResource(label)) })
-                }
-            }
-            val said = stringResource(R.string.request_oracle_said, question.trim(), stringResource(ODDS.getValue(odds)))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(enabled = question.isNotBlank(), onClick = { onAsk(question.trim(), odds, said) }) {
-                    Text(stringResource(R.string.request_oracle_ask))
-                }
-                TextButton(onClick = onCancel) { Text(stringResource(R.string.game_correct_cancel)) }
-            }
-        }
-    }
-}
-
-private const val FIFTY_FIFTY = "fifty_fifty"
-
-/** The odds of the yes/no oracle, as the engine names them, with their labels. */
-private val ODDS = linkedMapOf(
-    "almost_certain" to R.string.odds_almost_certain,
-    "likely" to R.string.odds_likely,
-    FIFTY_FIFTY to R.string.odds_fifty_fifty,
-    "unlikely" to R.string.odds_unlikely,
-    "small_chance" to R.string.odds_small_chance,
-)
 
 private val NO_REQUEST: String? = null
 private const val REQUEST_MOVE = "move"

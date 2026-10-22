@@ -175,6 +175,27 @@ class TurnPlayer(
         run(said) { onEvent -> narrator.requestOracle(said, question, odds, past(), onEvent) }
     }
 
+    /**
+     * Asks the yes/no oracle without the narrator (IRON-65): the engine answers at once and the
+     * answer stays as a card of its own turn, which the narrator reads in the next turn's context.
+     */
+    suspend fun askOracleOnly(question: String, odds: String, said: String) {
+        if (busy) return
+        val arguments = buildJsonObject {
+            put("question", question)
+            put("odds", odds)
+        }.toString()
+        val result = dispatcher.dispatch(ASK_ORACLE, arguments, Caller.PLAYER)
+        if (result !is DispatchResult.Success) {
+            Log.w(TAG, "ask_oracle failed: $result")
+            return
+        }
+        flush()
+        val step = NarratorStep(ASK_ORACLE, arguments, result.result.summary, true, result.result.data, result.result.changes)
+        store.appendTurn(campaignId, said, null, listOfNotNull(card(step)), null)
+        turns += PlayedTurn(said, listOfNotNull(cardSummary(step)), "")
+    }
+
     /** Plays the player's [input]. */
     suspend fun play(input: String) {
         val narrator = narrator ?: return
@@ -345,11 +366,20 @@ class TurnPlayer(
         return if (roll.pick == SourcePick.ANY) roll.sources.map { it.name.lowercase() } else emptyList()
     }
 
-    private fun past() = turns.map { PastTurn(it.playerInput, it.narration.ifBlank { null }) }
+    private fun past() = turns.map { turn ->
+        // A question answered without narration (IRON-65) carries its answer, so the narrator does not ask it again.
+        val answered = turn.steps.takeIf { turn.narration.isBlank() }?.firstOrNull { it.action == ASK_ORACLE }
+        val input = if (answered != null) "${turn.playerInput}\n\n" + ANSWERED_NOTE.format(answered.summary) else turn.playerInput
+        PastTurn(input, turn.narration.ifBlank { null })
+    }
 
     companion object {
         private const val TAG = "Turn"
         private const val CHOOSE_OPTION = "choose_option"
+        private const val ASK_ORACLE = "ask_oracle"
+
+        /** Model-facing note on a question the player asked the oracle without narration. */
+        private const val ANSWERED_NOTE = "(The player asked the yes/no oracle without narration and the engine answered: %s. This answer is final: use it and do not ask again.)"
 
         /** The first sentence of a move's trigger, such as "When you attempt something risky…, roll." */
         fun firstSentence(trigger: String): String {

@@ -12,7 +12,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * The state the narrator reads at the start of every turn (IRON-56): [sheet] of [characterName],
- * the world's [truths], and the oracle table results among [calls] that were not undone, newest
+ * the world's [truths], and the oracle results (tables and yes/no answers) among [calls] that were not undone, newest
  * last. Table names go in English, like the rest of what the model reads; results stay as rolled.
  */
 fun turnContext(
@@ -23,10 +23,16 @@ fun turnContext(
     oracles: OracleTableCatalog,
 ): TurnContext {
     val facts = calls
-        .filter { it.name == "roll_oracle_table" && it.outcome == CallOutcome.SUCCESS && !it.undone }
+        .filter { (it.name == "roll_oracle_table" || it.name == "ask_oracle") && it.outcome == CallOutcome.SUCCESS && !it.undone }
         .mapNotNull { call ->
-            val table = (call.details["data"] as? JsonObject)?.get("table")?.jsonPrimitive?.contentOrNull
+            val data = call.details["data"] as? JsonObject
             val result = call.details["summary"]?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+            // A yes/no answer keeps its question, also when the player asked it without narration (IRON-65).
+            if (call.name == "ask_oracle") {
+                val question = data?.get("question")?.jsonPrimitive?.contentOrNull ?: return@mapNotNull null
+                return@mapNotNull "Oracle, \"$question\": $result"
+            }
+            val table = data?.get("table")?.jsonPrimitive?.contentOrNull
             val name = table?.let { oracles.text(it, "en")?.name } ?: table
             if (name != null) "$name: $result" else result
         }
