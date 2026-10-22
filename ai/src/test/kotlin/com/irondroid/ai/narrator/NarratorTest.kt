@@ -2,6 +2,7 @@ package com.irondroid.ai.narrator
 
 import com.irondroid.ai.AiErrorKind
 import com.irondroid.ai.AiException
+import com.irondroid.ai.ChatEvent
 import com.irondroid.ai.ChatMessage
 import com.irondroid.ai.ReasoningEffort
 import com.irondroid.ai.ScriptedAiProvider
@@ -258,5 +259,39 @@ class NarratorTest {
         narrator.afterChoice("Seguir adelante", """{"summary":"ok"}""", listOf(PastTurn("Salto", "Caes.")))
         val last = assertIs<ChatMessage.User>(ai.requests.single().messages.last()).text
         assertTrue("Seguir adelante" in last && "\"summary\":\"ok\"" in last, last)
+    }
+
+    @Test
+    fun `the player sees when the narrator thinks and what it runs, and each request is timed`() = runTest {
+        val roll = ToolCall("c1", "roll_move", """{"move":"face_danger","source":"edge"}""")
+        val thinking = ScriptedTurn(listOf(ChatEvent.ReasoningDelta("Peligro.")) + ScriptedTurn.toolCalls(roll).events)
+        val (_, narrator) = narrator(thinking, ScriptedTurn.text("Saltas. ¿Qué haces?"))
+        val events = mutableListOf<TurnEvent>()
+        val outcome = narrator.play("Salto el arroyo", emptyList()) { events += it }
+
+        assertEquals(TurnEvent.Thinking, events[0])
+        assertEquals(TurnEvent.Acting("roll_move"), events[1])
+        assertIs<TurnEvent.Step>(events[2])
+        assertEquals(TurnEvent.Thinking, events[3])
+        assertTrue(events.drop(4).all { it is TurnEvent.Text })
+
+        val (first, second) = outcome.rounds
+        assertEquals(1, first.toolCalls)
+        assertNull(first.firstTextMs)
+        assertTrue(first.startMs <= first.firstOutputMs!! && first.firstOutputMs!! <= first.endMs)
+        assertTrue(first.endMs <= second.startMs)
+        assertEquals(0, second.toolCalls)
+        assertEquals(outcome.firstTextMs, second.firstTextMs)
+        assertTrue(first.endMs < second.firstOutputMs!!)
+        assertTrue(second.endMs <= outcome.totalMs)
+    }
+
+    @Test
+    fun `a request with only calls counts its calls as its first output`() = runTest {
+        val (_, narrator) = narrator(ScriptedTurn.toolCalls(faceDanger), ScriptedTurn.text("Listo."))
+        val outcome = narrator.play("Salto", emptyList())
+
+        val first = outcome.rounds.first()
+        assertEquals(first.endMs, first.firstOutputMs)
     }
 }

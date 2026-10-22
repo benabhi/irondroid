@@ -21,6 +21,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import com.irondroid.engine.debility.Debility
 import com.irondroid.theme.InkIcons
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.graphics.graphicsLayer
+import kotlinx.coroutines.delay
+import kotlin.math.max
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -92,8 +102,16 @@ fun GameScreen(
     val list = rememberLazyListState()
     val live = player.live
     val shown = player.turns.size + (if (live != null) 1 else 0)
-    LaunchedEffect(shown, live?.narration?.length) {
-        if (shown > 0) list.animateScrollToItem(shown - 1)
+    // Follow the story as it grows while the player is at the bottom; reading further up stops it (IRON-62).
+    var follow by remember { mutableStateOf(true) }
+    LaunchedEffect(list) {
+        snapshotFlow { list.isScrollInProgress to list.canScrollForward }.collect { (scrolling, more) -> if (scrolling) follow = !more }
+    }
+    LaunchedEffect(shown) { follow = true }
+    LaunchedEffect(list) {
+        snapshotFlow { list.layoutInfo.totalItemsCount to (list.layoutInfo.visibleItemsInfo.lastOrNull()?.size ?: 0) }.collect { (count, _) ->
+            if (follow && count > 0 && list.canScrollForward) list.scrollToItem(count - 1, scrollOffset = Int.MAX_VALUE / 2)
+        }
     }
 
     val choice = player.choice
@@ -127,7 +145,8 @@ fun GameScreen(
                 item { Text(stringResource(R.string.game_empty), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             items(player.turns) { TurnView(it, playing = false, player::moveName, showMetrics) }
-            if (live != null) item { TurnView(live, playing = true, player::moveName, showMetrics) }
+            // While the player confirms a roll, the narrator waits for them, not the other way round.
+            if (live != null) item { TurnView(live.copy(activity = live.activity.takeIf { pendingMove == null }), playing = true, player::moveName, showMetrics) }
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -348,13 +367,55 @@ private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> S
         turn.steps.forEach {
             Text(stringResource(R.string.game_step, stepLine(it, moveName)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        when {
-            turn.narration.isNotBlank() -> Text(turn.narration, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 27.sp))
-            playing -> Text(stringResource(R.string.game_thinking), style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (turn.narration.isNotBlank()) {
+            Text(
+                if (playing) revealed(turn.narration) else turn.narration,
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 27.sp),
+            )
         }
+        if (playing) turn.activity?.let { ActivityLine(it) }
         turn.error?.let { Text(stringResource(R.string.game_error, stringResource(aiErrorText(it.kind))), color = MaterialTheme.colorScheme.error) }
         if (showMetrics) turn.metrics?.let { MetricsLine(it) }
     }
+}
+
+/**
+ * [text] as it streams in, shown at a steady pace instead of in jumps (IRON-62): about 60 letters
+ * a second, faster the further behind it is, so it never lags much.
+ */
+@Composable
+private fun revealed(text: String): String {
+    var shown by remember { mutableIntStateOf(0) }
+    LaunchedEffect(text) {
+        while (shown < text.length) {
+            shown += max(1, (text.length - shown) / 12)
+            delay(16)
+        }
+    }
+    return text.take(shown)
+}
+
+/** What the narrator is doing while the player waits (IRON-62), gently pulsing. */
+@Composable
+private fun ActivityLine(activity: NarratorActivity) {
+    val pulse = rememberInfiniteTransition(label = "activity")
+    val alpha by pulse.animateFloat(0.4f, 1f, infiniteRepeatable(tween(800), RepeatMode.Reverse), label = "alpha")
+    val label = when (activity) {
+        NarratorActivity.Thinking -> R.string.game_thinking
+        is NarratorActivity.Acting -> when (activity.action) {
+            "roll_move", "roll_progress" -> R.string.game_acting_roll
+            "ask_oracle", "roll_oracle_table" -> R.string.game_acting_oracle
+            "create_progress_track", "mark_progress" -> R.string.game_acting_track
+            else -> R.string.game_acting_other
+        }
+    }
+    Text(
+        stringResource(label),
+        style = MaterialTheme.typography.bodyMedium,
+        fontStyle = FontStyle.Italic,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.graphicsLayer { this.alpha = alpha },
+    )
 }
 
 /**

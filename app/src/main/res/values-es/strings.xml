@@ -117,6 +117,10 @@
     <string name="game_input">¿Qué haces?</string>
     <string name="game_send">Enviar</string>
     <string name="game_thinking">El narrador está pensando…</string>
+    <string name="game_acting_roll">Tirando los dados…</string>
+    <string name="game_acting_oracle">Consultando al oráculo…</string>
+    <string name="game_acting_track">Marcando el progreso…</string>
+    <string name="game_acting_other">Revisando la partida…</string>
     <string name="game_step">⚄ %1$s</string>
     <string name="game_error">El narrador no respondió: %1$s</string>
     <string name="game_no_key">Para jugar, agrega tu clave de la IA en Ajustes.</string>

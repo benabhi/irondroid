@@ -119,6 +119,10 @@
     <string name="game_input">What do you do?</string>
     <string name="game_send">Send</string>
     <string name="game_thinking">The narrator is thinking…</string>
+    <string name="game_acting_roll">Rolling the dice…</string>
+    <string name="game_acting_oracle">Asking the oracle…</string>
+    <string name="game_acting_track">Marking progress…</string>
+    <string name="game_acting_other">Checking the game…</string>
     <string name="game_step">⚄ %1$s</string>
     <string name="game_error">The narrator did not answer: %1$s</string>
     <string name="game_no_key">To play, add your AI API key in Settings.</string>
