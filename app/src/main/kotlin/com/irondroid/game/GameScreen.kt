@@ -307,7 +307,7 @@ private fun BottomPanel(
         when {
             !player.hasNarrator -> Text(stringResource(R.string.game_no_key), color = MaterialTheme.colorScheme.error)
             pendingMove != null -> MovePanel(pendingMove.proposal, player)
-            requesting == REQUEST_MOVE -> MoveRequestPanel(player, onRoll = onRequestMove, onCancel = { onRequest(NO_REQUEST) })
+            requesting == REQUEST_MOVE -> MovePicker(player, onRoll = onRequestMove, onDismiss = { onRequest(NO_REQUEST) })
             requesting == REQUEST_ORACLE -> OracleRequestPanel(onAsk = onRequestOracle, onCancel = { onRequest(NO_REQUEST) })
             correcting -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -582,55 +582,6 @@ internal fun sourceName(source: String): Int = when (source) {
     "health" -> R.string.meter_health
     "spirit" -> R.string.meter_spirit
     else -> R.string.meter_supply
-}
-
-/** The move the player asks for themselves (RF-ENV-05): a move with dice and, when it lets them pick, its stat. */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun MoveRequestPanel(player: TurnPlayer, onRoll: (move: String, source: String?, said: String) -> Unit, onCancel: () -> Unit) {
-    var move by remember { mutableStateOf<String?>(null) }
-    var source by remember { mutableStateOf<String?>(null) }
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.request_move_title), style = MaterialTheme.typography.titleSmall)
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                player.rollableMoves.forEach { (id, label) ->
-                    FilterChip(
-                        selected = id == move,
-                        onClick = {
-                            move = id
-                            source = player.sources(id).firstOrNull()
-                        },
-                        label = { Text(label) },
-                    )
-                }
-            }
-            val chosen = move
-            val sources = chosen?.let(player::sources).orEmpty()
-            if (sources.size > 1) {
-                Text(stringResource(R.string.move_confirm_stat), style = MaterialTheme.typography.bodySmall)
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    sources.forEach { option ->
-                        FilterChip(selected = option == source, onClick = { source = option }, label = { Text(stringResource(sourceName(option))) })
-                    }
-                }
-            }
-            val said = chosen?.let {
-                val stat = source?.takeIf { it in sources }
-                if (stat != null) {
-                    stringResource(R.string.request_move_said_stat, player.moveName(it), stringResource(sourceName(stat)))
-                } else {
-                    stringResource(R.string.request_move_said, player.moveName(it))
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(enabled = chosen != null, onClick = { onRoll(chosen!!, source?.takeIf { it in sources }, said!!) }) {
-                    Text(stringResource(R.string.move_confirm_roll))
-                }
-                TextButton(onClick = onCancel) { Text(stringResource(R.string.game_correct_cancel)) }
-            }
-        }
-    }
 }
 
 /** A yes/no question the player asks the oracle themselves, with its odds (RF-ENV-05, RF-ORA-01). */

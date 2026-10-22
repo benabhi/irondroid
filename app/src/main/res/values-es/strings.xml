@@ -199,6 +199,17 @@
     <string name="request_move">Movimiento</string>
     <string name="request_oracle">Oráculo</string>
     <string name="request_move_title">¿Qué movimiento haces?</string>
+    <string name="move_search">Buscar movimiento</string>
+    <string name="move_suggested">Sugeridos por la IA</string>
+    <string name="move_suggesting">La IA está eligiendo…</string>
+    <string name="move_none">Ningún movimiento coincide</string>
+    <string name="move_roll_named">Tirar %1$s</string>
+    <string name="move_category_adventure">Aventura</string>
+    <string name="move_category_relationship">Relaciones</string>
+    <string name="move_category_combat">Combate</string>
+    <string name="move_category_suffer">Sufrimiento</string>
+    <string name="move_category_quest">Votos</string>
+    <string name="move_category_fate">Destino</string>
     <string name="request_move_said">Hago %1$s</string>
     <string name="request_move_said_stat">Hago %1$s +%2$s</string>
     <string name="request_oracle_question">Tu pregunta al oráculo</string>
