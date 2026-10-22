@@ -229,7 +229,7 @@ class TurnPlayer(
                 is TurnEvent.Step -> current.copy(steps = current.steps + listOfNotNull(cardSummary(event.step)))
             }
         }
-        Log.i(TAG, "turn steps=${outcome.steps.size} firstText=${outcome.firstTextMs}ms total=${outcome.totalMs}ms usage=${outcome.usage} error=${outcome.error?.kind}")
+        Log.i(TAG, "turn effort=${outcome.effort} steps=${outcome.steps.size} firstText=${outcome.firstTextMs}ms total=${outcome.totalMs}ms usage=${outcome.usage} error=${outcome.error?.kind}")
         outcome.steps.forEach { Log.i(TAG, "${it.action} ${it.arguments} → ${it.summary}") }
         flush()
         store.appendTurn(campaignId, input, outcome.narration.ifBlank { null }, outcome.steps.mapNotNull(::card))

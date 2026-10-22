@@ -168,6 +168,7 @@ class MainActivity : ComponentActivity() {
                                         NarratorPrompt.build(session.characterName, app.rulesLanguage, NarratorStyle.PERFORMED, gender)
                                     },
                                     confirmer = player,
+                                    effort = { app.playSettings.narratorEffort },
                                     context = {
                                         turnContext(
                                             session.characterName,

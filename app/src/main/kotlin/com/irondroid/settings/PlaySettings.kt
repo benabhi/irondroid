@@ -2,6 +2,7 @@ package com.irondroid.settings
 
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.irondroid.ai.ReasoningEffort
 
 /** How the player wants to play, apart from the AI choices. */
 class PlaySettings(private val preferences: SharedPreferences) {
@@ -10,8 +11,14 @@ class PlaySettings(private val preferences: SharedPreferences) {
         get() = preferences.getBoolean(KEY_CONFIRM_MOVES, true)
         set(value) = preferences.edit { putBoolean(KEY_CONFIRM_MOVES, value) }
 
+    /** How hard the narrator thinks (IRON-109); low unless the player picks another. */
+    var narratorEffort: ReasoningEffort
+        get() = preferences.getString(KEY_NARRATOR_EFFORT, null)?.let { saved -> ReasoningEffort.entries.firstOrNull { it.name == saved } } ?: ReasoningEffort.LOW
+        set(value) = preferences.edit { putString(KEY_NARRATOR_EFFORT, value.name) }
+
     companion object {
         const val FILE_NAME = "play_settings"
+        private const val KEY_NARRATOR_EFFORT = "narrator_effort"
         private const val KEY_CONFIRM_MOVES = "confirm_moves"
     }
 }
