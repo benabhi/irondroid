@@ -19,9 +19,13 @@ import com.irondroid.data.NewHistoryEntry
 import com.irondroid.data.entity.CharacterGender
 import com.irondroid.data.entity.HistoryEntryKind
 import com.irondroid.engine.action.ActionDispatcher
+import com.irondroid.engine.action.ActionHistory
 import com.irondroid.engine.action.Caller
 import com.irondroid.engine.action.DispatchResult
 import com.irondroid.engine.action.PendingChoice
+import com.irondroid.engine.action.UndoRole
+import com.irondroid.engine.character.Character
+import com.irondroid.engine.game.GameActions
 import com.irondroid.engine.move.MoveCatalog
 import com.irondroid.engine.move.MoveRoll
 import com.irondroid.engine.move.SourcePick
@@ -67,6 +71,8 @@ class TurnPlayer(
     narrator: ((TurnPlayer) -> Narrator)?,
     /** Waits for the pending writes of the open game, so the turn's calls get its number. */
     private val flush: suspend () -> Unit,
+    /** The calls of the open game, to know what undoing a turn takes back (IRON-57). */
+    private val history: () -> ActionHistory<Character>?,
 ) : MoveConfirmer {
     /** A move waiting for the player, with the answer the narrator waits on. */
     class PendingMove(val proposal: MoveProposal, internal val answer: CompletableDeferred<MoveDecision>)
@@ -143,6 +149,55 @@ class TurnPlayer(
         run(chosen) { onEvent -> narrator.afterChoice(chosen, result.result.toJson().toString(), past(), ownConsequence, onEvent) }
     }
 
+    /** Whether there is a turn to undo or correct now. */
+    val canTakeBack: Boolean get() = !busy && turns.isNotEmpty() && pendingMove == null
+
+    /**
+     * Undoes the last turn (RF-ENV-09): its rolls and sheet changes through the engine's undo, and
+     * its narration. A turn that answered a choice belongs to the move that opened it, so undoing it
+     * also takes back the turn of that move. Returns the turns taken back, oldest first.
+     */
+    suspend fun undoLastTurn(): List<PlayedTurn> {
+        if (!canTakeBack) return emptyList()
+        flush()
+        val last = store.lastTurnNumber(campaignId)
+        // Reads and undo calls change nothing (and an undo is logged under the turn after the one it took back).
+        val calls = store.actionCalls(campaignId).filter { !it.undone && it.undoRole != UndoRole.NONE }
+        fun firstCall(number: Int) = calls.filter { it.turnNumber == number }.minByOrNull { it.sequence }
+        // A turn that only answered a choice goes back with the turn of the move that opened it.
+        var from = last
+        while (from > 1 && firstCall(from)?.actionName == CHOOSE_OPTION) from--
+        val first = (from..last).firstNotNullOfOrNull { firstCall(it) }?.sequence
+        if (first != null) {
+            while ((history()?.lastUndoableSequence ?: 0) >= first) {
+                val undo = dispatcher.dispatch(GameActions.UNDO, "", Caller.PLAYER)
+                if (undo !is DispatchResult.Success) {
+                    Log.w(TAG, "undo failed: $undo")
+                    break
+                }
+            }
+        }
+        flush()
+        val taken = turns.takeLast(last - from + 1)
+        repeat(last - from + 1) { store.deleteLastTurn(campaignId) }
+        load()
+        return taken
+    }
+
+    /**
+     * Undoes the last turn and plays it again with the player's [correction] of the narration
+     * (RF-ENV-09), such as "no, my character cannot swim".
+     */
+    suspend fun correctLastTurn(correction: String) {
+        val narrator = narrator ?: return
+        if (correction.isBlank()) return
+        val taken = undoLastTurn().takeIf { it.isNotEmpty() } ?: return
+        val input = taken.first().playerInput.orEmpty()
+        val previous = taken.joinToString("\n\n") { it.narration }
+        val shown = correctionInput(input, correction.trim())
+        run(shown) { onEvent -> narrator.correct(input, previous, correction.trim(), past(), onEvent) }
+    }
+
     private suspend fun run(input: String, play: suspend ((TurnEvent) -> Unit) -> TurnOutcome) {
         live = PlayedTurn(input, emptyList(), "")
         val outcome = play { event ->
@@ -198,6 +253,10 @@ class TurnPlayer(
 
     companion object {
         private const val TAG = "Turn"
+        private const val CHOOSE_OPTION = "choose_option"
+
+        /** What a corrected turn keeps as the player's words: the action and, below, the correction. */
+        fun correctionInput(input: String, correction: String) = "$input\n\n✎ $correction"
         private val json = Json
 
         /** The kind of card a step leaves in the history, or null for reads and suggestions. */

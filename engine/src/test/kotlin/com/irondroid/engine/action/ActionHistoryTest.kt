@@ -137,6 +137,19 @@ class ActionHistoryTest {
     }
 
     @Test
+    fun `the last undoable call is the start of the unit undo would take back`() {
+        assertNull(history.lastUndoableSequence)
+        hurt(1)
+        play("get_health", Caller.AI)
+        hurt(1)
+        assertEquals(3, history.lastUndoableSequence)
+        history.undo()
+        assertEquals(1, history.lastUndoableSequence)
+        history.undo()
+        assertNull(history.lastUndoableSequence)
+    }
+
+    @Test
     fun `undo goes back to before the last play action that changed the game`() {
         hurt(1)
         hurt(2)

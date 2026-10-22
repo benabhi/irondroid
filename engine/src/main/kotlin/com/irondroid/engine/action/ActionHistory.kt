@@ -107,6 +107,12 @@ class ActionHistory<S>(
     val canUndo: Boolean get() = synchronized(lock) { lastUnitStart() != null }
 
     /**
+     * Sequence of the call that starts the unit [undo] would take back, or null when there is none.
+     * Undoing while it is above a mark takes back everything done after that mark, such as a whole turn.
+     */
+    val lastUndoableSequence: Int? get() = synchronized(lock) { lastUnitStart()?.let { log[it].sequence } }
+
+    /**
      * Goes back to before the last unit and returns the calls undone, oldest first. Drops the open
      * choice, if any. Throws [ActionRejectedException] when there is nothing to undo.
      */

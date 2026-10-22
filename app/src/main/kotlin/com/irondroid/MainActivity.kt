@@ -189,6 +189,7 @@ class MainActivity : ComponentActivity() {
                             confirmMoves = { app.playSettings.confirmMoves },
                             narrator = narrator,
                             flush = app.games::flushNow,
+                            history = { app.games.history },
                         )
                     }
                     LaunchedEffect(player) { player.load() }

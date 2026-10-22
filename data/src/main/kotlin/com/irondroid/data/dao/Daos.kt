@@ -133,6 +133,10 @@ interface HistoryDao {
     @Query("SELECT COALESCE(MAX(sequence), 0) FROM history_entries WHERE campaignId = :campaignId")
     suspend fun lastSequence(campaignId: Long): Int
 
+    /** Deletes the last turn of the campaign; its history cards go with it. */
+    @Query("DELETE FROM turns WHERE campaignId = :campaignId AND number = (SELECT MAX(number) FROM turns WHERE campaignId = :campaignId)")
+    suspend fun deleteLastTurn(campaignId: Long): Int
+
     @Query("SELECT * FROM turns WHERE campaignId = :campaignId ORDER BY number")
     suspend fun turns(campaignId: Long): List<TurnEntity>
 

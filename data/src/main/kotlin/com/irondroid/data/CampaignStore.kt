@@ -160,6 +160,23 @@ class CampaignStore(
         turnId
     }
 
+    /**
+     * Deletes the last turn with its cards (RF-ENV-09), after its calls were undone. Returns whether
+     * there was one. The calls stay in the log, marked undone.
+     */
+    suspend fun deleteLastTurn(campaignId: Long): Boolean = database.withTransaction {
+        val deleted = history.deleteLastTurn(campaignId) > 0
+        if (deleted) campaigns.touch(campaignId, clock())
+        deleted
+    }
+
+    /** Number of the last turn played, 0 before the first. */
+    suspend fun lastTurnNumber(campaignId: Long): Int = history.lastTurnNumber(campaignId)
+
+    /** Sequence of the first call of turn [number] that is not undone, or null when it made none. */
+    suspend fun firstCallOfTurn(campaignId: Long, number: Int): Int? =
+        history.calls(campaignId).filter { it.turnNumber == number && !it.undone }.minOfOrNull { it.sequence }
+
     /** Saves cards that happened outside a turn, such as a manual sheet edit. */
     suspend fun appendEntries(campaignId: Long, entries: List<NewHistoryEntry>) = database.withTransaction {
         val now = clock()

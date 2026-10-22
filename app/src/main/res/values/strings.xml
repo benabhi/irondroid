@@ -167,4 +167,9 @@
     <string name="gender_feminine">Feminine</string>
     <string name="gender_masculine">Masculine</string>
     <string name="gender_neutral">Neutral</string>
+    <string name="game_undo">Undo last turn</string>
+    <string name="game_correct">Correct</string>
+    <string name="game_correct_input">What should change?</string>
+    <string name="game_correct_send">Narrate again</string>
+    <string name="game_correct_cancel">Cancel</string>
 </resources>
