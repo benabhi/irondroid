@@ -191,6 +191,7 @@ class MainActivity : ComponentActivity() {
                             narrator = narrator,
                             flush = app.games::flushNow,
                             history = { app.games.history },
+                            pricing = { app.aiSettings.provider.model(app.aiSettings.model())?.pricing },
                         )
                     }
                     LaunchedEffect(player) { player.load() }
@@ -203,7 +204,15 @@ class MainActivity : ComponentActivity() {
                             onGender = { scope.launch { player.changeGender(it) } },
                         )
                     } else {
-                        GameScreen(loaded.campaign.title, session.characterName, sheet, player, onOpenSheet = { showSheet = true }, onBack = leaveCampaign)
+                        GameScreen(
+                            loaded.campaign.title,
+                            session.characterName,
+                            sheet,
+                            player,
+                            showMetrics = app.playSettings.showMetrics,
+                            onOpenSheet = { showSheet = true },
+                            onBack = leaveCampaign,
+                        )
                     }
                 } else {
                     CampaignScreen(null, onBack = leaveCampaign)

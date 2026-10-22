@@ -188,4 +188,10 @@
     <string name="settings_effort_high">Alto</string>
     <string name="settings_effort_max">Máximo</string>
     <string name="settings_effort_note">Cuánto piensa la IA antes de narrar. Bajo es lo más rápido y barato; alto y máximo tardan más y gastan más tokens.</string>
+    <string name="settings_metrics">Mostrar cuánto cuesta cada turno</string>
+    <string name="settings_metrics_note">Debajo de cada narración: tokens de entrada y salida, tiempo y costo estimado en dólares (la moneda en la que cobra el proveedor de IA).</string>
+    <string name="metrics_tokens">↓ %1$s (%2$s en caché) · ↑ %3$s</string>
+    <string name="metrics_time">%1$s s</string>
+    <string name="metrics_cost">≈ US$ %1$s</string>
+    <string name="metrics_effort">esfuerzo %1$s</string>
 </resources>

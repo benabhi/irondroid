@@ -136,6 +136,8 @@ data class TurnEntity(
     val playerInput: String?,
     val narration: String?,
     val createdAt: Long,
+    /** What the turn cost: tokens, time and estimated price, as JSON written by the app (IRON-111); null when unknown. */
+    val metrics: String? = null,
 )
 
 /** What a history card shows (RF-NAR-03). */

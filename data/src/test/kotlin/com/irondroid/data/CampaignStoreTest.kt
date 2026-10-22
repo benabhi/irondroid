@@ -134,6 +134,14 @@ class CampaignStoreTest {
     }
 
     @Test
+    fun `a turn keeps its metrics`() = runTest {
+        val campaignId = newCampaign()
+        store.appendTurn(campaignId, "I wait", "Night falls.", metrics = """{"prompt_tokens":10}""")
+        store.appendTurn(campaignId, "I sleep", "Dawn.")
+        assertEquals(listOf("""{"prompt_tokens":10}""", null), store.history(campaignId).turns.map { it.metrics })
+    }
+
+    @Test
     fun `saving a campaign without character fails`() = runTest {
         assertFailsWith<IllegalStateException> { store.saveCharacter(99, playedSheet()) }
         assertNull(store.loadCharacter(99))

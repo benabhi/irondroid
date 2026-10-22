@@ -18,7 +18,7 @@ interface AiProvider {
 }
 
 /** A model a provider offers; [supportsTools] says whether it can call tools (RF-IA-06). */
-data class ModelInfo(val id: String, val supportsTools: Boolean = true) {
+data class ModelInfo(val id: String, val supportsTools: Boolean = true, val pricing: ModelPricing? = null) {
     init {
         require(id.isNotBlank()) { "A model needs an id" }
     }

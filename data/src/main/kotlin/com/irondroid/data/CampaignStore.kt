@@ -144,6 +144,7 @@ class CampaignStore(
         playerInput: String?,
         narration: String?,
         entries: List<NewHistoryEntry> = emptyList(),
+        metrics: String? = null,
     ): Long = database.withTransaction {
         val now = clock()
         val turnId = history.insertTurn(
@@ -153,6 +154,7 @@ class CampaignStore(
                 playerInput = playerInput,
                 narration = narration,
                 createdAt = now,
+                metrics = metrics,
             ),
         )
         insertEntries(campaignId, turnId, entries, now)

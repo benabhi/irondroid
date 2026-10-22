@@ -190,4 +190,10 @@
     <string name="settings_effort_high">High</string>
     <string name="settings_effort_max">Maximum</string>
     <string name="settings_effort_note">How much the AI thinks before narrating. Low is the fastest and cheapest; high and maximum take longer and use more tokens.</string>
+    <string name="settings_metrics">Show what each turn costs</string>
+    <string name="settings_metrics_note">Under each narration: tokens in and out, time and estimated cost in US dollars (the currency the AI provider charges in).</string>
+    <string name="metrics_tokens">↓ %1$s (%2$s cached) · ↑ %3$s</string>
+    <string name="metrics_time">%1$s s</string>
+    <string name="metrics_cost">≈ US$ %1$s</string>
+    <string name="metrics_effort">effort %1$s</string>
 </resources>
