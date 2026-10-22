@@ -218,6 +218,7 @@ class MainActivity : ComponentActivity() {
                             session.characterName,
                             sheet,
                             player,
+                            tableName = { app.oracles.text(it, app.rulesLanguage)?.name ?: it },
                             showMetrics = app.playSettings.showMetrics,
                             onOpenSheet = { showSheet = true },
                             onBack = leaveCampaign,

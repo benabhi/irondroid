@@ -89,6 +89,8 @@ fun GameScreen(
     characterName: String,
     sheet: Character,
     player: TurnPlayer,
+    /** The name of an oracle table in the player's language, for the history cards (IRON-63). */
+    tableName: (String) -> String,
     /** Show what each turn cost under its narration (IRON-111). */
     showMetrics: Boolean,
     onOpenSheet: () -> Unit,
@@ -144,9 +146,9 @@ fun GameScreen(
             if (player.loaded && player.turns.isEmpty() && live == null) {
                 item { Text(stringResource(R.string.game_empty), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
-            items(player.turns) { TurnView(it, playing = false, player::moveName, showMetrics) }
+            items(player.turns) { TurnView(it, playing = false, player::moveName, tableName, showMetrics) }
             // While the player confirms a roll, the narrator waits for them, not the other way round.
-            if (live != null) item { TurnView(live.copy(activity = live.activity.takeIf { pendingMove == null }), playing = true, player::moveName, showMetrics) }
+            if (live != null) item { TurnView(live.copy(activity = live.activity.takeIf { pendingMove == null }), playing = true, player::moveName, tableName, showMetrics) }
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -351,7 +353,7 @@ private fun BottomPanel(
 }
 
 @Composable
-private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> String, showMetrics: Boolean) {
+private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> String, tableName: (String) -> String, showMetrics: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         turn.playerInput?.let { said ->
             Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth().padding(start = 48.dp)) {
@@ -365,7 +367,7 @@ private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> S
             }
         }
         turn.steps.forEach {
-            StepCardView(it, moveName)
+            StepCardView(it, moveName, tableName)
         }
         if (turn.narration.isNotBlank()) {
             Text(

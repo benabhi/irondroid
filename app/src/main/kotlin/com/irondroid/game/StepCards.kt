@@ -38,7 +38,7 @@ import kotlin.math.abs
  * what a choice changed, with the sheet changes it brought. Drawn with a thin ink border, no color.
  */
 @Composable
-fun StepCardView(card: StepCard, moveName: (String) -> String) {
+fun StepCardView(card: StepCard, moveName: (String) -> String, tableName: (String) -> String) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -51,7 +51,7 @@ fun StepCardView(card: StepCard, moveName: (String) -> String) {
             data == null -> Text(card.summary, style = MaterialTheme.typography.bodyMedium)
             card.action == "roll_move" || card.action == "roll_progress" -> MoveCard(data, moveName)
             card.action == "ask_oracle" -> OracleCard(data)
-            card.action == "roll_oracle_table" -> TableCard(data)
+            card.action == "roll_oracle_table" -> TableCard(data, tableName)
             card.action == "choose_option" -> CardTitle(
                 data["move"]?.jsonPrimitive?.contentOrNull?.let { stringResource(R.string.card_choice, moveName(it)) } ?: stringResource(R.string.card_choice_plain),
             )
@@ -152,9 +152,10 @@ private fun OracleCard(data: JsonObject) {
 
 /** A roll on an oracle table, such as a name or Pay the Price, with the extra rolls a row asked for. */
 @Composable
-private fun TableCard(data: JsonObject) {
+private fun TableCard(data: JsonObject, tableName: (String) -> String) {
     val table = data["table"]?.jsonPrimitive?.contentOrNull.orEmpty()
-    CardTitle(data["name"]?.jsonPrimitive?.contentOrNull ?: table.replace('_', ' ').replaceFirstChar { it.uppercase() }, data["roll"]?.jsonPrimitive?.intOrNull?.toString())
+    // Named in the player's language now, also for cards saved in another one.
+    CardTitle(tableName(table), data["roll"]?.jsonPrimitive?.intOrNull?.toString())
     fun rows(roll: JsonObject): List<String> =
         listOfNotNull(roll["text"]?.jsonPrimitive?.contentOrNull) + (roll["extra"] as? JsonArray).orEmpty().filterIsInstance<JsonObject>().flatMap(::rows)
     rows(data).forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
