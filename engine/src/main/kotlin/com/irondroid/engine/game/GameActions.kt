@@ -735,6 +735,7 @@ class GameActions(
         put("table", roll.table)
         put("roll", roll.roll)
         put("row", roll.row.id)
+        put("name", oracles.text(roll.table, language)?.name ?: roll.table)
         put("text", oracles.text(roll.table, language)?.rows?.get(roll.row.id) ?: roll.row.id)
         put("move", roll.row.move?.let(::JsonPrimitive) ?: JsonNull)
         put("repeated", roll.isRepeated)

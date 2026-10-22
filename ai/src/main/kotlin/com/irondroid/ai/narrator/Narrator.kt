@@ -11,6 +11,7 @@ import com.irondroid.ai.ToolChoice
 import com.irondroid.ai.collectReply
 import com.irondroid.ai.tools.ActionTools
 import com.irondroid.engine.action.DispatchResult
+import com.irondroid.engine.action.StateChange
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -30,6 +31,8 @@ data class NarratorStep(
     val succeeded: Boolean,
     /** The result's data when it succeeded, such as a move's roll and outcome, for screens that show it their own way. */
     val data: JsonObject? = null,
+    /** What the action changed in the game, such as health from 5 to 4 (IRON-63). */
+    val changes: List<StateChange> = emptyList(),
 )
 
 /** What the player sees while a turn is being played. */
@@ -217,6 +220,7 @@ class Narrator(
                         },
                         succeeded = run.result is DispatchResult.Success,
                         data = (run.result as? DispatchResult.Success)?.result?.data,
+                        changes = (run.result as? DispatchResult.Success)?.result?.changes.orEmpty(),
                     )
                     steps += step
                     onEvent(TurnEvent.Step(step))
