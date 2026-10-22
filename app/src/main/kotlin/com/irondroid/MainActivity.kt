@@ -2,6 +2,7 @@ package com.irondroid
 
 import android.graphics.Color.TRANSPARENT
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -217,6 +218,9 @@ class MainActivity : ComponentActivity() {
                         player,
                         tableName = { app.oracles.text(it, app.rulesLanguage)?.name ?: it },
                         showMetrics = app.playSettings.showMetrics,
+                        // The player's setting, or the phone's animations turned off (RF-UI-06).
+                        reduceMotion = app.playSettings.reduceMotion ||
+                            Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f,
                         onBack = leaveCampaign,
                     )
                 } else {

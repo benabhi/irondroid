@@ -267,6 +267,9 @@
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_theme_system">Like the phone</string>
+    <string name="settings_reduce_motion">Reduce animations</string>
+    <string name="settings_reduce_motion_note">Changes on the sheet show without movement. The phone\'s own setting to remove animations is followed too.</string>
+    <string name="meter_critical">At 0</string>
     <string name="metrics_tokens">↓ %1$s (%2$s cached) · ↑ %3$s</string>
     <string name="metrics_time">%1$s s</string>
     <string name="metrics_cost">≈ US$ %1$s</string>

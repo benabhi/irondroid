@@ -67,6 +67,9 @@ interface AiSettingsActions {
 
     /** Light, dark or as the phone (RF-UI-04). */
     var themeMode: ThemeMode
+
+    /** Whether changes show without movement (IRON-68). */
+    var reduceMotion: Boolean
 }
 
 /** AI settings (RF-IA-03, RF-IA-05): provider, model, API key and a connection check. */
@@ -233,6 +236,18 @@ fun AiSettingsScreen(actions: AiSettingsActions, onBack: () -> Unit) {
                     themeMode = option
                 }, label = { Text(stringResource(label)) })
             }
+        }
+
+        var reduceMotion by remember { mutableStateOf(actions.reduceMotion) }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_reduce_motion), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.settings_reduce_motion_note), style = MaterialTheme.typography.bodySmall)
+            }
+            Switch(checked = reduceMotion, onCheckedChange = {
+                actions.reduceMotion = it
+                reduceMotion = it
+            })
         }
     }
 }

@@ -108,6 +108,12 @@ class IrondroidApp : Application() {
             override fun maskedKey(provider: ProviderInfo) = apiKeys.load(provider.id)?.let { "••••" + it.takeLast(4) }
             override fun saveKey(provider: ProviderInfo, key: String) = apiKeys.save(provider.id, key)
             override fun deleteKey(provider: ProviderInfo) = apiKeys.delete(provider.id)
+            override var reduceMotion: Boolean
+                get() = playSettings.reduceMotion
+                set(value) {
+                    playSettings.reduceMotion = value
+                }
+
             override var themeMode: ThemeMode
                 get() = this@IrondroidApp.themeMode
                 set(value) {

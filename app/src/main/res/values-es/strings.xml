@@ -265,6 +265,9 @@
     <string name="settings_theme_light">Claro</string>
     <string name="settings_theme_dark">Oscuro</string>
     <string name="settings_theme_system">Como el celular</string>
+    <string name="settings_reduce_motion">Reducir animaciones</string>
+    <string name="settings_reduce_motion_note">Los cambios de la ficha se muestran sin movimiento. También se respeta si el celular tiene las animaciones desactivadas.</string>
+    <string name="meter_critical">En 0</string>
     <string name="metrics_tokens">↓ %1$s (%2$s en caché) · ↑ %3$s</string>
     <string name="metrics_time">%1$s s</string>
     <string name="metrics_cost">≈ US$ %1$s</string>
