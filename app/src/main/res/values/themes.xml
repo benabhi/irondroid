@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window behind the Compose UI: paper white, so the app does not flash dark while it starts (RF-UI-04). -->
+    <style name="Theme.Irondroid" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/paper</item>
+    </style>
+
+    <color name="paper">#FFFAFAFA</color>
+</resources>

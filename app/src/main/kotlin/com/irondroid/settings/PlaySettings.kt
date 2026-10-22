@@ -3,6 +3,7 @@ package com.irondroid.settings
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.irondroid.ai.ReasoningEffort
+import com.irondroid.theme.ThemeMode
 
 /** How the player wants to play, apart from the AI choices. */
 class PlaySettings(private val preferences: SharedPreferences) {
@@ -21,8 +22,14 @@ class PlaySettings(private val preferences: SharedPreferences) {
         get() = preferences.getBoolean(KEY_SHOW_METRICS, false)
         set(value) = preferences.edit { putBoolean(KEY_SHOW_METRICS, value) }
 
+    /** Light, dark or as the phone (RF-UI-04); light unless the player picks another. */
+    var themeMode: ThemeMode
+        get() = preferences.getString(KEY_THEME_MODE, null)?.let { saved -> ThemeMode.entries.firstOrNull { it.name == saved } } ?: ThemeMode.LIGHT
+        set(value) = preferences.edit { putString(KEY_THEME_MODE, value.name) }
+
     companion object {
         const val FILE_NAME = "play_settings"
+        private const val KEY_THEME_MODE = "theme_mode"
         private const val KEY_SHOW_METRICS = "show_metrics"
         private const val KEY_NARRATOR_EFFORT = "narrator_effort"
         private const val KEY_CONFIRM_MOVES = "confirm_moves"
