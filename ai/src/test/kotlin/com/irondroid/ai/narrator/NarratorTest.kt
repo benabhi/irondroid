@@ -3,6 +3,7 @@ package com.irondroid.ai.narrator
 import com.irondroid.ai.AiErrorKind
 import com.irondroid.ai.AiException
 import com.irondroid.ai.ChatMessage
+import com.irondroid.ai.ReasoningEffort
 import com.irondroid.ai.ScriptedAiProvider
 import com.irondroid.ai.ScriptedTurn
 import com.irondroid.ai.TokenUsage
@@ -149,6 +150,15 @@ class NarratorTest {
         assertEquals(ChatMessage.System("PROMPT"), messages[0])
         assertEquals(ChatMessage.System(context.render()), messages[1])
         assertEquals(ChatMessage.User("Antes"), messages[2])
+    }
+
+    @Test
+    fun `every request of a turn uses the effort chosen when it started`() = runTest {
+        val ai = ScriptedAiProvider(listOf(ScriptedTurn.toolCalls(ToolCall("c1", "get_scene", "{}")), ScriptedTurn.text("Sigue.")))
+        var chosen = ReasoningEffort.HIGH
+        val outcome = Narrator(ai, "scripted", tools, { "PROMPT" }, effort = { chosen.also { chosen = ReasoningEffort.LOW } }).play("Miro", emptyList())
+        assertEquals(listOf(ReasoningEffort.HIGH, ReasoningEffort.HIGH), ai.requests.map { it.reasoningEffort })
+        assertEquals(ReasoningEffort.HIGH, outcome.effort)
     }
 
     @Test

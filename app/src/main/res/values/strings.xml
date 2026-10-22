@@ -185,4 +185,9 @@
     <string name="odds_fifty_fifty">50/50</string>
     <string name="odds_unlikely">Unlikely</string>
     <string name="odds_small_chance">Small chance</string>
+    <string name="settings_effort">Narrator effort</string>
+    <string name="settings_effort_low">Low</string>
+    <string name="settings_effort_high">High</string>
+    <string name="settings_effort_max">Maximum</string>
+    <string name="settings_effort_note">How much the AI thinks before narrating. Low is the fastest and cheapest; high and maximum take longer and use more tokens.</string>
 </resources>

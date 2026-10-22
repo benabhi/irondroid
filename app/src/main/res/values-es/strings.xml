@@ -183,4 +183,9 @@
     <string name="odds_fifty_fifty">Mitad y mitad</string>
     <string name="odds_unlikely">Improbable</string>
     <string name="odds_small_chance">Casi imposible</string>
+    <string name="settings_effort">Esfuerzo del narrador</string>
+    <string name="settings_effort_low">Bajo</string>
+    <string name="settings_effort_high">Alto</string>
+    <string name="settings_effort_max">Máximo</string>
+    <string name="settings_effort_note">Cuánto piensa la IA antes de narrar. Bajo es lo más rápido y barato; alto y máximo tardan más y gastan más tokens.</string>
 </resources>

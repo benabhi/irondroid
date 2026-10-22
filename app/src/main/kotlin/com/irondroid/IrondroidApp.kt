@@ -96,6 +96,12 @@ class IrondroidApp : Application() {
             override fun maskedKey(provider: ProviderInfo) = apiKeys.load(provider.id)?.let { "••••" + it.takeLast(4) }
             override fun saveKey(provider: ProviderInfo, key: String) = apiKeys.save(provider.id, key)
             override fun deleteKey(provider: ProviderInfo) = apiKeys.delete(provider.id)
+            override var narratorEffort
+                get() = playSettings.narratorEffort
+                set(value) {
+                    playSettings.narratorEffort = value
+                }
+
             override var confirmMoves: Boolean
                 get() = playSettings.confirmMoves
                 set(value) {

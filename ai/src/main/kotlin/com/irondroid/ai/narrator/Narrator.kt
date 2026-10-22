@@ -52,6 +52,8 @@ data class TurnOutcome(
     val firstTextMs: Long?,
     val totalMs: Long,
     val error: AiException? = null,
+    /** How hard the model was asked to think on this turn (IRON-109). */
+    val effort: ReasoningEffort? = null,
 )
 
 /**
@@ -75,6 +77,8 @@ class Narrator(
     private val confirmer: MoveConfirmer? = null,
     /** The state of the game at the start of each turn (IRON-56), sent after the prompt; null sends none. */
     private val context: suspend () -> TurnContext? = { null },
+    /** How hard the model thinks, read at the start of each turn (IRON-109): low is faster and cheaper. */
+    private val effort: () -> ReasoningEffort = { ReasoningEffort.LOW },
 ) {
     init {
         require(maxRounds >= 1) { "The narrator needs at least one round" }
@@ -142,8 +146,9 @@ class Narrator(
         val steps = mutableListOf<NarratorStep>()
         var usage: TokenUsage? = null
         var firstText: Long? = null
+        val turnEffort = effort()
         fun outcome(error: AiException? = null) =
-            TurnOutcome(text.toString().trim(), steps.toList(), usage, firstText, clock() - started, error)
+            TurnOutcome(text.toString().trim(), steps.toList(), usage, firstText, clock() - started, error, turnEffort)
 
         try {
             for (round in 1..maxRounds + 1) {
@@ -153,7 +158,7 @@ class Narrator(
                 var separator = if (text.isEmpty()) "" else "\n\n"
                 val choice = if (last) ToolChoice.NONE else ToolChoice.AUTO
                 val reply = provider.chat(
-                    ChatRequest(model, conversation.toList(), tools.specs, choice, reasoningEffort = ReasoningEffort.LOW),
+                    ChatRequest(model, conversation.toList(), tools.specs, choice, reasoningEffort = turnEffort),
                 ).collectReply { piece ->
                     if (firstText == null) firstText = clock() - started
                     val shown = separator + piece

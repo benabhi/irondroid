@@ -37,6 +37,7 @@ import com.irondroid.R
 import com.irondroid.ai.AiErrorKind
 import com.irondroid.ai.ConnectionResult
 import com.irondroid.ai.ProviderInfo
+import com.irondroid.ai.ReasoningEffort
 import kotlinx.coroutines.launch
 
 /** What the settings screen needs from the app, so the screen holds no storage or network code. */
@@ -56,6 +57,9 @@ interface AiSettingsActions {
 
     /** Whether the narrator's moves wait for the player before the dice (RF-ENV-04). */
     var confirmMoves: Boolean
+
+    /** How hard the narrator thinks (IRON-109). */
+    var narratorEffort: ReasoningEffort
 }
 
 /** AI settings (RF-IA-03, RF-IA-05): provider, model, API key and a connection check. */
@@ -179,6 +183,22 @@ fun AiSettingsScreen(actions: AiSettingsActions, onBack: () -> Unit) {
                 confirmMoves = it
             })
         }
+
+        var effort by remember { mutableStateOf(actions.narratorEffort) }
+        Text(stringResource(R.string.settings_effort), style = MaterialTheme.typography.bodyLarge)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                ReasoningEffort.LOW to R.string.settings_effort_low,
+                ReasoningEffort.HIGH to R.string.settings_effort_high,
+                ReasoningEffort.MAX to R.string.settings_effort_max,
+            ).forEach { (option, label) ->
+                FilterChip(selected = effort == option, onClick = {
+                    actions.narratorEffort = option
+                    effort = option
+                }, label = { Text(stringResource(label)) })
+            }
+        }
+        Text(stringResource(R.string.settings_effort_note), style = MaterialTheme.typography.bodySmall)
     }
 }
 
