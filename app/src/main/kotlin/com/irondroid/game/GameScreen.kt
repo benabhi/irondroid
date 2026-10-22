@@ -62,6 +62,8 @@ fun GameScreen(
 ) {
     val scope = rememberCoroutineScope()
     var input by rememberSaveable { mutableStateOf("") }
+    var correcting by rememberSaveable { mutableStateOf(false) }
+    var correction by rememberSaveable { mutableStateOf("") }
     val list = rememberLazyListState()
     val live = player.live
     val shown = player.turns.size + (if (live != null) 1 else 0)
@@ -103,9 +105,37 @@ fun GameScreen(
 
         val choice = player.choice
         val pendingMove = player.pendingMove
+        // Take back the last turn, or have it narrated again with a correction (RF-ENV-09).
+        if (player.canTakeBack && !correcting) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = { scope.launch { player.undoLastTurn() } }) { Text(stringResource(R.string.game_undo)) }
+                if (player.hasNarrator) TextButton(onClick = { correcting = true }) { Text(stringResource(R.string.game_correct)) }
+            }
+        }
         when {
             !player.hasNarrator -> Text(stringResource(R.string.game_no_key), color = MaterialTheme.colorScheme.error)
             pendingMove != null -> MovePanel(pendingMove.proposal, player)
+            correcting -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = correction,
+                    onValueChange = { correction = it },
+                    label = { Text(stringResource(R.string.game_correct_input)) },
+                    modifier = Modifier.weight(1f),
+                    maxLines = 4,
+                )
+                Column {
+                    Button(
+                        enabled = !player.busy && correction.isNotBlank(),
+                        onClick = {
+                            val text = correction
+                            correction = ""
+                            correcting = false
+                            scope.launch { player.correctLastTurn(text) }
+                        },
+                    ) { Text(stringResource(R.string.game_correct_send)) }
+                    TextButton(onClick = { correcting = false }) { Text(stringResource(R.string.game_correct_cancel)) }
+                }
+            }
             choice != null && live == null -> ChoicePanel(choice, player, sheet.momentum.value) { picked, text, own -> scope.launch { player.choose(picked, text, own) } }
             else -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(

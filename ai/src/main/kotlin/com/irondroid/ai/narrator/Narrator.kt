@@ -100,6 +100,21 @@ class Narrator(
         onEvent: (TurnEvent) -> Unit = {},
     ): TurnOutcome = run(listOf(ChatMessage.User((if (ownConsequence) OWN_PRICE_NOTE else CHOICE_NOTE).format(chosen, result))), past, onEvent)
 
+    /**
+     * Plays again the turn the player started with [input], after its calls were undone (RF-ENV-09):
+     * the model gets the [previous] narration it wrote and the player's [correction] of it.
+     */
+    suspend fun correct(
+        input: String,
+        previous: String,
+        correction: String,
+        past: List<PastTurn>,
+        onEvent: (TurnEvent) -> Unit = {},
+    ): TurnOutcome {
+        require(correction.isNotBlank()) { "A correction needs text" }
+        return run(listOf(ChatMessage.User(CORRECTION_NOTE.format(input, previous, correction))), past, onEvent)
+    }
+
     private suspend fun run(newMessages: List<ChatMessage>, past: List<PastTurn>, onEvent: (TurnEvent) -> Unit): TurnOutcome {
         val started = clock()
         // The prompt first and the changing context after it, so providers can cache the prompt.
@@ -218,6 +233,12 @@ class Narrator(
         private const val CHOICE_NOTE =
             "(The player chose: %s. Result of choose_option, already applied by the engine: %s) " +
                 "Narrate what follows from this choice."
+
+        /** Model-facing note to play a turn again after the player corrected it. */
+        private const val CORRECTION_NOTE =
+            "%s\n\n(The player took back your last narration of this action and everything rolled for it: \"%s\". " +
+                "Their correction: \"%s\". Play this action again from the start, respecting the correction: roll again " +
+                "if it is still risky, and do not repeat what the correction rules out.)"
 
         /** Model-facing note when the player wrote the price their character pays. */
         private const val OWN_PRICE_NOTE =

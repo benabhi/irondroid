@@ -6,6 +6,9 @@ import androidx.test.core.app.ApplicationProvider
 import com.irondroid.data.entity.CampaignStatus
 import com.irondroid.data.entity.CharacterGender
 import com.irondroid.data.entity.HistoryEntryKind
+import com.irondroid.engine.action.CallOutcome
+import com.irondroid.engine.action.Caller
+import com.irondroid.engine.action.UndoRole
 import com.irondroid.engine.character.Character
 import com.irondroid.engine.character.PendingBonus
 import com.irondroid.engine.debility.Debilities
@@ -106,6 +109,28 @@ class CampaignStoreTest {
         assertEquals(CharacterGender.FEMININE, store.characterGender(campaignId))
         store.setCharacterGender(campaignId, null)
         assertNull(store.characterGender(campaignId))
+    }
+
+    @Test
+    fun `the last turn is deleted with its cards and its calls are found by turn`() = runTest {
+        val campaignId = newCampaign()
+        store.appendTurn(campaignId, "I search", "Dust.", listOf(NewHistoryEntry(HistoryEntryKind.MOVE, "{}")))
+        val call = NewActionCall(1, "roll_move", Caller.AI, "{}", CallOutcome.SUCCESS, "{}", UndoRole.START, null, false)
+        store.appendActionCall(campaignId, call)
+        store.appendActionCall(campaignId, call.copy(sequence = 2, undone = true))
+        store.appendTurn(campaignId, "I climb", "You fall.", listOf(NewHistoryEntry(HistoryEntryKind.ORACLE, "{}")))
+
+        assertEquals(2, store.lastTurnNumber(campaignId))
+        assertEquals(1, store.firstCallOfTurn(campaignId, 2))
+        assertNull(store.firstCallOfTurn(campaignId, 1))
+
+        assertTrue(store.deleteLastTurn(campaignId))
+        val history = store.history(campaignId)
+        assertEquals(listOf("I search"), history.turns.map { it.playerInput })
+        assertEquals(1, history.entries.size)
+        assertEquals(1, store.lastTurnNumber(campaignId))
+        assertTrue(store.deleteLastTurn(campaignId))
+        assertEquals(false, store.deleteLastTurn(campaignId))
     }
 
     @Test

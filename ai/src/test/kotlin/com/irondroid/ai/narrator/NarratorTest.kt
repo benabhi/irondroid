@@ -222,6 +222,16 @@ class NarratorTest {
     }
 
     @Test
+    fun `a corrected turn is played again with the old narration and the correction`() = runTest {
+        val (ai, narrator) = narrator(ScriptedTurn.text("Rodeas el río."))
+        val outcome = narrator.correct("Cruzo el río", "Nadas hasta la otra orilla.", "Mi personaje no sabe nadar", emptyList())
+        assertEquals("Rodeas el río.", outcome.narration)
+        val last = assertIs<ChatMessage.User>(ai.requests.single().messages.last()).text
+        assertTrue(last.startsWith("Cruzo el río"), last)
+        assertTrue("Nadas hasta la otra orilla." in last && "Mi personaje no sabe nadar" in last, last)
+    }
+
+    @Test
     fun `after a choice the model gets what the player picked and the result`() = runTest {
         val (ai, narrator) = narrator(ScriptedTurn.text("Eliges seguir."))
         narrator.afterChoice("Seguir adelante", """{"summary":"ok"}""", listOf(PastTurn("Salto", "Caes.")))
