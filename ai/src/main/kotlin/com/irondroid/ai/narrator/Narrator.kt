@@ -73,6 +73,8 @@ class Narrator(
     private val clock: () -> Long = System::currentTimeMillis,
     /** Asks the player before each roll of a move (RF-ENV-04); null rolls without asking. */
     private val confirmer: MoveConfirmer? = null,
+    /** The state of the game at the start of each turn (IRON-56), sent after the prompt; null sends none. */
+    private val context: suspend () -> TurnContext? = { null },
 ) {
     init {
         require(maxRounds >= 1) { "The narrator needs at least one round" }
@@ -100,7 +102,9 @@ class Narrator(
 
     private suspend fun run(newMessages: List<ChatMessage>, past: List<PastTurn>, onEvent: (TurnEvent) -> Unit): TurnOutcome {
         val started = clock()
+        // The prompt first and the changing context after it, so providers can cache the prompt.
         val conversation = mutableListOf<ChatMessage>(ChatMessage.System(prompt()))
+        context()?.let { conversation += ChatMessage.System(it.render()) }
         past.takeLast(memory).forEach { turn ->
             turn.playerInput?.takeIf { it.isNotBlank() }?.let { conversation += ChatMessage.User(it) }
             turn.narration?.takeIf { it.isNotBlank() }?.let { conversation += ChatMessage.Assistant(it) }

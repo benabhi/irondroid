@@ -46,7 +46,8 @@ class NarratorPromptTest {
 
     @Test
     fun `the gender line follows what the player said`() {
-        assertTrue("avoid gendered words about Kira" in spanish)
+        assertTrue("Refer to Kira without grammatical gender" in spanish)
+        assertTrue("Refer to Kira without grammatical gender" in NarratorPrompt.build("Kira", gender = CharacterGender.NEUTRAL))
         assertTrue("Kira is a woman" in NarratorPrompt.build("Kira", gender = CharacterGender.FEMININE))
         assertTrue("Bran is a man" in NarratorPrompt.build("Bran", gender = CharacterGender.MASCULINE))
     }

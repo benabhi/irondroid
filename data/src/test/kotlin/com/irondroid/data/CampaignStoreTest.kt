@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.irondroid.data.entity.CampaignStatus
+import com.irondroid.data.entity.CharacterGender
 import com.irondroid.data.entity.HistoryEntryKind
 import com.irondroid.engine.character.Character
 import com.irondroid.engine.character.PendingBonus
@@ -92,6 +93,19 @@ class CampaignStoreTest {
 
         assertEquals(after, store.loadCharacter(campaignId)!!.sheet)
         assertEquals(5_000L, store.campaign(campaignId)!!.updatedAt)
+    }
+
+    @Test
+    fun `the character's gender is saved and survives saving the sheet`() = runTest {
+        val campaignId = newCampaign()
+        assertNull(store.characterGender(campaignId))
+
+        store.setCharacterGender(campaignId, CharacterGender.FEMININE)
+        store.saveCharacter(campaignId, store.loadCharacter(campaignId)!!.sheet.copy(experience = 1))
+
+        assertEquals(CharacterGender.FEMININE, store.characterGender(campaignId))
+        store.setCharacterGender(campaignId, null)
+        assertNull(store.characterGender(campaignId))
     }
 
     @Test

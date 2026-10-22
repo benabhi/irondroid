@@ -5,6 +5,7 @@ import com.irondroid.data.dao.CampaignSummary
 import com.irondroid.data.entity.ActionCallEntity
 import com.irondroid.data.entity.CampaignEntity
 import com.irondroid.data.entity.CampaignStatus
+import com.irondroid.data.entity.CharacterGender
 import com.irondroid.data.entity.HistoryEntryEntity
 import com.irondroid.data.entity.HistoryEntryKind
 import com.irondroid.data.entity.TurnEntity
@@ -118,10 +119,18 @@ class CampaignStore(
         }
     }
 
+    /** How the narrator refers to the campaign's character; null when the player has not said (IRON-56). */
+    suspend fun characterGender(campaignId: Long): CharacterGender? = characters.forCampaign(campaignId)?.gender
+
+    suspend fun setCharacterGender(campaignId: Long, gender: CharacterGender?) = database.withTransaction {
+        val saved = checkNotNull(characters.forCampaign(campaignId)) { "Campaign $campaignId has no character" }
+        characters.update(saved.copy(gender = gender))
+    }
+
     /** Replaces the saved sheet of the campaign's character with [sheet]. */
     suspend fun saveCharacter(campaignId: Long, sheet: Character) = database.withTransaction {
         val saved = checkNotNull(characters.forCampaign(campaignId)) { "Campaign $campaignId has no character" }
-        characters.update(CharacterMapper.toEntity(sheet, campaignId, saved.name, saved.id))
+        characters.update(CharacterMapper.toEntity(sheet, campaignId, saved.name, saved.id).copy(gender = saved.gender))
         characters.deleteTracks(saved.id)
         characters.insertTracks(CharacterMapper.tracksToEntities(sheet, saved.id))
         characters.deletePendingBonuses(saved.id)

@@ -243,6 +243,27 @@ class TurnRecorderTest {
         }
     }
 
+    @Test
+    fun `version 2 characters gain an empty gender`() {
+        migrations.createDatabase(migrationPath(), 2).apply {
+            execSQL("INSERT INTO worlds (id, name, createdAt) VALUES (1, 'Ironlands', 0)")
+            execSQL("INSERT INTO campaigns (id, worldId, title, status, createdAt, updatedAt) VALUES (1, 1, 'Old', 'ACTIVE', 0, 0)")
+            execSQL(
+                "INSERT INTO characters (id, campaignId, name, edge, heart, iron, shadow, wits, health, spirit, supply, momentum, " +
+                    "debilities, experience, isEnded) VALUES (1, 1, 'Kira', 1, 1, 1, 1, 1, 5, 5, 5, 2, '', 0, 0)",
+            )
+            close()
+        }
+        migrations.runMigrationsAndValidate(migrationPath(), 3, true).apply {
+            query("SELECT name, gender FROM characters").use { cursor ->
+                cursor.moveToFirst()
+                assertEquals("Kira", cursor.getString(0))
+                assertTrue(cursor.isNull(1))
+            }
+            close()
+        }
+    }
+
     /** A full path: with only a name, Room's helper and the driver disagree on where the file is under Robolectric. */
     private fun migrationPath() = context.getDatabasePath(MIGRATION_DB).absolutePath
 

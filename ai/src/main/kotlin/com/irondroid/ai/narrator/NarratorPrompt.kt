@@ -9,8 +9,8 @@ enum class NarratorStyle(val file: String) {
     PERFORMED("performed"),
 }
 
-/** Grammatical gender the narrator uses for the player's character; null while the player has not said. */
-enum class CharacterGender { FEMININE, MASCULINE }
+/** Grammatical gender the narrator uses for the player's character (IRON-56). */
+enum class CharacterGender { FEMININE, MASCULINE, NEUTRAL }
 
 /**
  * The narrator's system prompt (RF-ENV-02, RF-ENV-10, RF-ENV-12), versioned with [VERSION] and
@@ -20,7 +20,7 @@ enum class CharacterGender { FEMININE, MASCULINE }
  */
 object NarratorPrompt {
     /** Raised whenever any of the prompt files changes, so a narration can be traced to its prompt. */
-    const val VERSION = 3
+    const val VERSION = 4
 
     /** Narration languages with instructions (RF-ENV-10). */
     val LANGUAGES = setOf("es", "en")
@@ -36,7 +36,10 @@ object NarratorPrompt {
         val genderLine = when (gender) {
             CharacterGender.FEMININE -> "$characterName is a woman: use feminine forms for her."
             CharacterGender.MASCULINE -> "$characterName is a man: use masculine forms for him."
-            null -> "The player has not said $characterName's gender: avoid gendered words about $characterName until the story makes it clear."
+            // Without a gender, guessing one is what goes wrong: the same neutral wording.
+            CharacterGender.NEUTRAL, null ->
+                "Refer to $characterName without grammatical gender: never use gendered adjectives or participles about $characterName " +
+                    "(not \"cansado\" or \"cansada\"); rephrase instead (\"el cansancio te pesa\")."
         }
         return listOf(
             read("rules.md").replace("{character}", characterName),
