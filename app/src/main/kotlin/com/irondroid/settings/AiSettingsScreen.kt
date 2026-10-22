@@ -70,6 +70,9 @@ interface AiSettingsActions {
     /** Whether shaking the phone rolls (RF-DAD-06). */
     var shakeToRoll: Boolean
 
+    /** Whether the player rolls their own dice (RF-DAD-07). */
+    var ownDice: Boolean
+
     /** How hard the narrator thinks (IRON-109). */
     var narratorEffort: ReasoningEffort
 
@@ -148,6 +151,11 @@ fun AiSettingsScreen(actions: AiSettingsActions, onBack: () -> Unit) {
         SettingSwitch(R.string.settings_dice_shake, R.string.settings_dice_shake_note, shake) {
             actions.shakeToRoll = it
             shake = it
+        }
+        var ownDice by remember { mutableStateOf(actions.ownDice) }
+        SettingSwitch(R.string.settings_own_dice, R.string.settings_own_dice_note, ownDice) {
+            actions.ownDice = it
+            ownDice = it
         }
 
         SectionTitle(R.string.settings_ai_section)

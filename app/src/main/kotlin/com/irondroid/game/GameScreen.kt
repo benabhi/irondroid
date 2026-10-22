@@ -181,7 +181,7 @@ fun GameScreen(
                 TurnView(turn, playing = false, player::moveName, tableName, showMetrics, applyPrice)
             }
             // While the player confirms a roll, the narrator waits for them, not the other way round.
-            if (live != null) item { TurnView(live.copy(activity = live.activity.takeIf { pendingMove == null }), playing = true, player::moveName, tableName, showMetrics) }
+            if (live != null) item { TurnView(live.copy(activity = live.activity.takeIf { pendingMove == null && player.pendingDice == null }), playing = true, player::moveName, tableName, showMetrics) }
         }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -352,6 +352,11 @@ private fun BottomPanel(
 ) {
         when {
             !player.hasNarrator -> Text(stringResource(R.string.game_no_key), color = MaterialTheme.colorScheme.error)
+            player.pendingDice != null -> player.pendingDice?.let { waiting ->
+                val title = waiting.move?.let { stringResource(R.string.own_dice_title_move, player.moveName(it)) }
+                    ?: stringResource(if (waiting.kind == OwnDiceKind.ORACLE) R.string.own_dice_title_oracle else R.string.own_dice_title)
+                OwnDicePanel(waiting.kind, title, onRoll = player::answerDice)
+            }
             pendingMove != null -> MovePanel(pendingMove.proposal, player, shakeToRoll)
             requesting == REQUEST_MOVE -> MovePicker(player, onRoll = onRequestMove, onDismiss = { onRequest(NO_REQUEST) })
             requesting == REQUEST_ORACLE -> OracleSheet(

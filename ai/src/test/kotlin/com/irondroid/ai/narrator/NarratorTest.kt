@@ -44,10 +44,14 @@ class NarratorTest {
     private val tools = ActionTools.forNarrator(actions.dispatcher())
     private var now = 0L
 
-    private fun narrator(vararg turns: ScriptedTurn, maxRounds: Int = Narrator.MAX_ROUNDS, confirmer: MoveConfirmer? = null) =
-        ScriptedAiProvider(turns.toList()).let {
-            it to Narrator(it, "scripted", tools, { "PROMPT" }, maxRounds, clock = { now += 100; now }, confirmer = confirmer)
-        }
+    private fun narrator(
+        vararg turns: ScriptedTurn,
+        maxRounds: Int = Narrator.MAX_ROUNDS,
+        confirmer: MoveConfirmer? = null,
+        beforeAction: suspend (ToolCall) -> Unit = {},
+    ) = ScriptedAiProvider(turns.toList()).let {
+        it to Narrator(it, "scripted", tools, { "PROMPT" }, maxRounds, clock = { now += 100; now }, confirmer = confirmer, beforeAction = beforeAction)
+    }
 
     /** Answers every proposal with [answer] and keeps what it was asked. */
     private class Confirmer(val answer: (MoveProposal) -> MoveDecision) : MoveConfirmer {
@@ -91,6 +95,22 @@ class NarratorTest {
         assertEquals(momentum, game.sheet.momentum.value)
         val result = assertIs<ChatMessage.ToolResult>(ai.requests[1].messages.last()).content
         assertTrue("declined" in result, result)
+    }
+
+    @Test
+    fun `every action waits for the hook before it runs, with what the player confirmed`() = runTest {
+        val seen = mutableListOf<String>()
+        val confirmer = Confirmer { MoveDecision.Roll("face_danger", "wits") }
+        val (_, narrator) = narrator(
+            ScriptedTurn.toolCalls(ToolCall("c0", "get_scene", "{}"), faceDanger),
+            ScriptedTurn.text("Saltas."),
+            confirmer = confirmer,
+            beforeAction = { call -> seen += call.name + " " + call.arguments },
+        )
+        narrator.play("Salto", emptyList())
+        assertEquals(2, seen.size)
+        assertEquals("get_scene {}", seen[0])
+        assertTrue(seen[1].startsWith("roll_move") && "wits" in seen[1], seen[1])
     }
 
     @Test
