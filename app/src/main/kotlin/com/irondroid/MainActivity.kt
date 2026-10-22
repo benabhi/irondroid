@@ -36,6 +36,8 @@ import com.irondroid.dice.DiceRollReport
 import com.irondroid.engine.character.Character
 import com.irondroid.ai.narrator.CharacterGender as NarratorGender
 import com.irondroid.ai.narrator.Narrator
+import com.irondroid.ai.narrator.MoveOption
+import com.irondroid.ai.narrator.MoveSuggester
 import com.irondroid.ai.narrator.NarratorPrompt
 import com.irondroid.ai.narrator.NarratorStyle
 import com.irondroid.ai.tools.ActionTools
@@ -201,6 +203,10 @@ class MainActivity : ComponentActivity() {
                             flush = app.games::flushNow,
                             history = { app.games.history },
                             pricing = { app.aiSettings.provider.model(app.aiSettings.model())?.pricing },
+                            // The model reads the triggers in English, like the rest of its instructions.
+                            suggester = app.aiProvider()?.let { provider ->
+                                MoveSuggester(provider, app.aiSettings.model(), app.moves.moves.map { MoveOption(it.id, app.moves.text(it.id, "en")?.trigger ?: it.id) })
+                            },
                         )
                     }
                     LaunchedEffect(player) { player.load() }

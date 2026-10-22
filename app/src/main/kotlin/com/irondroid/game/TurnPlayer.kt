@@ -10,6 +10,7 @@ import com.irondroid.ai.ModelPricing
 import com.irondroid.ai.narrator.MoveConfirmer
 import com.irondroid.ai.narrator.MoveDecision
 import com.irondroid.ai.narrator.MoveProposal
+import com.irondroid.ai.narrator.MoveSuggester
 import com.irondroid.ai.narrator.Narrator
 import com.irondroid.ai.narrator.NarratorStep
 import com.irondroid.ai.narrator.PastTurn
@@ -29,6 +30,7 @@ import com.irondroid.engine.action.UndoRole
 import com.irondroid.engine.character.Character
 import com.irondroid.engine.game.GameActions
 import com.irondroid.engine.move.MoveCatalog
+import com.irondroid.engine.move.MoveCategory
 import com.irondroid.engine.move.MoveRoll
 import com.irondroid.engine.move.SourcePick
 import kotlinx.coroutines.CompletableDeferred
@@ -49,6 +51,9 @@ import kotlinx.serialization.json.put
  * player's language (IRON-63).
  */
 data class StepCard(val action: String, val summary: String, val data: JsonObject?, val changes: List<StateChange> = emptyList())
+
+/** A move of the picker (IRON-64): [trigger] is the first sentence of when it is made, in the player's language. */
+data class PickerMove(val id: String, val name: String, val category: MoveCategory, val trigger: String)
 
 data class PlayedTurn(
     val playerInput: String?,
@@ -93,6 +98,8 @@ class TurnPlayer(
     private val history: () -> ActionHistory<Character>?,
     /** Prices of the model in use, to estimate what each turn costs (IRON-111). */
     private val pricing: () -> ModelPricing? = { null },
+    /** Asks the AI which moves fit the scene when the move picker opens (IRON-64); null without an API key. */
+    private val suggester: MoveSuggester? = null,
 ) : MoveConfirmer {
     /** A move waiting for the player, with the answer the narrator waits on. */
     class PendingMove(val proposal: MoveProposal, internal val answer: CompletableDeferred<MoveDecision>)
@@ -303,6 +310,32 @@ class TurnPlayer(
             .sortedBy { it.second }
     }
 
+    /** The moves of the picker (IRON-64): those with dice, with their category and when they are made. */
+    val pickerMoves: List<PickerMove> by lazy {
+        moves.moves.filter { it.roll !is MoveRoll.None }.map { move ->
+            val text = moves.text(move.id, language)
+            PickerMove(move.id, text?.name ?: move.id, move.category, firstSentence(text?.trigger.orEmpty()))
+        }.sortedBy { it.name }
+    }
+
+    /** The moves the AI suggests for the scene, best first; null while it is asked (IRON-64). */
+    var suggestedMoves by mutableStateOf<List<String>?>(emptyList())
+        private set
+    private var suggestedAfter = -1
+
+    /** Asks the AI for the moves that fit the last turn, once per turn. */
+    suspend fun loadSuggestions() {
+        val suggester = suggester ?: return
+        val last = turns.lastOrNull() ?: return
+        if (suggestedAfter == turns.size) return
+        suggestedAfter = turns.size
+        suggestedMoves = null
+        val rollable = pickerMoves.map { it.id }.toSet()
+        val started = System.currentTimeMillis()
+        suggestedMoves = suggester.suggest(last.narration, last.playerInput).filter { it in rollable }
+        Log.i(TAG, "suggested moves $suggestedMoves in ${System.currentTimeMillis() - started}ms")
+    }
+
     /** The name of [move] in the player's language. */
     fun moveName(move: String): String = moves.text(move, language)?.name ?: move
 
@@ -317,6 +350,13 @@ class TurnPlayer(
     companion object {
         private const val TAG = "Turn"
         private const val CHOOSE_OPTION = "choose_option"
+
+        /** The first sentence of a move's trigger, such as "When you attempt something risky…, roll." */
+        fun firstSentence(trigger: String): String {
+            val line = trigger.lineSequence().first()
+            val end = line.indexOf(". ")
+            return if (end < 0) line else line.substring(0, end + 1)
+        }
 
         /** What a corrected turn keeps as the player's words: the action and, below, the correction. */
         fun correctionInput(input: String, correction: String) = "$input\n\n✎ $correction"

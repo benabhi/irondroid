@@ -201,6 +201,17 @@
     <string name="request_move">Move</string>
     <string name="request_oracle">Oracle</string>
     <string name="request_move_title">Which move do you make?</string>
+    <string name="move_search">Search moves</string>
+    <string name="move_suggested">Suggested by the AI</string>
+    <string name="move_suggesting">The AI is choosing…</string>
+    <string name="move_none">No move matches</string>
+    <string name="move_roll_named">Roll %1$s</string>
+    <string name="move_category_adventure">Adventure</string>
+    <string name="move_category_relationship">Relationship</string>
+    <string name="move_category_combat">Combat</string>
+    <string name="move_category_suffer">Suffer</string>
+    <string name="move_category_quest">Quest</string>
+    <string name="move_category_fate">Fate</string>
     <string name="request_move_said">I make %1$s</string>
     <string name="request_move_said_stat">I make %1$s +%2$s</string>
     <string name="request_oracle_question">Your question for the oracle</string>
