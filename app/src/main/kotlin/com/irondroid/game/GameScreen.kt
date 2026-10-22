@@ -42,6 +42,7 @@ import com.irondroid.engine.action.ChoiceOption
 import com.irondroid.engine.action.PendingChoice
 import com.irondroid.settings.aiErrorText
 import kotlinx.coroutines.launch
+import java.util.Locale
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
@@ -57,6 +58,8 @@ fun GameScreen(
     characterName: String,
     sheet: Character,
     player: TurnPlayer,
+    /** Show what each turn cost under its narration (IRON-111). */
+    showMetrics: Boolean,
     onOpenSheet: () -> Unit,
     onBack: () -> Unit,
 ) {
@@ -100,8 +103,8 @@ fun GameScreen(
             if (player.loaded && player.turns.isEmpty() && live == null) {
                 item { Text(stringResource(R.string.game_empty), style = MaterialTheme.typography.bodyMedium) }
             }
-            items(player.turns) { TurnView(it, playing = false, player::moveName) }
-            if (live != null) item { TurnView(live, playing = true, player::moveName) }
+            items(player.turns) { TurnView(it, playing = false, player::moveName, showMetrics) }
+            if (live != null) item { TurnView(live, playing = true, player::moveName, showMetrics) }
         }
 
         val choice = player.choice
@@ -183,7 +186,7 @@ fun GameScreen(
 }
 
 @Composable
-private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> String) {
+private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> String, showMetrics: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         turn.playerInput?.let { said ->
             Card(
@@ -199,6 +202,7 @@ private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> S
             playing -> Text(stringResource(R.string.game_thinking), style = MaterialTheme.typography.bodyMedium)
         }
         turn.error?.let { Text(stringResource(R.string.game_error, stringResource(aiErrorText(it.kind))), color = MaterialTheme.colorScheme.error) }
+        if (showMetrics) turn.metrics?.let { MetricsLine(it) }
     }
 }
 
@@ -495,3 +499,24 @@ private val ODDS = linkedMapOf(
 
 private const val REQUEST_MOVE = "move"
 private const val REQUEST_ORACLE = "oracle"
+
+/** What a turn cost, in small grey text under its narration (IRON-111). Always in US dollars. */
+@Composable
+private fun MetricsLine(metrics: TurnMetrics) {
+    val locale = Locale.getDefault()
+    fun tokens(count: Int) = if (count >= 1000) String.format(locale, "%.1f k", count / 1000.0) else count.toString()
+    val parts = buildList {
+        add(stringResource(R.string.metrics_tokens, tokens(metrics.promptTokens), tokens(metrics.cachedTokens), tokens(metrics.completionTokens)))
+        add(stringResource(R.string.metrics_time, String.format(locale, "%.1f", metrics.totalMs / 1000.0)))
+        metrics.costUsd?.let { add(stringResource(R.string.metrics_cost, String.format(locale, "%.4f", it))) }
+        metrics.effort?.let { effort ->
+            val label = when (effort) {
+                "high" -> R.string.settings_effort_high
+                "max" -> R.string.settings_effort_max
+                else -> R.string.settings_effort_low
+            }
+            add(stringResource(R.string.metrics_effort, stringResource(label).lowercase(locale)))
+        }
+    }
+    Text(parts.joinToString(" · "), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+}

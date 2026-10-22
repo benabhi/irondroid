@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.irondroid.ai.AiException
+import com.irondroid.ai.ModelPricing
 import com.irondroid.ai.narrator.MoveConfirmer
 import com.irondroid.ai.narrator.MoveDecision
 import com.irondroid.ai.narrator.MoveProposal
@@ -30,6 +31,7 @@ import com.irondroid.engine.move.MoveCatalog
 import com.irondroid.engine.move.MoveRoll
 import com.irondroid.engine.move.SourcePick
 import kotlinx.coroutines.CompletableDeferred
+import java.time.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -51,6 +53,8 @@ data class PlayedTurn(
     val narration: String,
     /** Why the narrator did not answer, when it failed. */
     val error: AiException? = null,
+    /** Tokens, time and cost of the turn (IRON-111), when known. */
+    val metrics: TurnMetrics? = null,
 )
 
 /**
@@ -73,6 +77,8 @@ class TurnPlayer(
     private val flush: suspend () -> Unit,
     /** The calls of the open game, to know what undoing a turn takes back (IRON-57). */
     private val history: () -> ActionHistory<Character>?,
+    /** Prices of the model in use, to estimate what each turn costs (IRON-111). */
+    private val pricing: () -> ModelPricing? = { null },
 ) : MoveConfirmer {
     /** A move waiting for the player, with the answer the narrator waits on. */
     class PendingMove(val proposal: MoveProposal, internal val answer: CompletableDeferred<MoveDecision>)
@@ -114,7 +120,12 @@ class TurnPlayer(
         val cards = history.entries.groupBy { it.turnId }
         turns.clear()
         history.turns.forEach { turn ->
-            turns += PlayedTurn(turn.playerInput, cards[turn.id].orEmpty().mapNotNull { fromPayload(it.payload) }, turn.narration.orEmpty())
+            turns += PlayedTurn(
+                turn.playerInput,
+                cards[turn.id].orEmpty().mapNotNull { fromPayload(it.payload) },
+                turn.narration.orEmpty(),
+                metrics = TurnMetrics.fromJson(turn.metrics),
+            )
         }
         choice = dispatcher.choices.current
         gender = store.characterGender(campaignId)
@@ -232,8 +243,9 @@ class TurnPlayer(
         Log.i(TAG, "turn effort=${outcome.effort} steps=${outcome.steps.size} firstText=${outcome.firstTextMs}ms total=${outcome.totalMs}ms usage=${outcome.usage} error=${outcome.error?.kind}")
         outcome.steps.forEach { Log.i(TAG, "${it.action} ${it.arguments} → ${it.summary}") }
         flush()
-        store.appendTurn(campaignId, input, outcome.narration.ifBlank { null }, outcome.steps.mapNotNull(::card))
-        turns += PlayedTurn(input, outcome.steps.mapNotNull(::cardSummary), outcome.narration, outcome.error)
+        val metrics = TurnMetrics.of(outcome, pricing(), Instant.now())
+        store.appendTurn(campaignId, input, outcome.narration.ifBlank { null }, outcome.steps.mapNotNull(::card), metrics?.toJson())
+        turns += PlayedTurn(input, outcome.steps.mapNotNull(::cardSummary), outcome.narration, outcome.error, metrics)
         live = null
         choice = dispatcher.choices.current
     }

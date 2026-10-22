@@ -60,6 +60,9 @@ interface AiSettingsActions {
 
     /** How hard the narrator thinks (IRON-109). */
     var narratorEffort: ReasoningEffort
+
+    /** Whether each turn shows what it cost (IRON-111). */
+    var showMetrics: Boolean
 }
 
 /** AI settings (RF-IA-03, RF-IA-05): provider, model, API key and a connection check. */
@@ -199,6 +202,18 @@ fun AiSettingsScreen(actions: AiSettingsActions, onBack: () -> Unit) {
             }
         }
         Text(stringResource(R.string.settings_effort_note), style = MaterialTheme.typography.bodySmall)
+
+        var showMetrics by remember { mutableStateOf(actions.showMetrics) }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_metrics), style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.settings_metrics_note), style = MaterialTheme.typography.bodySmall)
+            }
+            Switch(checked = showMetrics, onCheckedChange = {
+                actions.showMetrics = it
+                showMetrics = it
+            })
+        }
     }
 }
 
