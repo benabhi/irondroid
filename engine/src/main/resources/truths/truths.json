@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "old_world",
+      "options": [
+        { "id": "old_world_1", "min": 1, "max": 33 },
+        { "id": "old_world_2", "min": 34, "max": 67 },
+        { "id": "old_world_3", "min": 68, "max": 100 }
+      ]
+    },
+    {
+      "id": "iron",
+      "options": [
+        { "id": "iron_1", "min": 1, "max": 33 },
+        { "id": "iron_2", "min": 34, "max": 67 },
+        { "id": "iron_3", "min": 68, "max": 100 }
+      ]
+    },
+    {
+      "id": "legacies",
+      "options": [
+        { "id": "legacies_1", "min": 1, "max": 33 },
+        { "id": "legacies_2", "min": 34, "max": 67 },
+        { "id": "legacies_3", "min": 68, "max": 100 }
+      ]
+    },
+    {
+      "id": "communities",
+      "options": [
+        { "id": "communities_1", "min": 1, "max": 33 },
+        { "id": "communities_2", "min": 34, "max": 67 },
+        { "id": "communities_3", "min": 68, "max": 100 }
+      ]
+    },
+    {
+      "id": "leaders",
+      "options": [
+        { "id": "leaders_1", "min": 1, "max": 33 },
+        { "id": "leaders_2", "min": 34, "max": 67 },
+        { "id": "leaders_3", "min": 68, "max": 100 }
+      ]
+    },
+    {
+      "id": "defense",
+      "options": [
+        { "id": "defense_1", "min": 1, "max": 33 },
+        { "id": "defense_2", "min": 34, "max": 67 },
+        { "id": "defense_3", "min": 68, "max": 100 }
+      ]
+    },
+    {
+      "id": "mysticism",
+      "options": [
+        { "id": "mysticism_1", "min": 1, "max": 33 },
+        { "id": "mysticism_2", "min": 34, "max": 67 },
+        { "id": "mysticism_3", "min": 68, "max": 100 }
+      ]
+    },
+    {
+      "id": "religion",
+      "options": [
+        { "id": "religion_1", "min": 1, "max": 33 },
+        { "id": "religion_2", "min": 34, "max": 67 },
+        { "id": "religion_3", "min": 68, "max": 100 }
+      ]
+    },
+    {
+      "id": "firstborn",
+      "options": [
+        { "id": "firstborn_1", "min": 1, "max": 33 },
+        { "id": "firstborn_2", "min": 34, "max": 67 },
+        { "id": "firstborn_3", "min": 68, "max": 100 }
+      ]
+    },
+    {
+      "id": "beasts",
+      "options": [
+        { "id": "beasts_1", "min": 1, "max": 33 },
+        { "id": "beasts_2", "min": 34, "max": 67 },
+        { "id": "beasts_3", "min": 68, "max": 100 }
+      ]
+    },
+    {
+      "id": "horrors",
+      "options": [
+        { "id": "horrors_1", "min": 1, "max": 33 },
+        { "id": "horrors_2", "min": 34, "max": 67 },
+        { "id": "horrors_3", "min": 68, "max": 100 }
+      ]
+    }
+  ]
+}
