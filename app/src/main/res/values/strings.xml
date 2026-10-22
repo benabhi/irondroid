@@ -215,7 +215,12 @@
     <string name="request_move_said">I make %1$s</string>
     <string name="request_move_said_stat">I make %1$s +%2$s</string>
     <string name="request_oracle_question">Your question for the oracle</string>
-    <string name="request_oracle_ask">Ask</string>
+    <string name="oracle_sheet_title">Ask the oracle</string>
+    <string name="oracle_sheet_odds">How likely is a yes?</string>
+    <string name="oracle_sheet_chance">%1$d%% yes</string>
+    <string name="oracle_sheet_ask">Ask and narrate</string>
+    <string name="oracle_sheet_answer_only">Answer only</string>
+    <string name="oracle_sheet_answer_only_note">Only the answer shows up, right away and without the AI; the narrator takes it into account in the next turn.</string>
     <string name="request_oracle_said">%1$s (%2$s)</string>
     <string name="odds_almost_certain">Almost certain</string>
     <string name="odds_likely">Likely</string>

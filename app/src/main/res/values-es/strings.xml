@@ -213,7 +213,12 @@
     <string name="request_move_said">Hago %1$s</string>
     <string name="request_move_said_stat">Hago %1$s +%2$s</string>
     <string name="request_oracle_question">Tu pregunta al oráculo</string>
-    <string name="request_oracle_ask">Preguntar</string>
+    <string name="oracle_sheet_title">Preguntar al oráculo</string>
+    <string name="oracle_sheet_odds">¿Qué tan probable es un sí?</string>
+    <string name="oracle_sheet_chance">%1$d %% sí</string>
+    <string name="oracle_sheet_ask">Preguntar y narrar</string>
+    <string name="oracle_sheet_answer_only">Solo la respuesta</string>
+    <string name="oracle_sheet_answer_only_note">Aparece solo la respuesta, al instante y sin la IA; el narrador la tiene en cuenta en el turno siguiente.</string>
     <string name="request_oracle_said">%1$s (%2$s)</string>
     <string name="odds_almost_certain">Casi seguro</string>
     <string name="odds_likely">Probable</string>
