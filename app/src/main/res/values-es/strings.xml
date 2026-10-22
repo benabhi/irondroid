@@ -252,7 +252,6 @@
     <string name="settings_text_huge">Muy grande</string>
     <string name="settings_text_size_note">Se suma al tamaño de letra del celular.</string>
     <string name="game_settings">Ajustes</string>
-    <string name="game_test_dice">Tirada de prueba (dados 3D)</string>
     <string name="settings_reduce_motion">Reducir animaciones</string>
     <string name="settings_reduce_motion_note">Los cambios de la ficha se muestran sin movimiento. También se respeta si el celular tiene las animaciones desactivadas.</string>
     <string name="meter_critical">En 0</string>

@@ -254,7 +254,6 @@
     <string name="settings_text_huge">Very large</string>
     <string name="settings_text_size_note">On top of the phone\'s own font size.</string>
     <string name="game_settings">Settings</string>
-    <string name="game_test_dice">Test roll (3D dice)</string>
     <string name="settings_reduce_motion">Reduce animations</string>
     <string name="settings_reduce_motion_note">Changes on the sheet show without movement. The phone\'s own setting to remove animations is followed too.</string>
     <string name="meter_critical">At 0</string>

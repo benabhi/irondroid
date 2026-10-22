@@ -17,6 +17,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.webkit.WebViewAssetLoader
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -63,9 +64,10 @@ class DiceOverlayView(context: Context, private val listener: Listener, dark: Bo
         loadUrl(if (dark) "$PAGE_URL?theme=dark" else PAGE_URL)
     }
 
-    /** Rolls the Ironsworn action roll so the dice land on the given values. */
-    fun roll(action: Int, challenge1: Int, challenge2: Int) {
-        evaluateJavascript("irondroidDice.roll($action, $challenge1, $challenge2)", null)
+    /** Throws [dice] so each lands on its value. */
+    fun roll(dice: List<ThrownDie>) {
+        val json = JSONArray(dice.map { JSONObject().put("sides", it.sides).put("value", it.value).put("ink", it.ink) })
+        evaluateJavascript("irondroidDice.roll($json)", null)
     }
 
     /** Dice colors for the dark theme (light dice on dark paper) or the light one. */
@@ -108,6 +110,37 @@ class DiceOverlayView(context: Context, private val listener: Listener, dark: Bo
     companion object {
         const val TAG = "Dice"
         private const val PAGE_URL = "https://appassets.androidplatform.net/assets/dice/index.html"
+    }
+}
+
+/**
+ * One die of a throw: [sides] 6 or 10, the [value] it must land on (a d10 shows its 10 as "0") and
+ * whether it is [ink] (dark on the light theme) or paper.
+ */
+data class ThrownDie(val sides: Int, val value: Int, val ink: Boolean) {
+    init {
+        require(sides == 6 || sides == 10) { "Only d6 and d10 are thrown, not d$sides" }
+        require(value in 1..sides) { "A d$sides cannot show $value" }
+    }
+
+    companion object {
+        /** An action roll (RF-DAD-02): the ink action die and the two paper challenge dice. */
+        fun actionRoll(action: Int, challenge1: Int, challenge2: Int) =
+            listOf(ThrownDie(6, action, ink = true), ThrownDie(10, challenge1, ink = false), ThrownDie(10, challenge2, ink = false))
+
+        /** A progress roll: only the two challenge dice. */
+        fun progressRoll(challenge1: Int, challenge2: Int) =
+            listOf(ThrownDie(10, challenge1, ink = false), ThrownDie(10, challenge2, ink = false))
+
+        /**
+         * A 1 to 100 oracle roll as two d10 (RF-DAD-03): tens in ink and units in paper, each "0"
+         * read as zero, so 00 and 0 make 100.
+         */
+        fun percentile(roll: Int): List<ThrownDie> {
+            require(roll in 1..100) { "An oracle roll goes from 1 to 100, not $roll" }
+            fun die(digit: Int) = if (digit == 0) 10 else digit
+            return listOf(ThrownDie(10, die(roll / 10 % 10), ink = true), ThrownDie(10, die(roll % 10), ink = false))
+        }
     }
 }
 

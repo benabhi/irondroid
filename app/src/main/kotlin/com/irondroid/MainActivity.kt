@@ -35,7 +35,6 @@ import com.irondroid.campaign.NewCampaignScreen
 import com.irondroid.data.WorldSummary
 import com.irondroid.dice.DiceTable
 import com.irondroid.dice.LocalDiceTable
-import com.irondroid.engine.dice.Die
 import com.irondroid.engine.character.Character
 import com.irondroid.ai.narrator.CharacterGender as NarratorGender
 import com.irondroid.ai.narrator.Narrator
@@ -215,6 +214,7 @@ class MainActivity : ComponentActivity() {
                             history = { app.games.history },
                             pricing = { app.aiSettings.provider.model(app.aiSettings.model())?.pricing },
                             sheet = { session.sheet.value },
+                            showDice = { diceTable.roll(it) },
                             // The model reads the triggers in English, like the rest of its instructions.
                             suggester = app.aiProvider()?.let { provider ->
                                 MoveSuggester(provider, app.aiSettings.model(), app.moves.moves.map { MoveOption(it.id, app.moves.text(it.id, "en")?.trigger ?: it.id) })
@@ -227,7 +227,7 @@ class MainActivity : ComponentActivity() {
                     GameScreen(
                         loaded.campaign.title,
                         session.characterName,
-                        sheet,
+                        player.shownSheet ?: sheet,
                         player,
                         tableName = { app.oracles.text(it, app.rulesLanguage)?.name ?: it },
                         showMetrics = app.playSettings.showMetrics,
@@ -239,10 +239,6 @@ class MainActivity : ComponentActivity() {
                             settingsFrom = Screen.CAMPAIGN
                             screen = Screen.AI_SETTINGS
                         },
-                        // Rolls the 3D dice with the game's dice until the moves use them (IRON-72).
-                        onTestDice = if (BuildConfig.DEBUG) ({
-                            scope.launch { diceTable.roll(app.dice.roll(Die.D6).value, app.dice.roll(Die.D10).value, app.dice.roll(Die.D10).value) }
-                        }) else null,
                     )
                 } else {
                     CampaignScreen(null, onBack = leaveCampaign)
