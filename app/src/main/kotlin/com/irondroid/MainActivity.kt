@@ -32,10 +32,16 @@ import androidx.compose.ui.unit.Density
 import com.irondroid.campaign.CampaignDetails
 import com.irondroid.campaign.CampaignListScreen
 import com.irondroid.campaign.CampaignScreen
+import com.irondroid.campaign.NewCampaign
 import com.irondroid.campaign.NewCampaignScreen
+import com.irondroid.campaign.WorldDraft
+import com.irondroid.campaign.WorldTruthsScreen
+import com.irondroid.campaign.WorldTruthsState
 import com.irondroid.data.WorldSummary
 import com.irondroid.dice.DiceTable
 import com.irondroid.dice.LocalDiceTable
+import com.irondroid.dice.ThrownDie
+import com.irondroid.engine.dice.Die
 import com.irondroid.engine.character.Character
 import com.irondroid.ai.narrator.CharacterGender as NarratorGender
 import com.irondroid.ai.narrator.Narrator
@@ -44,6 +50,8 @@ import com.irondroid.ai.narrator.MoveSuggester
 import com.irondroid.ai.narrator.NarratorPrompt
 import com.irondroid.ai.narrator.NarratorStyle
 import com.irondroid.ai.tools.ActionTools
+import com.irondroid.ai.world.TruthChoices
+import com.irondroid.ai.world.TruthSuggester
 import com.irondroid.game.GameScreen
 import com.irondroid.game.TurnPlayer
 import com.irondroid.game.turnContext
@@ -53,10 +61,13 @@ import com.irondroid.settings.AiSettingsScreen
 import com.irondroid.settings.DiceStyle
 import com.irondroid.theme.IrondroidTheme
 import com.irondroid.theme.isDark
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-private enum class Screen { CAMPAIGNS, NEW_CAMPAIGN, CAMPAIGN, AI_TEST, AI_SETTINGS, ORACLE_TABLES }
+private enum class Screen { CAMPAIGNS, NEW_CAMPAIGN, WORLD_TRUTHS, CAMPAIGN, AI_TEST, AI_SETTINGS, ORACLE_TABLES }
 
 /** Log tag of the turns played, as in [TurnPlayer]. */
 private const val TURN_TAG = "Turn"
@@ -129,7 +140,10 @@ class MainActivity : ComponentActivity() {
                 CampaignListScreen(
                     campaigns = campaigns,
                     onOpen = { openCampaignId = it; screen = Screen.CAMPAIGN },
-                    onNew = { screen = Screen.NEW_CAMPAIGN },
+                    onNew = {
+                        app.worldDraft = null
+                        screen = Screen.NEW_CAMPAIGN
+                    },
                     onDelete = { id -> scope.launch { store.deleteCampaign(id) } },
                     onOpenSettings = {
                         settingsFrom = Screen.CAMPAIGNS
@@ -147,15 +161,17 @@ class MainActivity : ComponentActivity() {
                 worlds?.let { loaded ->
                     NewCampaignScreen(
                         worlds = loaded,
+                        initial = app.worldDraft?.campaign,
                         onCreate = { new ->
-                            if (!creating) {
+                            if (new.worldId == null) {
+                                // A new world goes on to choose its truths (IRON-77).
+                                app.worldDraft = startWorldDraft(new)
+                                screen = Screen.WORLD_TRUTHS
+                            } else if (!creating) {
                                 creating = true
                                 scope.launch {
-                                    openCampaignId = if (new.worldId == null) {
-                                        store.createCampaignInNewWorld(new.newWorldName, new.title, new.characterName, PENDING_SHEET)
-                                    } else {
-                                        store.createCampaign(new.worldId, new.title, new.characterName, PENDING_SHEET)
-                                    }
+                                    openCampaignId = store.createCampaign(new.worldId, new.title, new.characterName, PENDING_SHEET)
+                                    app.worldDraft = null
                                     creating = false
                                     screen = Screen.CAMPAIGN
                                 }
@@ -167,7 +183,51 @@ class MainActivity : ComponentActivity() {
                                 worldsVersion++
                             }
                         },
-                        onCancel = { screen = Screen.CAMPAIGNS },
+                        onCancel = {
+                            app.worldDraft = null
+                            screen = Screen.CAMPAIGNS
+                        },
+                    )
+                }
+            }
+            Screen.WORLD_TRUTHS -> {
+                val draft = app.worldDraft
+                if (draft == null) {
+                    // Nothing to choose for, such as after the system closed the app: back to the form.
+                    LaunchedEffect(Unit) { screen = Screen.NEW_CAMPAIGN }
+                } else {
+                    val backToForm = {
+                        draft.suggestions?.cancel()
+                        screen = Screen.NEW_CAMPAIGN
+                    }
+                    BackHandler { if (draft.truths.step == 0) backToForm() else draft.truths.step-- }
+                    LaunchedEffect(Unit) { if (app.playSettings.diceStyle == DiceStyle.THREE_D) diceTable.preload() }
+                    WorldTruthsScreen(
+                        draft.truths,
+                        app.truths,
+                        app.rulesLanguage,
+                        onRoll = {
+                            val roll = app.dice.roll(Die.D100).value
+                            if (app.playSettings.diceStyle == DiceStyle.THREE_D) {
+                                diceTable.roll(ThrownDie.percentile(roll), fast = app.playSettings.shortDiceAnimation || reduceMotion())
+                            }
+                            roll
+                        },
+                        onBack = backToForm,
+                        onDone = { truths ->
+                            if (!creating) {
+                                creating = true
+                                val new = draft.campaign
+                                scope.launch {
+                                    openCampaignId = store.createCampaignInNewWorld(
+                                        new.newWorldName, new.title, new.characterName, PENDING_SHEET, truths,
+                                    )
+                                    app.worldDraft = null
+                                    creating = false
+                                    screen = Screen.CAMPAIGN
+                                }
+                            }
+                        },
                     )
                 }
             }
@@ -207,6 +267,7 @@ class MainActivity : ComponentActivity() {
                                             store.truths(loaded.campaign.worldId),
                                             app.games.history?.calls.orEmpty(),
                                             app.oracles,
+                                            app.truths,
                                         ).also { Log.d(TURN_TAG, it.render()) }
                                     },
                                 )
@@ -293,6 +354,42 @@ class MainActivity : ComponentActivity() {
                 AiSettingsScreen(app.aiSettingsActions, onBack = { screen = settingsFrom })
             }
         }
+    }
+
+    /**
+     * Starts choosing the truths of [new]'s world and asks the AI for its suggestions in the
+     * background (IRON-77). Without an AI, or if it fails, the options are shown without one.
+     */
+    private fun startWorldDraft(new: NewCampaign): WorldDraft {
+        val app = application as IrondroidApp
+        val draft = WorldDraft(new, WorldTruthsState(app.truths.categories))
+        val provider = app.aiProvider() ?: return draft
+        // The model reads the truths in English, like the rest of its instructions.
+        val choices = app.truths.categories.map { category ->
+            TruthChoices(
+                category.id,
+                app.truths.text(category.id, "en")?.name ?: category.id,
+                category.options.associate { it.id to (app.truths.optionText(category.id, it.id, "en")?.text ?: it.id) },
+            )
+        }
+        draft.truths.suggesting = true
+        draft.suggestions = app.appScope.launch {
+            val picks = try {
+                TruthSuggester(provider, app.aiSettings.model(), choices)
+                    .suggest(new.title, new.characterName, new.newWorldName, app.rulesLanguage) { Log.w(TURN_TAG, "Truth suggestions failed", it) }
+                    .also { Log.d(TURN_TAG, "Truth suggestions: ${it.size}") }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w(TURN_TAG, "Truth suggestions failed", e)
+                emptyMap()
+            }
+            withContext(Dispatchers.Main) {
+                draft.truths.suggestions = picks
+                draft.truths.suggesting = false
+            }
+        }
+        return draft
     }
 
     override fun onStop() {

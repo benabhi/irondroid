@@ -42,12 +42,13 @@ private const val NEW_WORLD = -1L
 
 /**
  * Starts a campaign with a title, a character name and a world: a new one or one already played
- * (continuous world, RF-PAR-04). Guided creation with truths and stats comes later (IRON-PLAN-11).
+ * (continuous world, RF-PAR-04). A new world goes on to its truths (IRON-77); stats come later (IRON-PLAN-11).
  * A world with no campaigns can be deleted here, after confirming (IRON-119).
  */
 @Composable
 fun NewCampaignScreen(
     worlds: List<WorldSummary>,
+    initial: NewCampaign?,
     onCreate: (NewCampaign) -> Unit,
     onDeleteWorld: (Long) -> Unit,
     onCancel: () -> Unit,
@@ -55,10 +56,10 @@ fun NewCampaignScreen(
 ) {
     val worldNames = worlds.map { it.name }
     val defaultWorldName = WorldNames.suggest(stringResource(R.string.world_default_name), worldNames)
-    var title by rememberSaveable { mutableStateOf("") }
-    var characterName by rememberSaveable { mutableStateOf("") }
-    var worldName by rememberSaveable { mutableStateOf(defaultWorldName) }
-    var selectedWorld by rememberSaveable { mutableLongStateOf(NEW_WORLD) }
+    var title by rememberSaveable { mutableStateOf(initial?.title.orEmpty()) }
+    var characterName by rememberSaveable { mutableStateOf(initial?.characterName.orEmpty()) }
+    var worldName by rememberSaveable { mutableStateOf(initial?.newWorldName?.takeIf { it.isNotBlank() } ?: defaultWorldName) }
+    var selectedWorld by rememberSaveable { mutableLongStateOf(initial?.worldId ?: NEW_WORLD) }
     var pendingDelete by remember { mutableStateOf<WorldSummary?>(null) }
     val isNewWorld = selectedWorld == NEW_WORLD
     val worldNameTaken = isNewWorld && WorldNames.isTaken(worldName, worldNames)
@@ -138,7 +139,7 @@ fun NewCampaignScreen(
             },
             enabled = canCreate,
             modifier = Modifier.fillMaxWidth(),
-        ) { Text(stringResource(R.string.campaign_new_create)) }
+        ) { Text(stringResource(if (isNewWorld) R.string.campaign_new_next else R.string.campaign_new_create)) }
         OutlinedButton(onClick = onCancel, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.common_cancel))
         }

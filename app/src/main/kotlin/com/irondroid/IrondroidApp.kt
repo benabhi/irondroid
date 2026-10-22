@@ -13,6 +13,7 @@ import com.irondroid.ai.ProviderInfo
 import com.irondroid.ai.ProviderRegistry
 import com.irondroid.ai.ProviderSettings
 import com.irondroid.ai.openai.DeepSeek
+import com.irondroid.campaign.WorldDraft
 import com.irondroid.data.CampaignStore
 import com.irondroid.data.IrondroidDatabase
 import com.irondroid.data.secret.ApiKeyStore
@@ -25,6 +26,8 @@ import com.irondroid.engine.move.MoveCatalog
 import com.irondroid.engine.move.MoveLoader
 import com.irondroid.engine.oracle.OracleTableCatalog
 import com.irondroid.engine.oracle.OracleTableLoader
+import com.irondroid.engine.truth.TruthCatalog
+import com.irondroid.engine.truth.TruthLoader
 import com.irondroid.settings.AiSettings
 import com.irondroid.settings.AiSettingsActions
 import com.irondroid.settings.PlaySettings
@@ -50,6 +53,15 @@ class IrondroidApp : Application() {
 
     /** The oracle tables (RF-ORA-02), with the inspiration tables of IRON-103. */
     val oracles: OracleTableCatalog by lazy { OracleTableLoader.fromResources() }
+
+    /** The world truths of the book (IRON-76), with their texts in every language. */
+    val truths: TruthCatalog by lazy { TruthLoader.fromResources() }
+
+    /**
+     * The new campaign whose world truths are being chosen (IRON-77). It lives here so turning the
+     * phone does not lose the choices; it is dropped when the campaign is created or abandoned.
+     */
+    var worldDraft: WorldDraft? = null
 
     /** The moves (RF-MOT), with their texts in every language. */
     val moves: MoveCatalog by lazy { MoveLoader.fromResources() }

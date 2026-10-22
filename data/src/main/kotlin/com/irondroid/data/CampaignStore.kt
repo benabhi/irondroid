@@ -100,9 +100,14 @@ class CampaignStore(
             campaignId
         }
 
-    /** Creates a new world and starts a campaign in it, both or neither. Returns the campaign id. */
-    suspend fun createCampaignInNewWorld(worldName: String, title: String, characterName: String, sheet: Character): Long =
-        database.withTransaction { createCampaign(createWorld(worldName), title, characterName, sheet) }
+    /** Creates a new world with its [truths] and starts a campaign in it, all or nothing. Returns the campaign id. */
+    suspend fun createCampaignInNewWorld(
+        worldName: String,
+        title: String,
+        characterName: String,
+        sheet: Character,
+        truths: List<WorldTruth> = emptyList(),
+    ): Long = database.withTransaction { createCampaign(createWorld(worldName, truths), title, characterName, sheet) }
 
     suspend fun campaign(campaignId: Long): CampaignEntity? = campaigns.get(campaignId)
 
