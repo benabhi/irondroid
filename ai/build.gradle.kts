@@ -38,7 +38,7 @@ dependencies {
 
 tasks.test {
     // Tests tagged "live" call the real APIs: they run only with `liveTest`.
-    useJUnitPlatform { excludeTags("live") }
+    useJUnitPlatform { excludeTags("live", "bench") }
     testLogging {
         events("passed", "skipped", "failed")
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
@@ -61,12 +61,31 @@ tasks.register<Test>("liveTest") {
     }
 }
 
+// The narration bench (IRON-110): fixed scenes against the real AI, outside `check`. It writes its
+// report to docs/narration-bench/prompt-v<N>.md: `.\gradlew.bat :ai:narrationBench`
+// (-Pbench.efforts=low,high,max -Pbench.model=deepseek-flash to change them).
+tasks.register<Test>("narrationBench") {
+    description = "Plays the narration bench against the real AI and writes its report."
+    group = "verification"
+    testClassesDirs = sourceSets["test"].output.classesDirs
+    classpath = sourceSets["test"].runtimeClasspath
+    useJUnitPlatform { includeTags("bench") }
+    outputs.upToDateWhen { false }
+    systemProperty("bench.out", rootProject.file("docs/narration-bench").absolutePath)
+    listOf("bench.efforts", "bench.model").forEach { key -> findProperty(key)?.let { systemProperty(key, it) } }
+    testLogging {
+        events("passed", "skipped", "failed")
+        showStandardStreams = true
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
+}
+
 // Same coverage floor as the engine: `check` fails below 95% of lines.
 kover {
     // The live tests are not part of the coverage, so `check` never calls the real APIs.
     currentProject {
         instrumentation {
-            disabledForTestTasks.add("liveTest")
+            disabledForTestTasks.addAll("liveTest", "narrationBench")
         }
     }
     reports {
