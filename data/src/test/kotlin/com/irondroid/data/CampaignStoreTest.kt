@@ -273,6 +273,15 @@ class CampaignStoreTest {
     }
 
     @Test
+    fun `a campaign in a new world keeps the world's truths`() = runTest {
+        val truths = listOf(WorldTruth("iron", "iron_3", "Pilares."), WorldTruth("horrors", null, "Los muertos cantan."))
+
+        val campaignId = store.createCampaignInNewWorld("Ironlands", "First", "Kira", playedSheet(), truths)
+
+        assertEquals(truths.sortedBy { it.truthKey }, store.truths(store.campaign(campaignId)!!.worldId))
+    }
+
+    @Test
     fun `two worlds cannot share a name`() = runTest {
         store.createWorld("Ironlands")
 
