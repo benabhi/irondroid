@@ -98,6 +98,10 @@ fun GameScreen(
     val scope = rememberCoroutineScope()
     // The sheet opens as a panel over the scene (IRON-66, RF-UI-08).
     var sheetOpen by rememberSaveable { mutableStateOf(false) }
+    // Vows and progress tracks, to look at (IRON-67).
+    var progressOpen by rememberSaveable { mutableStateOf(false) }
+    val onOpenProgress = { progressOpen = true }
+    if (progressOpen) ProgressPanel(sheet.tracks.values, onDismiss = { progressOpen = false })
     val onOpenSheet = { sheetOpen = true }
     if (sheetOpen) {
         SheetPanel(
@@ -147,6 +151,7 @@ fun GameScreen(
         StatusBar(title, characterName, sheet, onBack = onBack, onOpenSheet = onOpenSheet) {
             GameMenu(
                 onOpenSheet = onOpenSheet,
+                onOpenProgress = onOpenProgress,
                 onUndo = if (canTakeBack) ({ scope.launch { player.undoLastTurn() } }) else null,
                 onCorrect = if (canTakeBack && player.hasNarrator) ({ correcting = true }) else null,
             )
@@ -175,6 +180,7 @@ fun GameScreen(
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
             BottomPanel(
                 player, sheet, choice, pendingMove, live, correcting, requesting, idle,
+                onOpenProgress = onOpenProgress,
                 input = input,
                 onInput = { input = it },
                 correction = correction,
@@ -277,12 +283,13 @@ private fun MeterCell(@StringRes label: Int, value: String, modifier: Modifier) 
 
 /** The less frequent actions, out of the way: the sheet, undo and correct (RF-ENV-09). Null hides nothing, it disables. */
 @Composable
-private fun GameMenu(onOpenSheet: () -> Unit, onUndo: (() -> Unit)?, onCorrect: (() -> Unit)?) {
+private fun GameMenu(onOpenSheet: () -> Unit, onOpenProgress: () -> Unit, onUndo: (() -> Unit)?, onCorrect: (() -> Unit)?) {
     var open by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { open = true }) { Icon(InkIcons.More, contentDescription = stringResource(R.string.game_menu)) }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             DropdownMenuItem(text = { Text(stringResource(R.string.game_sheet)) }, onClick = { open = false; onOpenSheet() })
+            DropdownMenuItem(text = { Text(stringResource(R.string.progress_title)) }, onClick = { open = false; onOpenProgress() })
             DropdownMenuItem(text = { Text(stringResource(R.string.game_undo)) }, enabled = onUndo != null, onClick = { open = false; onUndo?.invoke() })
             DropdownMenuItem(text = { Text(stringResource(R.string.game_correct)) }, enabled = onCorrect != null, onClick = { open = false; onCorrect?.invoke() })
         }
@@ -324,6 +331,7 @@ private fun BottomPanel(
     onCorrect: () -> Unit,
     onCancelCorrect: () -> Unit,
     onRequest: (String?) -> Unit,
+    onOpenProgress: () -> Unit,
     onRequestMove: (move: String, source: String?, said: String) -> Unit,
     onRequestOracle: (question: String, odds: String, said: String) -> Unit,
     onAnswerOnly: (question: String, odds: String, said: String) -> Unit,
@@ -361,6 +369,9 @@ private fun BottomPanel(
                     }
                     OutlinedButton(enabled = idle, onClick = { onRequest(REQUEST_ORACLE) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
                         Text(stringResource(R.string.request_oracle))
+                    }
+                    OutlinedButton(onClick = onOpenProgress, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.progress_button))
                     }
                 }
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
