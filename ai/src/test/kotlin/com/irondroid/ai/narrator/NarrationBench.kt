@@ -221,7 +221,7 @@ class NarrationBench {
 
         /** Common voseo forms; "estás", "más" and the like are neutral and left out. */
         val VOSEO = Regex(
-            "(?i)\\b(tenés|podés|sos|querés|hacés|sabés|ves|decís|sentís|seguís|venís|tirá|mirá|elegí|hacé|decí|pensá|andá|vení|fijate|contame|decime|imaginá|preguntá|marcá|sumá|tomá)\\b",
+            "(?i)\\b(tenés|podés|sos|querés|hacés|sabés|decís|sentís|seguís|venís|tirá|mirá|elegí|hacé|decí|pensá|andá|vení|fijate|contame|decime|imaginá|preguntá|marcá|sumá|tomá)\\b",
         )
 
         fun rolled(move: String): (List<String>, String) -> Boolean = { tools, _ -> "roll_move:$move" in tools }
