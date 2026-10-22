@@ -2,8 +2,6 @@
   "mcpServers": {
     "lific": {
       "args": [
-        "--db",
-        "\\\\?\\G:\\irondroid\\lific.db",
         "mcp"
       ],
       "command": "lific",
