@@ -64,10 +64,10 @@ class DiceOverlayView(context: Context, private val listener: Listener, dark: Bo
         loadUrl(if (dark) "$PAGE_URL?theme=dark" else PAGE_URL)
     }
 
-    /** Throws [dice] so each lands on its value. */
-    fun roll(dice: List<ThrownDie>) {
+    /** Throws [dice] so each lands on its value; [fast] plays a short roll. */
+    fun roll(dice: List<ThrownDie>, fast: Boolean) {
         val json = JSONArray(dice.map { JSONObject().put("sides", it.sides).put("value", it.value).put("ink", it.ink) })
-        evaluateJavascript("irondroidDice.roll($json)", null)
+        evaluateJavascript("irondroidDice.roll($json, $fast)", null)
     }
 
     /** Dice colors for the dark theme (light dice on dark paper) or the light one. */

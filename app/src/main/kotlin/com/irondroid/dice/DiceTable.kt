@@ -32,9 +32,10 @@ class DiceTable(private val root: FrameLayout) {
 
     /**
      * Throws [dice], each landing on its value, and returns what they show once they stop, or null if
-     * the dice could not be shown. Rolls wait for each other.
+     * the dice could not be shown. [fast] plays the throw faster and keeps the dice a shorter while
+     * (RF-DAD-05). Rolls wait for each other.
      */
-    suspend fun roll(dice: List<ThrownDie>): DiceRollReport? = rolls.withLock {
+    suspend fun roll(dice: List<ThrownDie>, fast: Boolean = false): DiceRollReport? = rolls.withLock {
         val view = overlay()
         // Null if the page failed to load or is still loading after the timeout.
         val loaded = withTimeoutOrNull(LOAD_TIMEOUT_MS) { ready.await() }
@@ -44,7 +45,7 @@ class DiceTable(private val root: FrameLayout) {
         }
         val result = CompletableDeferred<DiceRollReport?>()
         pending = result
-        view.roll(dice)
+        view.roll(dice, fast)
         val report = withTimeoutOrNull(ROLL_TIMEOUT_MS) { result.await() }
         pending = null
         if (report == null) {

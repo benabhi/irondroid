@@ -49,6 +49,7 @@ import com.irondroid.game.turnContext
 import com.irondroid.prototype.AiTestScreen
 import com.irondroid.prototype.OracleTablesScreen
 import com.irondroid.settings.AiSettingsScreen
+import com.irondroid.settings.DiceStyle
 import com.irondroid.theme.IrondroidTheme
 import com.irondroid.theme.isDark
 import kotlinx.coroutines.flow.first
@@ -214,7 +215,12 @@ class MainActivity : ComponentActivity() {
                             history = { app.games.history },
                             pricing = { app.aiSettings.provider.model(app.aiSettings.model())?.pricing },
                             sheet = { session.sheet.value },
-                            showDice = { diceTable.roll(it) },
+                            // 3D dice or only the card (RF-DAD-10); short with the player's setting or reduced motion (RF-DAD-05).
+                            showDice = { dice ->
+                                if (app.playSettings.diceStyle == DiceStyle.THREE_D) {
+                                    diceTable.roll(dice, fast = app.playSettings.shortDiceAnimation || reduceMotion())
+                                }
+                            },
                             // The model reads the triggers in English, like the rest of its instructions.
                             suggester = app.aiProvider()?.let { provider ->
                                 MoveSuggester(provider, app.aiSettings.model(), app.moves.moves.map { MoveOption(it.id, app.moves.text(it.id, "en")?.trigger ?: it.id) })
@@ -223,7 +229,7 @@ class MainActivity : ComponentActivity() {
                     }
                     LaunchedEffect(player) { player.load() }
                     // The dice page loads with the game, so the first roll does not wait for it.
-                    LaunchedEffect(Unit) { diceTable.preload() }
+                    LaunchedEffect(Unit) { if (app.playSettings.diceStyle == DiceStyle.THREE_D) diceTable.preload() }
                     GameScreen(
                         loaded.campaign.title,
                         session.characterName,
@@ -232,8 +238,8 @@ class MainActivity : ComponentActivity() {
                         tableName = { app.oracles.text(it, app.rulesLanguage)?.name ?: it },
                         showMetrics = app.playSettings.showMetrics,
                         // The player's setting, or the phone's animations turned off (RF-UI-06).
-                        reduceMotion = app.playSettings.reduceMotion ||
-                            Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f,
+                        reduceMotion = reduceMotion(),
+                        shakeToRoll = app.playSettings.shakeToRoll,
                         onBack = leaveCampaign,
                         onOpenSettings = {
                             settingsFrom = Screen.CAMPAIGN
@@ -283,6 +289,10 @@ class MainActivity : ComponentActivity() {
         // Leaving the screen may be the last chance before the system ends the app: write pending saves now.
         (application as IrondroidApp).games.flush()
     }
+
+    /** The player's setting, or the phone's animations turned off (RF-UI-06). */
+    private fun reduceMotion(): Boolean = (application as IrondroidApp).playSettings.reduceMotion ||
+        Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
 
     override fun onPause() {
         super.onPause()

@@ -151,6 +151,15 @@
     <string name="settings_play_title">Juego</string>
     <string name="settings_confirm_moves">Confirmar el movimiento antes de tirar</string>
     <string name="settings_confirm_moves_note">El narrador muestra el movimiento y el atributo que propone, y tú tiras, los cambias o no tiras. Si lo apagas, tira enseguida.</string>
+    <string name="settings_dice_title">Dados</string>
+    <string name="settings_dice_style">Cómo se ven las tiradas</string>
+    <string name="settings_dice_3d">Dados 3D</string>
+    <string name="settings_dice_text">En texto</string>
+    <string name="settings_dice_style_note">Con dados 3D, los dados ruedan sobre la pantalla antes de la tarjeta de cada tirada. En texto, aparece solo la tarjeta, al instante. La tirada la decide siempre el motor.</string>
+    <string name="settings_dice_short">Animación corta de los dados</string>
+    <string name="settings_dice_short_note">Los dados ruedan más rápido y quedan menos tiempo en pantalla. También se activa con Reducir movimiento.</string>
+    <string name="settings_dice_shake">Sacudir para tirar</string>
+    <string name="settings_dice_shake_note">Cuando el narrador propone un movimiento, sacudir el celular lo tira, como el botón Tirar.</string>
     <string name="move_confirm_title">El narrador propone: %1$s</string>
     <string name="move_confirm_title_stat">El narrador propone: %1$s +%2$s</string>
     <string name="move_confirm_stat">Atributo</string>

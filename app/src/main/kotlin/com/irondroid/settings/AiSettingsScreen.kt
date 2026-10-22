@@ -61,6 +61,15 @@ interface AiSettingsActions {
     /** Whether the narrator's moves wait for the player before the dice (RF-ENV-04). */
     var confirmMoves: Boolean
 
+    /** 3D dice or text (RF-DAD-10). */
+    var diceStyle: DiceStyle
+
+    /** Whether the 3D dice roll faster (RF-DAD-05). */
+    var shortDiceAnimation: Boolean
+
+    /** Whether shaking the phone rolls (RF-DAD-06). */
+    var shakeToRoll: Boolean
+
     /** How hard the narrator thinks (IRON-109). */
     var narratorEffort: ReasoningEffort
 
@@ -113,6 +122,32 @@ fun AiSettingsScreen(actions: AiSettingsActions, onBack: () -> Unit) {
                 actions.confirmMoves = it
                 confirmMoves = it
             })
+        }
+
+        SectionTitle(R.string.settings_dice_title)
+        var diceStyle by remember { mutableStateOf(actions.diceStyle) }
+        Text(stringResource(R.string.settings_dice_style), style = MaterialTheme.typography.bodyLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                DiceStyle.THREE_D to R.string.settings_dice_3d,
+                DiceStyle.TEXT to R.string.settings_dice_text,
+            ).forEach { (option, label) ->
+                FilterChip(selected = diceStyle == option, onClick = {
+                    actions.diceStyle = option
+                    diceStyle = option
+                }, label = { Text(stringResource(label)) })
+            }
+        }
+        Text(stringResource(R.string.settings_dice_style_note), style = MaterialTheme.typography.bodySmall)
+        var shortDice by remember { mutableStateOf(actions.shortDiceAnimation) }
+        SettingSwitch(R.string.settings_dice_short, R.string.settings_dice_short_note, shortDice, enabled = diceStyle == DiceStyle.THREE_D) {
+            actions.shortDiceAnimation = it
+            shortDice = it
+        }
+        var shake by remember { mutableStateOf(actions.shakeToRoll) }
+        SettingSwitch(R.string.settings_dice_shake, R.string.settings_dice_shake_note, shake) {
+            actions.shakeToRoll = it
+            shake = it
         }
 
         SectionTitle(R.string.settings_ai_section)
@@ -274,6 +309,18 @@ fun AiSettingsScreen(actions: AiSettingsActions, onBack: () -> Unit) {
             }
         }
         Text(stringResource(R.string.settings_text_size_note), style = MaterialTheme.typography.bodySmall)
+    }
+}
+
+/** A setting turned on or off, with its [note] under the name. */
+@Composable
+private fun SettingSwitch(@StringRes label: Int, @StringRes note: Int, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(stringResource(label), style = MaterialTheme.typography.bodyLarge)
+            Text(stringResource(note), style = MaterialTheme.typography.bodySmall)
+        }
+        Switch(checked = checked, enabled = enabled, onCheckedChange = onChange)
     }
 }
 
