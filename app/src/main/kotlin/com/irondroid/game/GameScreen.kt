@@ -98,6 +98,8 @@ fun GameScreen(
     reduceMotion: Boolean = false,
     /** Opens Settings, coming back to the game (IRON-69); null hides it. */
     onOpenSettings: (() -> Unit)? = null,
+    /** A test roll of the 3D dice, in development builds until the moves roll them (IRON-71); null hides it. */
+    onTestDice: (() -> Unit)? = null,
 ) {
     val scope = rememberCoroutineScope()
     // The sheet opens as a panel over the scene (IRON-66, RF-UI-08).
@@ -160,6 +162,7 @@ fun GameScreen(
                 onCorrect = if (canTakeBack && player.hasNarrator) ({ correcting = true }) else null,
                 // Leaving the screen mid-turn would lose the turn: Settings waits for the narrator.
                 onOpenSettings = onOpenSettings.takeIf { !player.busy && player.pendingMove == null },
+                onTestDice = onTestDice,
             )
         }
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
@@ -292,6 +295,7 @@ private fun GameMenu(
     onUndo: (() -> Unit)?,
     onCorrect: (() -> Unit)?,
     onOpenSettings: (() -> Unit)?,
+    onTestDice: (() -> Unit)?,
 ) {
     var open by remember { mutableStateOf(false) }
     Box {
@@ -302,6 +306,7 @@ private fun GameMenu(
             DropdownMenuItem(text = { Text(stringResource(R.string.game_undo)) }, enabled = onUndo != null, onClick = { open = false; onUndo?.invoke() })
             DropdownMenuItem(text = { Text(stringResource(R.string.game_correct)) }, enabled = onCorrect != null, onClick = { open = false; onCorrect?.invoke() })
             DropdownMenuItem(text = { Text(stringResource(R.string.game_settings)) }, enabled = onOpenSettings != null, onClick = { open = false; onOpenSettings?.invoke() })
+            onTestDice?.let { DropdownMenuItem(text = { Text(stringResource(R.string.game_test_dice)) }, onClick = { open = false; it() }) }
         }
     }
 }

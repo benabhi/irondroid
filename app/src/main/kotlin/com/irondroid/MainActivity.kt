@@ -4,7 +4,6 @@ import android.graphics.Color.TRANSPARENT
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
-import android.view.View
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
@@ -34,9 +33,9 @@ import com.irondroid.campaign.CampaignListScreen
 import com.irondroid.campaign.CampaignScreen
 import com.irondroid.campaign.NewCampaignScreen
 import com.irondroid.data.WorldSummary
-import com.irondroid.dice.DiceOverlayView
-import com.irondroid.dice.DiceReadyInfo
-import com.irondroid.dice.DiceRollReport
+import com.irondroid.dice.DiceTable
+import com.irondroid.dice.LocalDiceTable
+import com.irondroid.engine.dice.Die
 import com.irondroid.engine.character.Character
 import com.irondroid.ai.narrator.CharacterGender as NarratorGender
 import com.irondroid.ai.narrator.Narrator
@@ -48,10 +47,7 @@ import com.irondroid.ai.tools.ActionTools
 import com.irondroid.game.GameScreen
 import com.irondroid.game.TurnPlayer
 import com.irondroid.game.turnContext
-import com.irondroid.prototype.ActionRoll
 import com.irondroid.prototype.AiTestScreen
-import com.irondroid.prototype.DicePrototypeScreen
-import com.irondroid.prototype.DicePrototypeState
 import com.irondroid.prototype.OracleTablesScreen
 import com.irondroid.settings.AiSettingsScreen
 import com.irondroid.theme.IrondroidTheme
@@ -59,7 +55,7 @@ import com.irondroid.theme.isDark
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-private enum class Screen { CAMPAIGNS, NEW_CAMPAIGN, CAMPAIGN, DICE_PROTOTYPE, AI_TEST, AI_SETTINGS, ORACLE_TABLES }
+private enum class Screen { CAMPAIGNS, NEW_CAMPAIGN, CAMPAIGN, AI_TEST, AI_SETTINGS, ORACLE_TABLES }
 
 /** Log tag of the turns played, as in [TurnPlayer]. */
 private const val TURN_TAG = "Turn"
@@ -74,13 +70,13 @@ private val PENDING_SHEET = Character.create(edge = 0, heart = 0, iron = 0, shad
 class MainActivity : ComponentActivity() {
 
     private lateinit var root: FrameLayout
-    private var diceOverlay: DiceOverlayView? = null
-    private val diceState = DicePrototypeState()
+    private lateinit var diceTable: DiceTable
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         root = FrameLayout(this)
+        diceTable = DiceTable(root)
         val composeView = ComposeView(this).apply {
             setContent {
                 val dark = (application as IrondroidApp).themeMode.isDark()
@@ -88,12 +84,16 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(dark) {
                     val bars = if (dark) SystemBarStyle.dark(TRANSPARENT) else SystemBarStyle.light(TRANSPARENT, TRANSPARENT)
                     enableEdgeToEdge(bars, bars)
+                    diceTable.setDark(dark)
                 }
                 IrondroidTheme(dark) {
                     // The player's text size on top of the phone's font scale (IRON-69).
                     val density = LocalDensity.current
                     val scale = (application as IrondroidApp).textSize.scale
-                    CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale * scale)) {
+                    CompositionLocalProvider(
+                        LocalDensity provides Density(density.density, density.fontScale * scale),
+                        LocalDiceTable provides diceTable,
+                    ) {
                         Surface(modifier = Modifier.fillMaxSize()) {
                             AppContent()
                         }
@@ -130,7 +130,6 @@ class MainActivity : ComponentActivity() {
                     onOpen = { openCampaignId = it; screen = Screen.CAMPAIGN },
                     onNew = { screen = Screen.NEW_CAMPAIGN },
                     onDelete = { id -> scope.launch { store.deleteCampaign(id) } },
-                    onOpenDicePrototype = { screen = Screen.DICE_PROTOTYPE },
                     onOpenSettings = {
                         settingsFrom = Screen.CAMPAIGNS
                         screen = Screen.AI_SETTINGS
@@ -223,6 +222,8 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     LaunchedEffect(player) { player.load() }
+                    // The dice page loads with the game, so the first roll does not wait for it.
+                    LaunchedEffect(Unit) { diceTable.preload() }
                     GameScreen(
                         loaded.campaign.title,
                         session.characterName,
@@ -238,6 +239,10 @@ class MainActivity : ComponentActivity() {
                             settingsFrom = Screen.CAMPAIGN
                             screen = Screen.AI_SETTINGS
                         },
+                        // Rolls the 3D dice with the game's dice until the moves use them (IRON-72).
+                        onTestDice = if (BuildConfig.DEBUG) ({
+                            scope.launch { diceTable.roll(app.dice.roll(Die.D6).value, app.dice.roll(Die.D10).value, app.dice.roll(Die.D10).value) }
+                        }) else null,
                     )
                 } else {
                     CampaignScreen(null, onBack = leaveCampaign)
@@ -274,19 +279,6 @@ class MainActivity : ComponentActivity() {
                 BackHandler { screen = settingsFrom }
                 AiSettingsScreen(app.aiSettingsActions, onBack = { screen = settingsFrom })
             }
-            Screen.DICE_PROTOTYPE -> {
-                BackHandler { screen = Screen.CAMPAIGNS; hideDiceOverlay() }
-                DicePrototypeScreen(
-                    state = diceState,
-                    onRoll = ::rollDice,
-                    onSharpChange = { sharp ->
-                        diceState.sharp = sharp
-                        diceOverlay?.setSharp(sharp)
-                    },
-                    onBack = { screen = Screen.CAMPAIGNS; hideDiceOverlay() },
-                )
-                LaunchedEffect(Unit) { showDiceOverlay() }
-            }
         }
     }
 
@@ -296,41 +288,18 @@ class MainActivity : ComponentActivity() {
         (application as IrondroidApp).games.flush()
     }
 
-    /** Creates the overlay on first use, so the WebView does not slow down app start. */
-    private fun showDiceOverlay() {
-        val overlay = diceOverlay ?: DiceOverlayView(this, diceListener).also {
-            root.addView(it, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
-            diceOverlay = it
-        }
-        overlay.visibility = View.VISIBLE
+    override fun onPause() {
+        super.onPause()
+        diceTable.pause()
     }
 
-    private fun hideDiceOverlay() {
-        diceOverlay?.clearDice()
-        diceOverlay?.visibility = View.GONE
+    override fun onResume() {
+        super.onResume()
+        diceTable.resume()
     }
 
-    private fun rollDice() {
-        val roll = ActionRoll.random()
-        diceState.expected = roll
-        diceState.rolling = true
-        Log.i(DiceOverlayView.TAG, "engine result: $roll")
-        diceOverlay?.roll(roll.action, roll.challenge1, roll.challenge2)
-    }
-
-    private val diceListener = object : DiceOverlayView.Listener {
-        override fun onReady(info: DiceReadyInfo) {
-            diceState.ready = info
-        }
-
-        override fun onRollComplete(report: DiceRollReport) {
-            diceState.expected?.let { diceState.reports.add(it to report) }
-            diceState.rolling = false
-        }
-
-        override fun onError(message: String) {
-            diceState.error = message
-            diceState.rolling = false
-        }
+    override fun onDestroy() {
+        diceTable.destroy()
+        super.onDestroy()
     }
 }

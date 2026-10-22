@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
   <style>
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: transparent; }
-    #dice { position: absolute; inset: 0; }
+    #dice { position: absolute; inset: 0; opacity: 0; }
+    #dice.shown { opacity: 1; }
+    #dice.fading { opacity: 0; transition: opacity 300ms ease-in; }
     canvas { display: block; }
   </style>
 </head>
@@ -13,14 +15,33 @@
 <div id="dice"></div>
 <script src="dice-box-threejs.umd.js"></script>
 <script>
-  // 3D dice overlay prototype (IRON-12). The host app decides every result and passes it in;
-  // this page only animates the dice so they land on those values and reports render metrics.
+  // 3D dice drawn above the whole app (RF-DAD-01, IRON-71). The host app decides every result and
+  // passes it in; this page only animates the dice so they land on those values (RF-DAD-04) and
+  // reports what they show, with render metrics for the logs.
   (function () {
     const bridge = window.DiceBridge;
+    const container = document.getElementById("dice");
     const DiceBox = window["dice-box-threejs"].default || window["dice-box-threejs"];
 
-    const ACTION_SET = { name: "action", foreground: "#f5f1e8", background: "#1c1c1c", outline: "#1c1c1c", texture: "none", material: "plastic" };
-    const CHALLENGE_SET = { name: "challenge", foreground: "#1c1c1c", background: "#e9e3d5", outline: "#e9e3d5", texture: "none", material: "plastic" };
+    // Ink and paper, like the rest of the app: the action die takes the ink of the theme and the
+    // challenge dice its paper, so both stand out against the screen behind (RF-DAD-02).
+    const INK = "#1c1c1c";
+    const PAPER = "#e9e3d5";
+    const DARK_PAPER = "#585858";
+    const LIGHT_INK = "#f2efe8";
+    const COLOR_SETS = {
+      light: {
+        action: { name: "action-light", foreground: "#f5f1e8", background: INK, outline: INK, texture: "none", material: "plastic" },
+        challenge: { name: "challenge-light", foreground: INK, background: PAPER, outline: PAPER, texture: "none", material: "plastic" },
+      },
+      dark: {
+        action: { name: "action-dark", foreground: INK, background: LIGHT_INK, outline: LIGHT_INK, texture: "none", material: "plastic" },
+        challenge: { name: "challenge-dark", foreground: LIGHT_INK, background: DARK_PAPER, outline: DARK_PAPER, texture: "none", material: "plastic" },
+      },
+    };
+    // How long the dice stay on the table once they land, before fading away.
+    const HOLD_MS = 1600;
+    const FADE_MS = 300;
 
     const SLOW_FRAME_MS = 20;
     // Walls sit at this fraction of the visible area (the library uses 0.93), so dice tops seen
@@ -44,6 +65,12 @@
     let throwLog = null;
     let stepLog = null;
     let simulationMs = 0;
+    let colors = { action: null, challenge: null };
+    // The theme the app had when it loaded the page; later changes come through setTheme.
+    let dark = new URLSearchParams(location.search).get("theme") === "dark";
+    let warmup = null;
+    let holdTimer = null;
+    let fadeTimer = null;
 
     function report(method, payload) {
       if (bridge && bridge[method]) bridge[method](JSON.stringify(payload));
@@ -60,15 +87,21 @@
       };
     }
 
+    async function loadColors() {
+      const sets = COLOR_SETS[dark ? "dark" : "light"];
+      colors = {
+        action: await box.DiceColors.makeColorSet(sets.action),
+        challenge: await box.DiceColors.makeColorSet(sets.challenge),
+      };
+    }
+
     // The library uses one colour set per box; switch it per die so action and challenge
     // dice look different (RF-DAD-02).
-    async function installPerDieColors() {
-      const action = await box.DiceColors.makeColorSet(ACTION_SET);
-      const challenge = await box.DiceColors.makeColorSet(CHALLENGE_SET);
+    function installPerDieColors() {
       const factory = box.DiceFactory;
       const create = factory.create.bind(factory);
       factory.create = function (type) {
-        factory.applyColorSet(type === "d6" ? action : challenge);
+        factory.applyColorSet(type === "d6" ? colors.action : colors.challenge);
         return create(type);
       };
     }
@@ -160,31 +193,76 @@
       };
     }
 
+    function show() {
+      clearTimeout(holdTimer);
+      clearTimeout(fadeTimer);
+      container.className = "shown";
+    }
+
+    // The dice stay a moment so the player can read them, then fade out and leave the app clear.
+    function scheduleClear() {
+      holdTimer = setTimeout(function () {
+        container.className = "fading";
+        fadeTimer = setTimeout(function () { box.clearDice(); }, FADE_MS);
+      }, HOLD_MS);
+    }
+
+    async function throwDice(action, challenge1, challenge2) {
+      const notation = "1d6+2d10@" + [action, challenge1, challenge2].join(",");
+      pendingNotation = notation;
+      const result = await box.roll(notation);
+      return { notation: notation, shown: result.sets.flatMap(set => set.rolls.map(r => r.value)) };
+    }
+
     async function roll(action, challenge1, challenge2) {
       if (!box) return;
-      const notation = "1d6+2d10@" + [action, challenge1, challenge2].join(",");
+      if (warmup) await warmup;
+      show();
       frameTimes = [];
-      pendingNotation = notation;
       throwLog = [];
       stepLog = [];
       const startedAt = performance.now();
       try {
-        const result = await box.roll(notation);
+        const thrown = await throwDice(action, challenge1, challenge2);
         const stats = frameStats(frameTimes, startedAt);
         frameTimes = null;
-        const shown = result.sets.flatMap(set => set.rolls.map(r => r.value));
         report("onRollComplete", Object.assign({
-          notation: notation,
-          shown: shown,
+          notation: thrown.notation,
+          shown: thrown.shown,
           durationMs: performance.now() - startedAt,
           simulationMs: simulationMs,
           throws: throwLog,
           steps: stepLog,
         }, stats));
+        scheduleClear();
       } catch (e) {
         frameTimes = null;
+        box.clearDice();
         report("onError", { message: String(e) });
       }
+    }
+
+    // The first throw compiles shaders and materials and stutters for almost half a second
+    // (IRON-12). Throw once while the table is invisible so the player never sees it.
+    async function warmUp() {
+      const startedAt = performance.now();
+      await throwDice(1, 1, 1);
+      box.clearDice();
+      return performance.now() - startedAt;
+    }
+
+    async function setTheme(isDark) {
+      if (dark === isDark) return;
+      dark = isDark;
+      if (colors.action) await loadColors();
+    }
+
+    function clear() {
+      if (!box) return;
+      clearTimeout(holdTimer);
+      clearTimeout(fadeTimer);
+      container.className = "";
+      box.clearDice();
     }
 
     async function init() {
@@ -199,14 +277,22 @@
         });
         shrinkWalls();
         await box.initialize();
-        await installPerDieColors();
+        // The screen's real density: sharper, at no cost in frame rate (IRON-12).
+        box.renderer.setPixelRatio(window.devicePixelRatio);
+        box.renderer.setSize(box.container.clientWidth, box.container.clientHeight);
+        await loadColors();
+        installPerDieColors();
         installCleanThrows();
         shortenSettleWait();
         instrumentRenderer();
+        warmup = warmUp();
+        const warmupMs = await warmup;
+        warmup = null;
         const gl = box.renderer.getContext();
         const info = gl.getExtension("WEBGL_debug_renderer_info");
         report("onReady", {
           initMs: performance.now() - startedAt,
+          warmupMs: warmupMs,
           width: window.innerWidth,
           height: window.innerHeight,
           pixelRatio: window.devicePixelRatio,
@@ -217,16 +303,7 @@
       }
     }
 
-    // The library renders at 1 CSS pixel per pixel; sharp mode uses the screen's real density
-    // to compare quality against frame rate.
-    function setSharp(sharp) {
-      if (!box) return;
-      box.renderer.setPixelRatio(sharp ? window.devicePixelRatio : 1);
-      box.renderer.setSize(box.container.clientWidth, box.container.clientHeight);
-      box.renderer.render(box.scene, box.camera);
-    }
-
-    window.irondroidDice = { roll: roll, setSharp: setSharp, clear: () => box && box.clearDice() };
+    window.irondroidDice = { roll: roll, setTheme: setTheme, clear: clear };
     init();
   })();
 </script>
