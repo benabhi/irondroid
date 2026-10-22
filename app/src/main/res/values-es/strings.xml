@@ -112,7 +112,6 @@
     <string name="oracle_tables_repeated">Las dos tiradas cayeron en el mismo resultado: hazlo más intenso.</string>
     <string name="ai_test_style_performed">Interpretado</string>
     <string name="ai_test_style_sober">Sobrio</string>
-    <string name="game_header">%1$s · %2$s</string>
     <string name="game_sheet">Ficha</string>
     <string name="game_empty">Tu historia empieza aquí. Cuéntale al narrador qué hace tu personaje.</string>
     <string name="game_input">¿Qué haces?</string>
@@ -139,6 +138,16 @@
     <string name="meter_health">Salud</string>
     <string name="meter_spirit">Espíritu</string>
     <string name="meter_supply">Suministros</string>
+    <string name="meter_momentum">Impulso</string>
+    <string name="game_menu">Más opciones</string>
+    <string name="debility_wounded">Herido</string>
+    <string name="debility_shaken">Conmocionado</string>
+    <string name="debility_unprepared">Desabastecido</string>
+    <string name="debility_encumbered">Agobiado</string>
+    <string name="debility_maimed">Mutilado</string>
+    <string name="debility_corrupted">Corrompido</string>
+    <string name="debility_cursed">Maldito</string>
+    <string name="debility_tormented">Atormentado</string>
     <string name="choice_title_one">%1$s: elige una</string>
     <string name="choice_title_many">%1$s: elige %2$d</string>
     <string name="choice_burn_title">%1$s: ¿quemas tu impulso (%2$+d) para mejorar el resultado?</string>
