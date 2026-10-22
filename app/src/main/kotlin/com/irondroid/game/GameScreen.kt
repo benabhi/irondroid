@@ -94,6 +94,8 @@ fun GameScreen(
     /** Show what each turn cost under its narration (IRON-111). */
     showMetrics: Boolean,
     onBack: () -> Unit,
+    /** Changes show without movement: the player's setting or the phone's (IRON-68, RF-UI-06). */
+    reduceMotion: Boolean = false,
 ) {
     val scope = rememberCoroutineScope()
     // The sheet opens as a panel over the scene (IRON-66, RF-UI-08).
@@ -148,7 +150,7 @@ fun GameScreen(
             .safeDrawingPadding()
             .imePadding(),
     ) {
-        StatusBar(title, characterName, sheet, onBack = onBack, onOpenSheet = onOpenSheet) {
+        StatusBar(title, characterName, sheet, onBack = onBack, onOpenSheet = onOpenSheet, reduceMotion = reduceMotion) {
             GameMenu(
                 onOpenSheet = onOpenSheet,
                 onOpenProgress = onOpenProgress,
@@ -229,6 +231,7 @@ private fun StatusBar(
     sheet: Character,
     onBack: () -> Unit,
     onOpenSheet: () -> Unit,
+    reduceMotion: Boolean,
     menu: @Composable () -> Unit,
 ) {
     Column {
@@ -248,36 +251,32 @@ private fun StatusBar(
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Row(modifier = Modifier.fillMaxWidth()) {
-                MeterCell(R.string.meter_health, sheet.meters.health.value.toString(), Modifier.weight(1f))
-                MeterCell(R.string.meter_spirit, sheet.meters.spirit.value.toString(), Modifier.weight(1f))
-                MeterCell(R.string.meter_supply, sheet.meters.supply.value.toString(), Modifier.weight(1f))
-                MeterCell(R.string.meter_momentum, String.format(LocalConfiguration.current.locales[0], "%+d", sheet.momentum.value), Modifier.weight(1f))
+                val meters = sheet.meters
+                AnimatedMeterCell(R.string.meter_health, meters.health.value, signed = false, meters.health.value == 0, reduceMotion, Modifier.weight(1f))
+                AnimatedMeterCell(R.string.meter_spirit, meters.spirit.value, signed = false, meters.spirit.value == 0, reduceMotion, Modifier.weight(1f))
+                AnimatedMeterCell(R.string.meter_supply, meters.supply.value, signed = false, meters.supply.value == 0, reduceMotion, Modifier.weight(1f))
+                AnimatedMeterCell(R.string.meter_momentum, sheet.momentum.value, signed = true, critical = false, reduceMotion, Modifier.weight(1f))
             }
             val debilities = Debility.entries.filter { it in sheet.debilities }
-            if (debilities.isNotEmpty()) {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), modifier = Modifier.fillMaxWidth()) {
-                    debilities.forEach { debility ->
-                        Text(
-                            stringResource(debilityName(debility)),
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier
-                                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        )
-                    }
+            // Debilities marked since the bar was drawn pulse; tapping one shows its name for a moment.
+            var seen by remember { mutableStateOf(debilities.toSet()) }
+            var named by remember { mutableStateOf<Debility?>(null) }
+            LaunchedEffect(named) {
+                if (named != null) {
+                    delay(NAME_MS)
+                    named = null
                 }
             }
+            if (debilities.isNotEmpty()) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally), modifier = Modifier.fillMaxWidth()) {
+                    debilities.forEach { debility ->
+                        DebilityIcon(debility, fresh = debility !in seen, reduceMotion, onTap = { named = debility })
+                    }
+                }
+                named?.let { Text(stringResource(debilityName(it)), style = MaterialTheme.typography.labelMedium, modifier = Modifier.align(Alignment.CenterHorizontally)) }
+            }
+            LaunchedEffect(debilities) { seen = debilities.toSet() }
         }
-    }
-}
-
-/** One meter of the status bar: its value large, its name small under it. */
-@Composable
-private fun MeterCell(@StringRes label: Int, value: String, modifier: Modifier) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
-        // Lining figures: Cormorant's old-style digits dip below the line and look uneven side by side.
-        Text(value, style = MaterialTheme.typography.headlineSmall.copy(fontFeatureSettings = "lnum"))
-        Text(stringResource(label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
     }
 }
 
@@ -634,6 +633,8 @@ internal fun sourceName(source: String): Int = when (source) {
 }
 
 private val NO_REQUEST: String? = null
+/** How long a tapped debility shows its name, in milliseconds. */
+private const val NAME_MS = 2000L
 private const val REQUEST_MOVE = "move"
 private const val REQUEST_ORACLE = "oracle"
 
