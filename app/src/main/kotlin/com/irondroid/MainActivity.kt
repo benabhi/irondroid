@@ -191,6 +191,7 @@ class MainActivity : ComponentActivity() {
                                     },
                                     confirmer = player,
                                     effort = { app.playSettings.narratorEffort },
+                                    beforeAction = { call -> player.beforeAction(call.name, call.arguments) },
                                     context = {
                                         turnContext(
                                             session.characterName,
@@ -221,6 +222,8 @@ class MainActivity : ComponentActivity() {
                                     diceTable.roll(dice, fast = app.playSettings.shortDiceAnimation || reduceMotion())
                                 }
                             },
+                            playerDice = app.playerDice,
+                            ownDice = { app.playSettings.ownDice },
                             // The model reads the triggers in English, like the rest of its instructions.
                             suggester = app.aiProvider()?.let { provider ->
                                 MoveSuggester(provider, app.aiSettings.model(), app.moves.moves.map { MoveOption(it.id, app.moves.text(it.id, "en")?.trigger ?: it.id) })

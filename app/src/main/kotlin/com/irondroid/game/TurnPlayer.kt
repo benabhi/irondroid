@@ -32,6 +32,8 @@ import com.irondroid.engine.character.Character
 import com.irondroid.engine.character.Stat
 import com.irondroid.engine.meters.MeterType
 import com.irondroid.engine.debility.Debility
+import com.irondroid.engine.dice.Die
+import com.irondroid.engine.dice.PlayerDice
 import com.irondroid.engine.game.GameActions
 import com.irondroid.engine.move.MoveCatalog
 import com.irondroid.engine.move.MoveCategory
@@ -124,6 +126,10 @@ class TurnPlayer(
     private val sheet: () -> Character? = { null },
     /** Shows the dice of a roll and returns once they stop (IRON-72); the card of the roll waits for it. */
     private val showDice: suspend (List<ThrownDie>) -> Unit = {},
+    /** The game's dice, which take the player's own values (IRON-74); null never asks for them. */
+    private val playerDice: PlayerDice? = null,
+    /** Whether the player rolls their own dice (RF-DAD-07), read at each roll. */
+    private val ownDice: () -> Boolean = { false },
 ) : MoveConfirmer {
     /** A move waiting for the player, with the answer the narrator waits on. */
     class PendingMove(val proposal: MoveProposal, internal val answer: CompletableDeferred<MoveDecision>)
@@ -147,6 +153,16 @@ class TurnPlayer(
      */
     var shownSheet by mutableStateOf<Character?>(null)
         private set
+
+    /** A roll waiting for the values of the player's own dice (IRON-74), with the answer it waits on. */
+    class PendingDice(val kind: OwnDiceKind, val action: String, val move: String?, internal val answer: CompletableDeferred<List<Int>?>)
+
+    /** The roll waiting for the player's own dice, or null. */
+    var pendingDice by mutableStateOf<PendingDice?>(null)
+        private set
+
+    /** Whether the player typed the values of the roll about to run, so its 3D dice are not shown. */
+    private var ownValuesLoaded = false
 
     /** The choice the player has to make, if any (RF-ENV-11). */
     var choice by mutableStateOf<PendingChoice?>(null)
@@ -217,14 +233,18 @@ class TurnPlayer(
             put("question", question)
             put("odds", odds)
         }.toString()
+        beforeAction(ASK_ORACLE, arguments)
         val result = dispatcher.dispatch(ASK_ORACLE, arguments, Caller.PLAYER)
+        val typed = ownValuesLoaded
+        ownValuesLoaded = false
+        playerDice?.clear()
         if (result !is DispatchResult.Success) {
             Log.w(TAG, "ask_oracle failed: $result")
             return
         }
         flush()
         val step = NarratorStep(ASK_ORACLE, arguments, result.result.summary, true, result.result.data, result.result.changes)
-        diceOf(step)?.let { showDice(it) }
+        if (!typed) diceOf(step)?.let { showDice(it) }
         store.appendTurn(campaignId, said, null, listOfNotNull(card(step)), null)
         turns += PlayedTurn(said, listOfNotNull(cardSummary(step)), "")
     }
@@ -369,10 +389,19 @@ class TurnPlayer(
         live = PlayedTurn(input, before.mapNotNull(::cardSummary), "", activity = NarratorActivity.Thinking)
         shownSheet = sheet()
         val outcome = coroutineScope {
-            // Each event with the sheet as it was right after it, which the screen shows once the event shows.
-            val events = Channel<Pair<TurnEvent, Character?>>(Channel.UNLIMITED)
-            val shown = launch { for ((event, after) in events) show(event, after) }
-            val outcome = play { events.trySend(it to sheet()) }
+            // Each event with the sheet as it was right after it, which the screen shows once the event shows,
+            // and whether the player rolled its dice by hand.
+            val events = Channel<Triple<TurnEvent, Character?, Boolean>>(Channel.UNLIMITED)
+            val shown = launch { for ((event, after, typed) in events) show(event, after, typed) }
+            val outcome = play { event ->
+                val typed = event is TurnEvent.Step && ownValuesLoaded
+                if (event is TurnEvent.Step) {
+                    // Values the action did not use, such as when it failed, are not for the next roll.
+                    ownValuesLoaded = false
+                    playerDice?.clear()
+                }
+                events.trySend(Triple(event, sheet(), typed))
+            }
             events.close()
             shown.join()
             outcome
@@ -393,8 +422,8 @@ class TurnPlayer(
         choice = dispatcher.choices.current
     }
 
-    private suspend fun show(event: TurnEvent, sheetAfter: Character?) {
-        if (event is TurnEvent.Step) diceOf(event.step)?.let { showDice(it) }
+    private suspend fun show(event: TurnEvent, sheetAfter: Character?, typed: Boolean) {
+        if (event is TurnEvent.Step && !typed) diceOf(event.step)?.let { showDice(it) }
         shownSheet = sheetAfter
         val current = live ?: return
         live = when (event) {
@@ -403,6 +432,60 @@ class TurnPlayer(
             TurnEvent.Thinking -> current.copy(activity = NarratorActivity.Thinking)
             is TurnEvent.Acting -> current.copy(activity = NarratorActivity.Acting(event.action))
         }
+    }
+
+    /**
+     * Before an action runs (IRON-74): if it rolls dice and the player uses their own, waits for the
+     * values they type and gives them to the engine, which checks them. Letting the app roll this
+     * time, or any other action, goes on at once.
+     */
+    suspend fun beforeAction(action: String, arguments: String) {
+        val dice = playerDice ?: return
+        if (!ownDice()) return
+        val move = if (action == ROLL_MOVE) parsedMove(arguments) else null
+        val kind = when (action) {
+            ROLL_MOVE -> when (moves[move ?: return]?.roll) {
+                is MoveRoll.Action -> OwnDiceKind.ACTION
+                is MoveRoll.Progress -> OwnDiceKind.CHALLENGE
+                else -> return
+            }
+            ROLL_PROGRESS -> OwnDiceKind.CHALLENGE
+            ASK_ORACLE, ROLL_ORACLE_TABLE -> OwnDiceKind.ORACLE
+            else -> return
+        }
+        val pending = PendingDice(kind, action, move, CompletableDeferred())
+        pendingDice = pending
+        val values = try {
+            pending.answer.await()
+        } finally {
+            pendingDice = null
+        } ?: return
+        try {
+            when (kind) {
+                OwnDiceKind.ACTION -> {
+                    dice.load(Die.D6, values.take(1))
+                    dice.load(Die.D10, values.drop(1))
+                }
+                OwnDiceKind.CHALLENGE -> dice.load(Die.D10, values)
+                OwnDiceKind.ORACLE -> dice.load(Die.D100, values)
+            }
+            ownValuesLoaded = true
+        } catch (e: IllegalArgumentException) {
+            // The panel only offers real faces; if one slips through, the app rolls instead.
+            Log.w(TAG, "own dice refused: ${e.message}")
+            dice.clear()
+        }
+    }
+
+    /** The values of the player's own dice for the roll waiting, or null to let the app roll it. */
+    fun answerDice(values: List<Int>?) {
+        pendingDice?.answer?.complete(values)
+    }
+
+    private fun parsedMove(arguments: String): String? = try {
+        (Json.parseToJsonElement(arguments) as? JsonObject)?.get("move")?.jsonPrimitive?.content
+    } catch (e: IllegalArgumentException) {
+        null
     }
 
     override fun needsConfirmation(move: String): Boolean = confirmMoves() && moves[move]?.let { it.roll !is MoveRoll.None } == true
@@ -480,6 +563,9 @@ class TurnPlayer(
         private const val TAG = "Turn"
         private const val CHOOSE_OPTION = "choose_option"
         private const val ASK_ORACLE = "ask_oracle"
+        private const val ROLL_MOVE = "roll_move"
+        private const val ROLL_PROGRESS = "roll_progress"
+        private const val ROLL_ORACLE_TABLE = "roll_oracle_table"
         private const val MANUAL_EDIT = "manual_edit"
 
         /** Model-facing note on a question the player asked the oracle without narration. */

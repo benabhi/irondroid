@@ -56,6 +56,11 @@ class PlaySettings(private val preferences: SharedPreferences) {
         get() = preferences.getBoolean(KEY_SHAKE_TO_ROLL, true)
         set(value) = preferences.edit { putBoolean(KEY_SHAKE_TO_ROLL, value) }
 
+    /** Whether the player rolls their own dice and types the values (RF-DAD-07, IRON-74); off unless turned on. */
+    var ownDice: Boolean
+        get() = preferences.getBoolean(KEY_OWN_DICE, false)
+        set(value) = preferences.edit { putBoolean(KEY_OWN_DICE, value) }
+
     companion object {
         const val FILE_NAME = "play_settings"
         private const val KEY_THEME_MODE = "theme_mode"
@@ -67,5 +72,6 @@ class PlaySettings(private val preferences: SharedPreferences) {
         private const val KEY_DICE_STYLE = "dice_style"
         private const val KEY_SHORT_DICE = "short_dice_animation"
         private const val KEY_SHAKE_TO_ROLL = "shake_to_roll"
+        private const val KEY_OWN_DICE = "own_dice"
     }
 }

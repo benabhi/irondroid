@@ -96,6 +96,11 @@ class Narrator(
     private val context: suspend () -> TurnContext? = { null },
     /** How hard the model thinks, read at the start of each turn (IRON-109): low is faster and cheaper. */
     private val effort: () -> ReasoningEffort = { ReasoningEffort.LOW },
+    /**
+     * Called right before each action runs, after the player confirmed it, such as to wait for the
+     * values of the player's own dice (RF-DAD-07, IRON-74).
+     */
+    private val beforeAction: suspend (ToolCall) -> Unit = {},
 ) {
     init {
         require(maxRounds >= 1) { "The narrator needs at least one round" }
@@ -207,6 +212,7 @@ class Narrator(
                         continue
                     }
                     val call = (decision as? MoveDecision.Roll)?.let { withRoll(asked, it) } ?: asked
+                    beforeAction(call)
                     onEvent(TurnEvent.Acting(call.name))
                     val run = tools.run(call)
                     conversation += if (call === asked) run.message else run.message.copy(content = changedNote(call, run.message.content))
