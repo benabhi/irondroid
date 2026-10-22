@@ -23,20 +23,20 @@
     const container = document.getElementById("dice");
     const DiceBox = window["dice-box-threejs"].default || window["dice-box-threejs"];
 
-    // Ink and paper, like the rest of the app: the action die takes the ink of the theme and the
-    // challenge dice its paper, so both stand out against the screen behind (RF-DAD-02).
+    // Ink and paper, like the rest of the app. The host says which each die is: the action die is
+    // ink and the challenge dice paper (RF-DAD-02); for a d100, tens are ink and units paper (RF-DAD-03).
     const INK = "#1c1c1c";
     const PAPER = "#e9e3d5";
     const DARK_PAPER = "#585858";
     const LIGHT_INK = "#f2efe8";
     const COLOR_SETS = {
       light: {
-        action: { name: "action-light", foreground: "#f5f1e8", background: INK, outline: INK, texture: "none", material: "plastic" },
-        challenge: { name: "challenge-light", foreground: INK, background: PAPER, outline: PAPER, texture: "none", material: "plastic" },
+        ink: { name: "ink-light", foreground: "#f5f1e8", background: INK, outline: INK, texture: "none", material: "plastic" },
+        paper: { name: "paper-light", foreground: INK, background: PAPER, outline: PAPER, texture: "none", material: "plastic" },
       },
       dark: {
-        action: { name: "action-dark", foreground: INK, background: LIGHT_INK, outline: LIGHT_INK, texture: "none", material: "plastic" },
-        challenge: { name: "challenge-dark", foreground: LIGHT_INK, background: DARK_PAPER, outline: DARK_PAPER, texture: "none", material: "plastic" },
+        ink: { name: "ink-dark", foreground: INK, background: LIGHT_INK, outline: LIGHT_INK, texture: "none", material: "plastic" },
+        paper: { name: "paper-dark", foreground: LIGHT_INK, background: DARK_PAPER, outline: DARK_PAPER, texture: "none", material: "plastic" },
       },
     };
     // How long the dice stay on the table once they land, before fading away.
@@ -65,7 +65,10 @@
     let throwLog = null;
     let stepLog = null;
     let simulationMs = 0;
-    let colors = { action: null, challenge: null };
+    let colors = { ink: null, paper: null };
+    // Whether each die of the throw being spawned is ink, in spawn order; restarted on every throw.
+    let dieInk = [];
+    let dieIndex = 0;
     // The theme the app had when it loaded the page; later changes come through setTheme.
     let dark = new URLSearchParams(location.search).get("theme") === "dark";
     let warmup = null;
@@ -90,18 +93,19 @@
     async function loadColors() {
       const sets = COLOR_SETS[dark ? "dark" : "light"];
       colors = {
-        action: await box.DiceColors.makeColorSet(sets.action),
-        challenge: await box.DiceColors.makeColorSet(sets.challenge),
+        ink: await box.DiceColors.makeColorSet(sets.ink),
+        paper: await box.DiceColors.makeColorSet(sets.paper),
       };
     }
 
-    // The library uses one colour set per box; switch it per die so action and challenge
-    // dice look different (RF-DAD-02).
+    // The library uses one colour set per box; switch it per die so each die takes the colour
+    // the host asked for.
     function installPerDieColors() {
       const factory = box.DiceFactory;
       const create = factory.create.bind(factory);
       factory.create = function (type) {
-        factory.applyColorSet(type === "d6" ? colors.action : colors.challenge);
+        const ink = dieInk.length ? dieInk[dieIndex++ % dieInk.length] : type === "d6";
+        factory.applyColorSet(ink ? colors.ink : colors.paper);
         return create(type);
       };
     }
@@ -171,6 +175,7 @@
           if (throwLog) throwLog.push(reason || "ok");
           if (stepLog) stepLog.push(box.iteration);
           if (!reason || attempt >= MAX_THROW_ATTEMPTS) break;
+          dieIndex = 0;
           box.notationVectors = box.startClickThrow(pendingNotation);
           for (const vector of box.notationVectors.vectors) box.spawnDice(vector);
         }
@@ -207,14 +212,29 @@
       }, HOLD_MS);
     }
 
-    async function throwDice(action, challenge1, challenge2) {
-      const notation = "1d6+2d10@" + [action, challenge1, challenge2].join(",");
+    // The library's notation for dice in order, with the values they must land on, such as
+    // "1d6+2d10@4,7,10". Consecutive dice with the same sides form one group.
+    function notationOf(dice) {
+      const groups = [];
+      for (const die of dice) {
+        const last = groups[groups.length - 1];
+        if (last && last.sides === die.sides) last.count++;
+        else groups.push({ sides: die.sides, count: 1 });
+      }
+      return groups.map(g => g.count + "d" + g.sides).join("+") + "@" + dice.map(d => d.value).join(",");
+    }
+
+    async function throwDice(dice) {
+      const notation = notationOf(dice);
       pendingNotation = notation;
+      dieInk = dice.map(d => !!d.ink);
+      dieIndex = 0;
       const result = await box.roll(notation);
       return { notation: notation, shown: result.sets.flatMap(set => set.rolls.map(r => r.value)) };
     }
 
-    async function roll(action, challenge1, challenge2) {
+    // Throws dice that land on the values the host decided: [{ sides: 6 or 10, value, ink }].
+    async function roll(dice) {
       if (!box) return;
       if (warmup) await warmup;
       show();
@@ -223,7 +243,7 @@
       stepLog = [];
       const startedAt = performance.now();
       try {
-        const thrown = await throwDice(action, challenge1, challenge2);
+        const thrown = await throwDice(dice);
         const stats = frameStats(frameTimes, startedAt);
         frameTimes = null;
         report("onRollComplete", Object.assign({
@@ -246,7 +266,8 @@
     // (IRON-12). Throw once while the table is invisible so the player never sees it.
     async function warmUp() {
       const startedAt = performance.now();
-      await throwDice(1, 1, 1);
+      // Every die and colour the game throws: an ink d6, an ink d10 and a paper d10.
+      await throwDice([{ sides: 6, value: 1, ink: true }, { sides: 10, value: 1, ink: true }, { sides: 10, value: 1, ink: false }]);
       box.clearDice();
       return performance.now() - startedAt;
     }
@@ -254,7 +275,7 @@
     async function setTheme(isDark) {
       if (dark === isDark) return;
       dark = isDark;
-      if (colors.action) await loadColors();
+      if (colors.ink) await loadColors();
     }
 
     function clear() {

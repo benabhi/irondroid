@@ -20,6 +20,7 @@ import com.irondroid.data.CampaignStore
 import com.irondroid.data.NewHistoryEntry
 import com.irondroid.data.entity.CharacterGender
 import com.irondroid.data.entity.HistoryEntryKind
+import com.irondroid.dice.ThrownDie
 import com.irondroid.engine.action.ActionDispatcher
 import com.irondroid.engine.action.ActionHistory
 import com.irondroid.engine.action.Caller
@@ -37,6 +38,9 @@ import com.irondroid.engine.move.MoveCategory
 import com.irondroid.engine.move.MoveRoll
 import com.irondroid.engine.move.SourcePick
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import java.time.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -118,6 +122,8 @@ class TurnPlayer(
     private val suggester: MoveSuggester? = null,
     /** The sheet of the open game, to apply hand edits as targets (IRON-66). */
     private val sheet: () -> Character? = { null },
+    /** Shows the dice of a roll and returns once they stop (IRON-72); the card of the roll waits for it. */
+    private val showDice: suspend (List<ThrownDie>) -> Unit = {},
 ) : MoveConfirmer {
     /** A move waiting for the player, with the answer the narrator waits on. */
     class PendingMove(val proposal: MoveProposal, internal val answer: CompletableDeferred<MoveDecision>)
@@ -132,6 +138,14 @@ class TurnPlayer(
 
     /** The turn being played, or null. */
     var live by mutableStateOf<PlayedTurn?>(null)
+        private set
+
+    /**
+     * The sheet as of what the screen has shown of the turn being played, or null to show the game's
+     * own: the engine changes the sheet the moment it rolls, and the status bar must not tell the
+     * result, such as a +1 momentum, while the dice still roll (IRON-72).
+     */
+    var shownSheet by mutableStateOf<Character?>(null)
         private set
 
     /** The choice the player has to make, if any (RF-ENV-11). */
@@ -210,6 +224,7 @@ class TurnPlayer(
         }
         flush()
         val step = NarratorStep(ASK_ORACLE, arguments, result.result.summary, true, result.result.data, result.result.changes)
+        diceOf(step)?.let { showDice(it) }
         store.appendTurn(campaignId, said, null, listOfNotNull(card(step)), null)
         turns += PlayedTurn(said, listOfNotNull(cardSummary(step)), "")
     }
@@ -343,18 +358,26 @@ class TurnPlayer(
         run(shown) { onEvent -> narrator.correct(input, previous, correction.trim(), past(), onEvent) }
     }
 
-    /** Plays a turn; [before] are steps the player already ran for it, such as picking options. */
+    /**
+     * Plays a turn; [before] are steps the player already ran for it, such as picking options.
+     *
+     * What the narrator does reaches the screen in order through a queue: a roll's dice are shown
+     * first, and its card, and whatever the narrator does next, wait until they stop (IRON-72), so
+     * neither the card nor the narration gives the result away while the dice still roll.
+     */
     private suspend fun run(input: String, before: List<NarratorStep> = emptyList(), play: suspend ((TurnEvent) -> Unit) -> TurnOutcome) {
         live = PlayedTurn(input, before.mapNotNull(::cardSummary), "", activity = NarratorActivity.Thinking)
-        val outcome = play { event ->
-            val current = live ?: return@play
-            live = when (event) {
-                is TurnEvent.Text -> current.copy(narration = current.narration + event.text, activity = null)
-                is TurnEvent.Step -> current.copy(steps = current.steps + listOfNotNull(cardSummary(event.step)))
-                TurnEvent.Thinking -> current.copy(activity = NarratorActivity.Thinking)
-                is TurnEvent.Acting -> current.copy(activity = NarratorActivity.Acting(event.action))
-            }
+        shownSheet = sheet()
+        val outcome = coroutineScope {
+            // Each event with the sheet as it was right after it, which the screen shows once the event shows.
+            val events = Channel<Pair<TurnEvent, Character?>>(Channel.UNLIMITED)
+            val shown = launch { for ((event, after) in events) show(event, after) }
+            val outcome = play { events.trySend(it to sheet()) }
+            events.close()
+            shown.join()
+            outcome
         }
+        shownSheet = null
         Log.i(TAG, "turn effort=${outcome.effort} steps=${outcome.steps.size} firstText=${outcome.firstTextMs}ms total=${outcome.totalMs}ms usage=${outcome.usage} error=${outcome.error?.kind}")
         // Where the time went (IRON-62): per request, the first output, the first text and the end, from the turn start.
         outcome.rounds.forEachIndexed { i, round ->
@@ -368,6 +391,18 @@ class TurnPlayer(
         turns += PlayedTurn(input, steps.mapNotNull(::cardSummary), outcome.narration, outcome.error, metrics)
         live = null
         choice = dispatcher.choices.current
+    }
+
+    private suspend fun show(event: TurnEvent, sheetAfter: Character?) {
+        if (event is TurnEvent.Step) diceOf(event.step)?.let { showDice(it) }
+        shownSheet = sheetAfter
+        val current = live ?: return
+        live = when (event) {
+            is TurnEvent.Text -> current.copy(narration = current.narration + event.text, activity = null)
+            is TurnEvent.Step -> current.copy(steps = current.steps + listOfNotNull(cardSummary(event.step)))
+            TurnEvent.Thinking -> current.copy(activity = NarratorActivity.Thinking)
+            is TurnEvent.Acting -> current.copy(activity = NarratorActivity.Acting(event.action))
+        }
     }
 
     override fun needsConfirmation(move: String): Boolean = confirmMoves() && moves[move]?.let { it.roll !is MoveRoll.None } == true

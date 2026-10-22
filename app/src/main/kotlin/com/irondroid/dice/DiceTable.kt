@@ -31,10 +31,10 @@ class DiceTable(private val root: FrameLayout) {
     }
 
     /**
-     * Rolls an action roll whose dice land on [action] and the two challenge dice, and returns what they
-     * show once they stop, or null if the dice could not be shown. Rolls wait for each other.
+     * Throws [dice], each landing on its value, and returns what they show once they stop, or null if
+     * the dice could not be shown. Rolls wait for each other.
      */
-    suspend fun roll(action: Int, challenge1: Int, challenge2: Int): DiceRollReport? = rolls.withLock {
+    suspend fun roll(dice: List<ThrownDie>): DiceRollReport? = rolls.withLock {
         val view = overlay()
         // Null if the page failed to load or is still loading after the timeout.
         val loaded = withTimeoutOrNull(LOAD_TIMEOUT_MS) { ready.await() }
@@ -44,14 +44,14 @@ class DiceTable(private val root: FrameLayout) {
         }
         val result = CompletableDeferred<DiceRollReport?>()
         pending = result
-        view.roll(action, challenge1, challenge2)
+        view.roll(dice)
         val report = withTimeoutOrNull(ROLL_TIMEOUT_MS) { result.await() }
         pending = null
         if (report == null) {
             Log.w(DiceOverlayView.TAG, "roll did not finish, clearing the dice")
             view.clearDice()
-        } else if (report.shown != listOf(action, challenge1, challenge2)) {
-            Log.e(DiceOverlayView.TAG, "dice show ${report.shown}, the engine rolled ${listOf(action, challenge1, challenge2)}")
+        } else if (report.shown != dice.map { it.value }) {
+            Log.e(DiceOverlayView.TAG, "dice show ${report.shown}, the engine rolled ${dice.map { it.value }}")
         }
         report
     }
