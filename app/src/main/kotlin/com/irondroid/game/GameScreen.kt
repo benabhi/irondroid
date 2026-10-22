@@ -1,5 +1,26 @@
 package com.irondroid.game
 
+import androidx.annotation.StringRes
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import com.irondroid.engine.debility.Debility
+import com.irondroid.theme.InkIcons
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -42,7 +63,7 @@ import com.irondroid.engine.action.ChoiceOption
 import com.irondroid.engine.action.PendingChoice
 import com.irondroid.settings.aiErrorText
 import kotlinx.coroutines.launch
-import java.util.Locale
+
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
@@ -75,131 +96,261 @@ fun GameScreen(
         if (shown > 0) list.animateScrollToItem(shown - 1)
     }
 
+    val choice = player.choice
+    val pendingMove = player.pendingMove
+    // Take back the last turn, or have it narrated again with a correction (RF-ENV-09).
+    val canTakeBack = player.canTakeBack && !player.busy && !correcting && requesting == null
+    val idle = player.hasNarrator && !player.busy && pendingMove == null && choice == null && !correcting && requesting == null
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .safeDrawingPadding()
-            .imePadding()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .imePadding(),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            TextButton(onClick = onBack) { Text(stringResource(R.string.common_back)) }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                Text(
-                    stringResource(
-                        R.string.game_header,
-                        characterName,
-                        stringResource(R.string.campaign_meters, sheet.meters.health.value, sheet.meters.spirit.value, sheet.meters.supply.value, sheet.momentum.value),
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                )
-            }
-            TextButton(onClick = onOpenSheet) { Text(stringResource(R.string.game_sheet)) }
+        StatusBar(title, characterName, sheet, onBack = onBack, onOpenSheet = onOpenSheet) {
+            GameMenu(
+                onOpenSheet = onOpenSheet,
+                onUndo = if (canTakeBack) ({ scope.launch { player.undoLastTurn() } }) else null,
+                onCorrect = if (canTakeBack && player.hasNarrator) ({ correcting = true }) else null,
+            )
         }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
-        LazyColumn(state = list, modifier = Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(
+            state = list,
+            modifier = Modifier.weight(1f).fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
             if (player.loaded && player.turns.isEmpty() && live == null) {
-                item { Text(stringResource(R.string.game_empty), style = MaterialTheme.typography.bodyMedium) }
+                item { Text(stringResource(R.string.game_empty), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) }
             }
             items(player.turns) { TurnView(it, playing = false, player::moveName, showMetrics) }
             if (live != null) item { TurnView(live, playing = true, player::moveName, showMetrics) }
         }
 
-        val choice = player.choice
-        val pendingMove = player.pendingMove
-        // Take back the last turn, or have it narrated again with a correction (RF-ENV-09).
-        val idle = player.hasNarrator && !player.busy && pendingMove == null && choice == null && !correcting && requesting == null
-        if ((player.canTakeBack && !correcting && requesting == null) || idle) {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (player.canTakeBack && !correcting && requesting == null) {
-                    TextButton(onClick = { scope.launch { player.undoLastTurn() } }) { Text(stringResource(R.string.game_undo)) }
-                    if (player.hasNarrator) TextButton(onClick = { correcting = true }) { Text(stringResource(R.string.game_correct)) }
-                }
-                // Ask for a move or the oracle directly, without waiting for the narrator to decide (RF-ENV-05).
-                if (idle) {
-                    TextButton(onClick = { requesting = REQUEST_MOVE }) { Text(stringResource(R.string.request_move)) }
-                    TextButton(onClick = { requesting = REQUEST_ORACLE }) { Text(stringResource(R.string.request_oracle)) }
-                }
-            }
-        }
-        when {
-            !player.hasNarrator -> Text(stringResource(R.string.game_no_key), color = MaterialTheme.colorScheme.error)
-            pendingMove != null -> MovePanel(pendingMove.proposal, player)
-            requesting == REQUEST_MOVE -> MoveRequestPanel(
-                player,
-                onRoll = { move, source, said ->
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+            BottomPanel(
+                player, sheet, choice, pendingMove, live, correcting, requesting, idle,
+                input = input,
+                onInput = { input = it },
+                correction = correction,
+                onCorrection = { correction = it },
+                onSend = {
+                    val text = input
+                    input = ""
+                    scope.launch { player.play(text) }
+                },
+                onCorrect = {
+                    val text = correction
+                    correction = ""
+                    correcting = false
+                    scope.launch { player.correctLastTurn(text) }
+                },
+                onCancelCorrect = { correcting = false },
+                onRequest = { requesting = it },
+                onRequestMove = { move, source, said ->
                     requesting = null
                     scope.launch { player.requestMove(move, source, said) }
                 },
-                onCancel = { requesting = null },
-            )
-            requesting == REQUEST_ORACLE -> OracleRequestPanel(
-                onAsk = { question, odds, said ->
+                onRequestOracle = { question, odds, said ->
                     requesting = null
                     scope.launch { player.requestOracle(question, odds, said) }
                 },
-                onCancel = { requesting = null },
+                onChoose = { picked, text, own -> scope.launch { player.choose(picked, text, own) } },
             )
-            correcting -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = correction,
-                    onValueChange = { correction = it },
-                    label = { Text(stringResource(R.string.game_correct_input)) },
-                    modifier = Modifier.weight(1f),
-                    maxLines = 4,
-                )
-                Column {
-                    Button(
-                        enabled = !player.busy && correction.isNotBlank(),
-                        onClick = {
-                            val text = correction
-                            correction = ""
-                            correcting = false
-                            scope.launch { player.correctLastTurn(text) }
-                        },
-                    ) { Text(stringResource(R.string.game_correct_send)) }
-                    TextButton(onClick = { correcting = false }) { Text(stringResource(R.string.game_correct_cancel)) }
-                }
+        }
+    }
+}
+
+/**
+ * The compact bar on top (SRD 3.15): back, the campaign and character, the menu, and health,
+ * spirit, supply and momentum always in sight with the marked debilities. Tapping the meters opens
+ * the sheet.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun StatusBar(
+    title: String,
+    characterName: String,
+    sheet: Character,
+    onBack: () -> Unit,
+    onOpenSheet: () -> Unit,
+    menu: @Composable () -> Unit,
+) {
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 4.dp)) {
+            IconButton(onClick = onBack) { Icon(InkIcons.Back, contentDescription = stringResource(R.string.common_back)) }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(characterName, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
             }
-            choice != null && live == null -> ChoicePanel(choice, player, sheet.momentum.value) { picked, text, own -> scope.launch { player.choose(picked, text, own) } }
-            else -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = input,
-                    onValueChange = { input = it },
-                    label = { Text(stringResource(R.string.game_input)) },
-                    modifier = Modifier.weight(1f),
-                    maxLines = 4,
-                )
-                Button(
-                    enabled = !player.busy && input.isNotBlank(),
-                    onClick = {
-                        val text = input
-                        input = ""
-                        scope.launch { player.play(text) }
-                    },
-                ) { Text(stringResource(R.string.game_send)) }
+            menu()
+        }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpenSheet)
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                MeterCell(R.string.meter_health, sheet.meters.health.value.toString(), Modifier.weight(1f))
+                MeterCell(R.string.meter_spirit, sheet.meters.spirit.value.toString(), Modifier.weight(1f))
+                MeterCell(R.string.meter_supply, sheet.meters.supply.value.toString(), Modifier.weight(1f))
+                MeterCell(R.string.meter_momentum, String.format(LocalConfiguration.current.locales[0], "%+d", sheet.momentum.value), Modifier.weight(1f))
+            }
+            val debilities = Debility.entries.filter { it in sheet.debilities }
+            if (debilities.isNotEmpty()) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally), modifier = Modifier.fillMaxWidth()) {
+                    debilities.forEach { debility ->
+                        Text(
+                            stringResource(debilityName(debility)),
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier
+                                .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(4.dp))
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                }
             }
         }
     }
 }
 
+/** One meter of the status bar: its value large, its name small under it. */
 @Composable
-private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> String, showMetrics: Boolean) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        turn.playerInput?.let { said ->
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                modifier = Modifier.fillMaxWidth().padding(start = 48.dp),
-            ) {
-                Text(said, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(12.dp))
+private fun MeterCell(@StringRes label: Int, value: String, modifier: Modifier) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
+        // Lining figures: Cormorant's old-style digits dip below the line and look uneven side by side.
+        Text(value, style = MaterialTheme.typography.headlineSmall.copy(fontFeatureSettings = "lnum"))
+        Text(stringResource(label), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+    }
+}
+
+/** The less frequent actions, out of the way: the sheet, undo and correct (RF-ENV-09). Null hides nothing, it disables. */
+@Composable
+private fun GameMenu(onOpenSheet: () -> Unit, onUndo: (() -> Unit)?, onCorrect: (() -> Unit)?) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }) { Icon(InkIcons.More, contentDescription = stringResource(R.string.game_menu)) }
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            DropdownMenuItem(text = { Text(stringResource(R.string.game_sheet)) }, onClick = { open = false; onOpenSheet() })
+            DropdownMenuItem(text = { Text(stringResource(R.string.game_undo)) }, enabled = onUndo != null, onClick = { open = false; onUndo?.invoke() })
+            DropdownMenuItem(text = { Text(stringResource(R.string.game_correct)) }, enabled = onCorrect != null, onClick = { open = false; onCorrect?.invoke() })
+        }
+    }
+}
+
+/** The name of a debility, as the status bar shows it. */
+private fun debilityName(debility: Debility): Int = when (debility) {
+    Debility.WOUNDED -> R.string.debility_wounded
+    Debility.SHAKEN -> R.string.debility_shaken
+    Debility.UNPREPARED -> R.string.debility_unprepared
+    Debility.ENCUMBERED -> R.string.debility_encumbered
+    Debility.MAIMED -> R.string.debility_maimed
+    Debility.CORRUPTED -> R.string.debility_corrupted
+    Debility.CURSED -> R.string.debility_cursed
+    Debility.TORMENTED -> R.string.debility_tormented
+}
+
+/**
+ * The bottom of the screen: what the turn waits for (a move to confirm, a choice, a correction or a
+ * request) or, when nothing does, the bottom bar of the SRD: move and oracle at one tap (RF-UI-07,
+ * RF-ENV-05) and the player's text.
+ */
+@Composable
+private fun BottomPanel(
+    player: TurnPlayer,
+    sheet: Character,
+    choice: PendingChoice?,
+    pendingMove: TurnPlayer.PendingMove?,
+    live: PlayedTurn?,
+    correcting: Boolean,
+    requesting: String?,
+    idle: Boolean,
+    input: String,
+    onInput: (String) -> Unit,
+    correction: String,
+    onCorrection: (String) -> Unit,
+    onSend: () -> Unit,
+    onCorrect: () -> Unit,
+    onCancelCorrect: () -> Unit,
+    onRequest: (String?) -> Unit,
+    onRequestMove: (move: String, source: String?, said: String) -> Unit,
+    onRequestOracle: (question: String, odds: String, said: String) -> Unit,
+    onChoose: (List<String>, String, Boolean) -> Unit,
+) {
+        when {
+            !player.hasNarrator -> Text(stringResource(R.string.game_no_key), color = MaterialTheme.colorScheme.error)
+            pendingMove != null -> MovePanel(pendingMove.proposal, player)
+            requesting == REQUEST_MOVE -> MoveRequestPanel(player, onRoll = onRequestMove, onCancel = { onRequest(NO_REQUEST) })
+            requesting == REQUEST_ORACLE -> OracleRequestPanel(onAsk = onRequestOracle, onCancel = { onRequest(NO_REQUEST) })
+            correcting -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedTextField(
+                    value = correction,
+                    onValueChange = onCorrection,
+                    label = { Text(stringResource(R.string.game_correct_input)) },
+                    modifier = Modifier.weight(1f),
+                    maxLines = 4,
+                )
+                Column {
+                    Button(enabled = !player.busy && correction.isNotBlank(), onClick = onCorrect) { Text(stringResource(R.string.game_correct_send)) }
+                    TextButton(onClick = onCancelCorrect) { Text(stringResource(R.string.game_correct_cancel)) }
+                }
+            }
+            choice != null && live == null -> ChoicePanel(choice, player, sheet.momentum.value, onChoose)
+            else -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Ask for a move or the oracle directly, without waiting for the narrator to decide (RF-ENV-05).
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(enabled = idle, onClick = { onRequest(REQUEST_MOVE) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.request_move))
+                    }
+                    OutlinedButton(enabled = idle, onClick = { onRequest(REQUEST_ORACLE) }, modifier = Modifier.weight(1f).heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.request_oracle))
+                    }
+                }
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = input,
+                        onValueChange = onInput,
+                        placeholder = { Text(stringResource(R.string.game_input)) },
+                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier.weight(1f),
+                        maxLines = 4,
+                    )
+                    FilledIconButton(
+                        enabled = !player.busy && input.isNotBlank(),
+                        onClick = onSend,
+                        modifier = Modifier.size(52.dp),
+                    ) { Icon(InkIcons.Send, contentDescription = stringResource(R.string.game_send)) }
+                }
             }
         }
-        turn.steps.forEach { Text(stringResource(R.string.game_step, stepLine(it, moveName)), style = MaterialTheme.typography.bodySmall) }
+}
+
+@Composable
+private fun TurnView(turn: PlayedTurn, playing: Boolean, moveName: (String) -> String, showMetrics: Boolean) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        turn.playerInput?.let { said ->
+            Box(contentAlignment = Alignment.CenterEnd, modifier = Modifier.fillMaxWidth().padding(start = 48.dp)) {
+                Text(
+                    said,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(16.dp))
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                )
+            }
+        }
+        turn.steps.forEach {
+            Text(stringResource(R.string.game_step, stepLine(it, moveName)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         when {
-            turn.narration.isNotBlank() -> Text(turn.narration, style = MaterialTheme.typography.bodyLarge)
-            playing -> Text(stringResource(R.string.game_thinking), style = MaterialTheme.typography.bodyMedium)
+            turn.narration.isNotBlank() -> Text(turn.narration, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 27.sp))
+            playing -> Text(stringResource(R.string.game_thinking), style = MaterialTheme.typography.bodyMedium, fontStyle = FontStyle.Italic, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         turn.error?.let { Text(stringResource(R.string.game_error, stringResource(aiErrorText(it.kind))), color = MaterialTheme.colorScheme.error) }
         if (showMetrics) turn.metrics?.let { MetricsLine(it) }
@@ -497,13 +648,14 @@ private val ODDS = linkedMapOf(
     "small_chance" to R.string.odds_small_chance,
 )
 
+private val NO_REQUEST: String? = null
 private const val REQUEST_MOVE = "move"
 private const val REQUEST_ORACLE = "oracle"
 
 /** What a turn cost, in small grey text under its narration (IRON-111). Always in US dollars. */
 @Composable
 private fun MetricsLine(metrics: TurnMetrics) {
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     fun tokens(count: Int) = if (count >= 1000) String.format(locale, "%.1f k", count / 1000.0) else count.toString()
     val parts = buildList {
         add(stringResource(R.string.metrics_tokens, tokens(metrics.promptTokens), tokens(metrics.cachedTokens), tokens(metrics.completionTokens)))

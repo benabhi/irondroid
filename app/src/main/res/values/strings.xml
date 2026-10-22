@@ -114,7 +114,6 @@
     <string name="oracle_tables_repeated">Both rolls landed on the same result: make it stronger.</string>
     <string name="ai_test_style_performed">Performed</string>
     <string name="ai_test_style_sober">Sober</string>
-    <string name="game_header">%1$s · %2$s</string>
     <string name="game_sheet">Sheet</string>
     <string name="game_empty">Your story begins here. Tell the narrator what your character does.</string>
     <string name="game_input">What do you do?</string>
@@ -141,6 +140,16 @@
     <string name="meter_health">Health</string>
     <string name="meter_spirit">Spirit</string>
     <string name="meter_supply">Supply</string>
+    <string name="meter_momentum">Momentum</string>
+    <string name="game_menu">More options</string>
+    <string name="debility_wounded">Wounded</string>
+    <string name="debility_shaken">Shaken</string>
+    <string name="debility_unprepared">Unprepared</string>
+    <string name="debility_encumbered">Encumbered</string>
+    <string name="debility_maimed">Maimed</string>
+    <string name="debility_corrupted">Corrupted</string>
+    <string name="debility_cursed">Cursed</string>
+    <string name="debility_tormented">Tormented</string>
     <string name="choice_title_one">%1$s: choose one</string>
     <string name="choice_title_many">%1$s: choose %2$d</string>
     <string name="choice_burn_title">%1$s: burn your momentum (%2$+d) to improve the result?</string>
